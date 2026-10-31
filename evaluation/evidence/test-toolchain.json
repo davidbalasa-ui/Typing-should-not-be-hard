@@ -1,0 +1,27 @@
+[
+  {
+    "path": "toolchain/gradle-9.4.1.zip",
+    "url": "https://services.gradle.org/distributions/gradle-9.4.1-bin.zip",
+    "sha256": "2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb"
+  },
+  {
+    "path": "toolchain/test-jars/junit.jar",
+    "url": "https://repo.maven.apache.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar",
+    "sha256": "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3"
+  },
+  {
+    "path": "toolchain/test-jars/hamcrest.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar",
+    "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9"
+  },
+  {
+    "path": "toolchain/test-jars/kotlin-test.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-test/2.3.0/kotlin-test-2.3.0.jar",
+    "sha256": "ae298a046eb9db6facb448685cb29f6ca77ab52afff1169b3fc52519de74da28"
+  },
+  {
+    "path": "toolchain/test-jars/kotlin-test-junit.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-test-junit/2.3.0/kotlin-test-junit-2.3.0.jar",
+    "sha256": "3ab0e208804c1951f082e71ce8a3229015e9afd226393cffa847a263a2a2a927"
+  }
+]

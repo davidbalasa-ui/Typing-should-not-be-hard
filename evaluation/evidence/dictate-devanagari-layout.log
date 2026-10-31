@@ -1,0 +1,19 @@
+hindi_varnamala: 5 rows [10, 10, 10, 10, 8], 48 key slots
+
+On the keys themselves (including shift faces):
+  consonants: 33/33  OK
+  independent vowels: 11/11  OK
+  vowel signs: 9/9  OK
+  signs: 5/5  OK
+
+Including long-press popups:
+  consonants: 33/33  OK
+  independent vowels: 11/11  OK
+  vowel signs: 9/9  OK
+  signs: 5/5  OK
+
+Registered in the layout extension: 1 (want 1)
+Used by subtype presets: 1 (want 1)
+First hi-* preset (this is the default a new Hindi user gets): org.florisboard.layouts:hindi_varnamala
+
+RESULT: ok
