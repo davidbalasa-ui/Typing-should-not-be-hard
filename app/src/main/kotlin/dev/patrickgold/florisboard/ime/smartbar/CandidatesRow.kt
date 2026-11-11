@@ -232,7 +232,12 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                     },
                     onClick = {
                         FlorisImeService.inputFeedbackController()?.keyPress()
-                        keyboardManager.commitCandidate(item)
+                        // TypeBetter: an offer chip ("+ Kasmyra") does its action instead of typing.
+                        if (item is com.typebetter.keyboard.PersonalOfferCandidate) {
+                            item.accept()
+                        } else {
+                            keyboardManager.commitCandidate(item)
+                        }
                     },
                     onLongPress = {
                         val candidateItem = item
@@ -244,6 +249,8 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                             // An answer is not a word. Falling through to the branch below put "600" into
                             // the personal dictionary, where it went on being suggested long after the sum.
                             candidateItem is MathSuggestionCandidate -> false
+                            // TypeBetter offer chips are actions, not words.
+                            candidateItem is com.typebetter.keyboard.PersonalOfferCandidate -> false
                             // A word the keyboard picked up by itself is already in the vocabulary, so the
                             // gesture means the opposite there: forget it (issue #318). Without this, the
                             // only way to take back something it learned would be the settings screen —

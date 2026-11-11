@@ -11,14 +11,14 @@ class TypingRulesTest {
     private data class Cand(val text: String, val auto: Boolean = false)
 
     private fun TypingRules.run(typed: String, vararg stock: Cand) =
-        apply(typed, stock.toList(), { it.text }, { it.auto })
+        apply(typed, stock.toList(), { it.text }, { it.auto }) { it in common }
 
     private val common = setOf("weave", "silos", "corn", "cursor", "grog", "heaven", "its", "it's", "the")
 
     private fun rules(
         rules: PersonalRules = PersonalRules(),
         words: List<String> = emptyList(),
-    ) = TypingRules(rules, words) { it in common }
+    ) = TypingRules(rules, words)
 
     private fun <C> List<TypingRules.Entry<C>>.autoWord() = singleOrNull { it.autoCommit }?.text
     private fun <C> List<TypingRules.Entry<C>>.texts() = map { it.text }

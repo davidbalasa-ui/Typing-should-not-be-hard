@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.nlp
 import android.content.Context
 import android.os.SystemClock
 import android.util.LruCache
+import com.typebetter.keyboard.PersonalWords
+import com.typebetter.keyboard.TypeBetterSuggestions
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.clipboardManager
@@ -183,6 +185,16 @@ class NlpManager(context: Context) {
         }
         subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
             preload(subtype)
+        }
+        // TypeBetter: a change to My words or My fixes takes effect from the very next keystroke.
+        PersonalWords.changes.collectLatestIn(scope) {
+            val subtype = subtypeManager.activeSubtype
+            notePersonalVocabularyChanged(subtype)
+            glideTypingManager.value.invalidateWordData()
+            suggest(subtype, editorInstance.activeContent)
+        }
+        PersonalWords.offers.collectLatestIn(scope) {
+            assembleCandidates()
         }
     }
 
@@ -394,13 +406,17 @@ class NlpManager(context: Context) {
             }
             else -> {
                 val provider = getSuggestionProvider(subtype)
-                provider.suggest(
+                val stock = provider.suggest(
                     subtype = subtype,
                     content = content,
                     maxCandidateCount = provider.maxCandidates,
                     allowPossiblyOffensive = true,
                     isPrivateSession = keyboardManager.activeState.isIncognitoMode,
                 )
+                // TypeBetter: My fixes, Never change and My words decide before the keyboard's own guess.
+                TypeBetterSuggestions.shape(content.composingText.toString(), stock) { word ->
+                    provider.getFrequencyForWord(subtype, word) > 0.0
+                }
             }
         }
         // Words first, emoji after — a flat list, because where they end up on screen is
@@ -754,8 +770,15 @@ class NlpManager(context: Context) {
                 }
                 else -> emptyList()
             }
-            activeCandidates = candidates
-            autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)
+            // TypeBetter: a one-tap offer ("+ Kasmyra") leads the strip until the next word is started.
+            val withOffers = TypeBetterSuggestions.withOffers(
+                candidates = candidates,
+                isComposing = editorInstance.activeContent.composingText.isNotEmpty(),
+                isPassword = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD,
+                context = appContext,
+            )
+            activeCandidates = withOffers
+            autoExpandCollapseSmartbarActions(withOffers, NlpInlineAutofill.suggestions.value)
         }
     }
 

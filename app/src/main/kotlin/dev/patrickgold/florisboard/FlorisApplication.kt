@@ -162,6 +162,8 @@ class FlorisApplication : Application() {
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
+        // TypeBetter: load My fixes, apply the starter pack once, keep the weekly copy.
+        com.typebetter.keyboard.PersonalWords.init(this)
     }
 
     private inner class BootComplete : BroadcastReceiver() {

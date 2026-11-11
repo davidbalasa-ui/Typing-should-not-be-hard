@@ -297,6 +297,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(projects.lib.kotlin)
     implementation(projects.lib.snygg)
+    // TypeBetter: personal word lists and correction rules
+    implementation(projects.lib.typebetter)
 
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)

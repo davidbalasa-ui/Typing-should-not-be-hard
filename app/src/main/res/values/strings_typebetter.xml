@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TypeBetter: personal words and fixes. Kept apart from upstream strings so merges stay easy. -->
+<resources>
+    <string name="typebetter__offer_stop_title">Don\'t fix</string>
+    <string name="typebetter__offer_add_hint">Add to My words</string>
+</resources>

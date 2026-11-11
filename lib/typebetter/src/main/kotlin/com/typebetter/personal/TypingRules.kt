@@ -19,8 +19,6 @@ package com.typebetter.personal
 class TypingRules(
     private val rules: PersonalRules,
     myWords: Collection<String>,
-    /** True for an ordinary dictionary word (its lower-case form). Only used to stay cautious. */
-    private val isCommonWord: (String) -> Boolean = { false },
 ) {
     enum class Origin { STOCK, FIX, MY_WORD }
 
@@ -53,6 +51,8 @@ class TypingRules(
         stock: List<C>,
         textOf: (C) -> String,
         autoCommitOf: (C) -> Boolean,
+        /** True for an ordinary dictionary word (given in lower case). Only used to stay cautious. */
+        isCommonWord: (String) -> Boolean = { false },
     ): List<Entry<C>> {
         val word = typed.trim()
         val stockEntries = stock.map { Entry(textOf(it), autoCommitOf(it), Origin.STOCK, it) }

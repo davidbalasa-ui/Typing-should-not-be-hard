@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.keyboard
 
+import com.typebetter.keyboard.PersonalWords
 import android.content.Context
 import android.icu.lang.UCharacter
 import android.os.SystemClock
@@ -762,6 +763,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             lastTypedWord = null
             return
         }
+        offerUnknownWordToTypeBetter(word.toString())
         val wasTyped = TouchTrace.wasFullyTyped(word)
         val textBefore = content.textBeforeSelection.removeSuffix(word)
         nlpManager.learnFinishedWord(
@@ -775,6 +777,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 ?.let { nlpManager.learnWordPair(it, word) }
         }
         lastTypedWord = word.takeIf { wasTyped }
+    }
+
+    /**
+     * TypeBetter: after a word the dictionary does not know, the strip offers "+ word" for one tap onto
+     * My words. Not in password fields or incognito, where nothing about the text should linger.
+     */
+    private fun offerUnknownWordToTypeBetter(word: String) {
+        if (activeState.isIncognitoMode || activeState.keyVariation == KeyVariation.PASSWORD) return
+        val subtype = subtypeManager.activeSubtype
+        val known = runCatching {
+            nlpManager.getFrequencyForWord(subtype, word) > 0.0 ||
+                nlpManager.getFrequencyForWord(subtype, word.lowercase()) > 0.0
+        }.getOrDefault(true)
+        PersonalWords.onWordFinished(word, isKnown = known)
     }
 
     /**
@@ -1116,6 +1132,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // otherwise reject it for certain — a word restored from a correction is one cheap edit from a
         // dictionary word by construction, which is exactly what that reasoning treats as a typo.
         val restored = correction.replaced.trim()
+        // TypeBetter: offer "+ word" at once, and after the second undo of the same correction
+        // "Don't fix", which saves it as Never change.
+        if (restored.isNotEmpty()) {
+            PersonalWords.onCorrectionUndone(restored, correction.inserted.trim())
+        }
         if (restored.isNotEmpty()) {
             nlpManager.learnFinishedWord(
                 word = restored,
