@@ -109,6 +109,8 @@ object Restore {
     // metadata package starts with this is a genuine Dictate backup, not a "third-party" one. Was still
     // the upstream FlorisBoard id after the fork, which made every Dictate backup falsely warn.
     const val PACKAGE_NAME = "net.devemperor.dictate"
+    // TypeBetter (this fork) writes backups under its own id; those are just as much our own.
+    const val TYPEBETTER_PACKAGE_NAME = "com.typebetter.keyboard"
     const val BACKUP_ARCHIVE_FILE_NAME = "backup.zip"
     // The plain archive inside a password-protected one (issue #470), deleted again once it is unpacked.
     const val DECRYPTED_ARCHIVE_FILE_NAME = "decrypted_backup.zip"
@@ -131,7 +133,8 @@ private fun CacheManager.BackupAndRestoreWorkspace.readArchive(archive: FsFile) 
         metadata.versionCode != BuildConfig.VERSION_CODE -> {
             R.string.backup_and_restore__restore__metadata_warn_different_version
         }
-        !metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
+        !metadata.packageName.startsWith(Restore.PACKAGE_NAME) &&
+            !metadata.packageName.startsWith(Restore.TYPEBETTER_PACKAGE_NAME) -> {
             R.string.backup_and_restore__restore__metadata_warn_different_vendor
         }
         else -> null

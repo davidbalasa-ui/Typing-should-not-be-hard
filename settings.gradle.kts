@@ -50,3 +50,5 @@ include(":lib:dictate-core")
 include(":lib:compose")
 include(":lib:kotlin")
 include(":lib:snygg")
+// TypeBetter: personal word lists and correction rules, plain Kotlin so they test without Android.
+include(":lib:typebetter")

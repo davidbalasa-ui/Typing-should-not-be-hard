@@ -112,3 +112,6 @@ evaluation/toolchain/
 evaluation/component-build/
 *.pyc
 .env.*
+
+# TypeBetter: the release keystore is committed encrypted; its password is a GitHub secret (see signing/README.md)
+!signing/typebetter-release.p12

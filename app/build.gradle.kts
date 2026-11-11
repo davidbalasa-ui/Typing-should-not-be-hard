@@ -68,7 +68,8 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "net.devemperor.dictate"
+        // TypeBetter installs beside Dictate instead of replacing it, so it has its own id.
+        applicationId = "com.typebetter.keyboard"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
         versionCode = projectVersionCode.toInt()
