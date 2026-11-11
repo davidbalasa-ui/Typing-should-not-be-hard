@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
@@ -260,6 +261,13 @@ fun HomeScreen() = FlorisScreen {
                     )
                 }
             },
+        )
+        // TypeBetter: the personal word lists, right under Dictate.
+        Preference(
+            icon = Icons.Default.AutoFixHigh,
+            title = stringRes(R.string.typebetter__screen_title),
+            summary = stringRes(R.string.typebetter__home_summary),
+            onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
         )
         Preference(
             icon = Icons.Default.Language,

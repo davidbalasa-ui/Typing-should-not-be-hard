@@ -1,6 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TypeBetter: personal words and fixes. Kept apart from upstream strings so merges stay easy. -->
 <resources>
+    <!-- Suggestion strip offers -->
     <string name="typebetter__offer_stop_title">Don\'t fix</string>
     <string name="typebetter__offer_add_hint">Add to My words</string>
+
+    <!-- Home entry and screen -->
+    <string name="typebetter__screen_title">My words &amp; fixes</string>
+    <string name="typebetter__home_summary">Names and words never corrected, your own fixes, learn from text, backup</string>
+
+    <string name="typebetter__fixes_group">My fixes ({count})</string>
+    <string name="typebetter__fixes_empty">When you type the word on the left, the keyboard writes the one on the right.</string>
+    <string name="typebetter__fix_add">Add a fix</string>
+    <string name="typebetter__fix_mode_auto">Fixed automatically</string>
+    <string name="typebetter__fix_mode_suggest">Suggested only</string>
+    <string name="typebetter__fix_phrase">Dictation only (more than one word)</string>
+    <string name="typebetter__fix_dialog_title">Fix</string>
+    <string name="typebetter__fix_typed">When I type</string>
+    <string name="typebetter__fix_meant">I mean</string>
+    <string name="typebetter__fix_auto_title">Fix it automatically</string>
+    <string name="typebetter__fix_auto_summary">Off: it is only offered first in the suggestions. Use that when the typed word is also a real word.</string>
+    <string name="typebetter__fix_invalid">Fill in both words, and make them different.</string>
+
+    <string name="typebetter__never_group">Never change ({count})</string>
+    <string name="typebetter__never_empty">Corrections the keyboard may not make by itself. Taking one back twice offers to add it here.</string>
+    <string name="typebetter__never_add">Add a correction to stop</string>
+    <string name="typebetter__never_summary">Still suggested, never swapped in by itself</string>
+    <string name="typebetter__never_dialog_title">Never change</string>
+    <string name="typebetter__never_typed">When I type</string>
+    <string name="typebetter__never_blocked">Never change it to</string>
+    <string name="typebetter__never_hint">The rest of autocorrect keeps working.</string>
+
+    <string name="typebetter__words_group">My words ({count})</string>
+    <string name="typebetter__words_empty">Words here are never corrected and are suggested early. Tap + in the suggestions after a new word to add it.</string>
+    <string name="typebetter__word_add">Add a word</string>
+    <string name="typebetter__word_dialog_title">Word</string>
+    <string name="typebetter__word_field">Word</string>
+    <string name="typebetter__word_hint">Written exactly like this, capitals included.</string>
+
+    <string name="typebetter__starter_group">Starter pack</string>
+    <string name="typebetter__starter_title">Use the starter pack</string>
+    <string name="typebetter__starter_summary">Campaign names, tech words and common slips. Turning it off removes only what it added.</string>
+
+    <string name="typebetter__learn_title">Learn from text</string>
+    <string name="typebetter__learn_summary">Paste a conversation and pick the new words to keep</string>
+    <string name="typebetter__learn_paste_hint">Copied text is filled in for you. Links, addresses and code are skipped.</string>
+    <string name="typebetter__learn_field">Text</string>
+    <string name="typebetter__learn_find">Find new words</string>
+    <string name="typebetter__learn_add">Add {count}</string>
+    <string name="typebetter__learn_none">Every word in this text is already known.</string>
+    <string name="typebetter__learn_pick_hint">Untick anything that is a typo.</string>
+    <string name="typebetter__learn_done">Added {count} words to My words</string>
+
+    <string name="typebetter__export">Back up to a file</string>
+    <string name="typebetter__import">Restore from a file</string>
+    <string name="typebetter__export_done">Saved</string>
+    <string name="typebetter__export_failed">Could not save the file</string>
+    <string name="typebetter__import_done">Added {words} words and {fixes} fixes. Nothing was removed.</string>
+    <string name="typebetter__import_failed">That file is not a TypeBetter backup</string>
 </resources>

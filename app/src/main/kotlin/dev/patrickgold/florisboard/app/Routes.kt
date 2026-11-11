@@ -157,6 +157,11 @@ object Routes {
         @Deeplink("settings/dictate/mappings")
         object DictateMappings
 
+        // TypeBetter: My words & fixes.
+        @Serializable
+        @Deeplink("settings/typebetter/words")
+        object TypeBetterWords
+
         @Serializable
         @Deeplink("settings/dictate/cloud")
         object DictateCloud
@@ -410,6 +415,7 @@ object Routes {
             composableWithDeepLink(Settings.DictateProviders::class) { DictateProvidersScreen() }
             composableWithDeepLink(Settings.DictateProvidersAdd::class) { DictateAddProviderScreen() }
             composableWithDeepLink(Settings.DictateMappings::class) { DictateMappingsScreen() }
+            composableWithDeepLink(Settings.TypeBetterWords::class) { com.typebetter.keyboard.settings.MyWordsScreen() }
             composableWithDeepLink(Settings.DictateCloud::class) { DictateCloudScreen() }
             composableWithDeepLink(Settings.DictateProxy::class) { DictateProxyScreen() }
             composableWithDeepLink(Settings.DictateWear::class) { DictateWearScreen() }

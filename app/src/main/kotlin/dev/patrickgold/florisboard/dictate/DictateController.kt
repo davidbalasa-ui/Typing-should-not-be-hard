@@ -2533,8 +2533,11 @@ object DictateController {
         val stopLeftOff = !isLive && prefs.dictate.dropFinalFullStop.get() &&
             FinalFullStop.droppable(paragraphed, head = rawText.dropLast(text.length))
         // Deterministic find-and-replace dictionary (issue #129), applied right before insert.
-        val outputText = prefs.dictate.customMappings.get().apply(
-            if (stopLeftOff) paragraphed.dropLast(1) else paragraphed,
+        // TypeBetter: then My fixes (typed → meant, phrases included), so "fey wild" arrives as "Feywild".
+        val outputText = com.typebetter.keyboard.PersonalWords.fixTranscript(
+            prefs.dictate.customMappings.get().apply(
+                if (stopLeftOff) paragraphed.dropLast(1) else paragraphed,
+            ),
         )
         // The whole dictation, for what keeps a record of it — the history, the stats, the re-insert cache —
         // while the field gets only the part that was not handed over (#421). [text] is the tail of [rawText].

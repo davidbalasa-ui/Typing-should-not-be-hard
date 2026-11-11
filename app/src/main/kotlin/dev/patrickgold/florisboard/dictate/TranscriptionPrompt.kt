@@ -45,7 +45,10 @@ fun transcriptionStyleBasePrompt(
 fun transcriptionStylePrompt(
     prefs: FlorisPreferenceModel,
     language: String = prefs.dictate.activeInputLanguage.get(),
-): String? = DictatePromptDefaults.appendCustomWords(transcriptionStyleBasePrompt(prefs, language), prefs.dictate.customWords.get())
+): String? = DictatePromptDefaults.appendCustomWords(
+    transcriptionStyleBasePrompt(prefs, language),
+    withPersonalWords(prefs.dictate.customWords.get()).joinToString(", "),
+)
 
 /**
  * The custom words one by one (issue #466), for
@@ -53,4 +56,15 @@ fun transcriptionStylePrompt(
  * and the realtime session: the providers whose field takes a list of terms get them this way, everyone
  * else inside [transcriptionStylePrompt].
  */
-fun customWordList(prefs: FlorisPreferenceModel): List<String> = CustomWordList.parse(prefs.dictate.customWords.get())
+fun customWordList(prefs: FlorisPreferenceModel): List<String> = withPersonalWords(prefs.dictate.customWords.get())
+
+/**
+ * TypeBetter: the custom words, then as many of My words and My fixes' targets as still fit the prompt
+ * (names first, see [com.typebetter.personal.PromptVocabulary]). Falls back to the custom words alone.
+ */
+private fun withPersonalWords(rawCustomWords: String?): List<String> {
+    val custom = CustomWordList.parse(rawCustomWords)
+    return runCatching {
+        com.typebetter.keyboard.PersonalWords.promptVocabulary(custom, CustomWordList.TOKEN_BUDGET)
+    }.getOrDefault(custom)
+}
