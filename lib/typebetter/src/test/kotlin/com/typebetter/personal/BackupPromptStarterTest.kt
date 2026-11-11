@@ -69,6 +69,7 @@ class PersonalCodecTest {
     fun `unrelated JSON is still refused`() {
         assertNull(PersonalCodec.decodeBackup("""{"name": "something else"}"""))
         assertNull(PersonalCodec.decodeBackup("not json"))
+        assertNull(PersonalCodec.decodeBackup("""{"fixes": []}"""))
     }
 }
 

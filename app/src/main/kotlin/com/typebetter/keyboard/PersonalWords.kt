@@ -144,7 +144,7 @@ object PersonalWords {
 
     /**
      * One full copy a week (My words, My fixes and Never change, in the export format), the last eight
-     * kept. Settings → My words & fixes → Restore a weekly copy brings one back.
+     * kept; each holds the last state of its week. Settings → My words & fixes → Restore a weekly copy brings one back.
      */
     private fun weeklyBackup(context: Context) {
         runCatching {
@@ -153,7 +153,7 @@ object PersonalWords {
             val today = LocalDate.now()
             val week = "%d-W%02d".format(today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
             val target = File(folder, "$WEEKLY_PREFIX$week.json")
-            if (target.exists()) return
+            // Rewritten on every save during the week, so the copy holds the week's latest state.
             val backup = PersonalBackup.of(_rules.value, myWords(), System.currentTimeMillis())
             if (backup.words.isEmpty() && backup.fixes.isEmpty() && backup.neverChange.isEmpty()) return
             target.writeText(PersonalCodec.encodeBackup(backup))

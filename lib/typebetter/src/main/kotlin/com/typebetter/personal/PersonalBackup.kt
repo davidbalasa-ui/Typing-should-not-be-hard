@@ -47,6 +47,7 @@ object PersonalCodec {
         if (backup != null) return backup
         if (!text.contains("\"fixes\"") && !text.contains("\"neverChange\"")) return null
         val rules = decodeRules(text) ?: return null
+        if (rules.fixes.isEmpty() && rules.neverChange.isEmpty()) return null
         return PersonalBackup.of(rules, emptyList(), 0L)
     }
 }
