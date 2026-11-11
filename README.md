@@ -2,6 +2,12 @@
 
 An Android keyboard project focused on comfortable typing, predictable corrections, useful clipboard tools, GIFs, and reliable dictation.
 
+## Install on your phone
+
+Open **https://github.com/davidbalasa-ui/Typing-should-not-be-hard/releases/latest/download/TypeBetter.apk** on the phone, then tap the download and allow the install. TypeBetter installs next to any other keyboard. Its setup screen then turns it on.
+
+For automatic updates, add this repository's URL in [Obtainium](https://github.com/ImranR98/Obtainium).
+
 ## Priorities
 
 - Put punctuation, symbols, and shortcuts where they are easy to reach.
@@ -13,7 +19,7 @@ An Android keyboard project focused on comfortable typing, predictable correctio
 
 Dictate Keyboard is the selected upstream foundation, chosen by the project owner on October 31, 2026. The pinned source revision and adoption constraints are recorded in [the foundation decision](docs/decisions/2026-10-31-dictate-foundation.md). The initial comparison remains available as historical research.
 
-An initial targeted component baseline passed 51 tests. Full Android builds remain blocked in the initial test environment by dependency-download failures; phone usability and speech-recognition accuracy are still untested. This repository does not yet contain a custom Android app or an installable APK.
+An initial targeted component baseline passed 51 tests. Full Android builds remain blocked in the initial test environment by dependency-download failures; phone usability and speech-recognition accuracy are still untested. TypeBetter, the custom keyboard built on that foundation, is built and released by GitHub Actions (`.github/workflows/typebetter.yml`).
 
 ## Research and test checkpoint
 
