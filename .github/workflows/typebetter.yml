@@ -130,7 +130,7 @@ jobs:
           if [ ! -f "$key" ]; then
             # One key for every build, made once on main: a key made on a work branch would differ from
             # main's, and phones only accept updates signed with the key they installed.
-            if [ "$EVENT" != "push" ] || [ "$REF" != "main" ]; then
+            if { [ "$EVENT" != "push" ] && [ "$EVENT" != "workflow_dispatch" ]; } || [ "$REF" != "main" ]; then
               echo "::warning::No release key yet; it is made by the first build of main. This APK uses a throwaway key."
               echo "signed=false" >> "$GITHUB_OUTPUT"
               exit 0
@@ -175,7 +175,8 @@ jobs:
           mkdir -p out
           apk=$(find app/build/outputs/apk -name '*.apk' \( -path '*release*' -o -path '*benchmark*' \) | head -n 1)
           [ -n "$apk" ] || { echo "::error::No APK was built"; exit 1; }
-          cp "$apk" "out/TypeBetter-${{ github.run_number }}.apk"
+          # One fixed name, so .../releases/latest/download/TypeBetter.apk is always the newest build.
+          cp "$apk" "out/TypeBetter.apk"
           ls -l out
       - uses: actions/upload-artifact@v4
         with:
@@ -185,7 +186,7 @@ jobs:
   publish:
     name: Publish
     needs: [test, apk]
-    if: github.event_name == 'push' && needs.apk.outputs.signed == 'true'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.apk.outputs.signed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -206,6 +207,6 @@ jobs:
           else
             tag="dev-$RUN"; title="TypeBetter test build $RUN"; pre="--prerelease"
           fi
-          notes="Built from ${SHA:0:7} on $REF. Install the APK below, or let Obtainium keep it updated."
+          notes="Built from ${SHA:0:7} on $REF. Install TypeBetter.apk below, or let Obtainium keep it updated."
           gh release create "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --target "$SHA" \
             --title "$title" --notes "$notes" $pre
