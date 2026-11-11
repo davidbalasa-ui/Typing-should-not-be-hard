@@ -1,0 +1,114 @@
+/*
+ * Copyright (C) 2026 DevEmperor (Dictate)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+package dev.patrickgold.florisboard.dictate.overlay
+
+import dev.patrickgold.florisboard.dictate.DictateController
+
+/**
+ * When the floating dictation button is on screen — the whole rule, as one function that can be asked
+ * without a phone (issue #339).
+ *
+ * It used to live inline in the controller's flow collector, where its second clause read "the state is
+ * not idle". That was meant as *a dictation is running*, and for a while the two were the same thing.
+ * They stopped being the same when the state machine gained resting states that merely carry an offer:
+ * a rate/donate nudge, a recording the screen going dark interrupted, a failure with the audio kept for
+ * a retry. All of those are Smartbar chips — they can only be seen and dismissed on the keyboard — so
+ * for someone using the button with a different keyboard, one of them parked the state off idle with
+ * nothing in the overlay world able to clear it again, and the button stayed on screen over every app
+ * and over the home screen, for good.
+ */
+object BubbleVisibility {
+
+    /**
+     * Whether [state] is work in flight, i.e. a reason to keep the button on screen even though no text
+     * field holds focus.
+     *
+     * Only what is actually running counts. A recording has to survive leaving the app it is going into
+     * — the microphone is open and the user is still talking (#293) — and the same is true while its
+     * transcription or rewording is in the air. Everything else is a resting state: whatever it offers,
+     * it offers on the keyboard, and it must not keep a button floating over the home screen.
+     *
+     * That includes [DictateController.UiState.Error]: nothing is lost by letting the button go. The
+     * message is a toast, which is a window of its own, the text is on the clipboard, and the kept audio
+     * stays kept — so the moment a field is focused again the button is back, still in the error state,
+     * and one tap re-sends the recording (#160).
+     */
+    fun pinsBubble(state: DictateController.UiState): Boolean = when (state) {
+        is DictateController.UiState.Recording,
+        is DictateController.UiState.Transcribing,
+        is DictateController.UiState.Rewording,
+        -> true
+        else -> false
+    }
+
+    /**
+     * Whether the button should be on screen right now.
+     *
+     * [hiddenByOwnKeyboard] is the Dictate keyboard being up without the user having asked for both (it
+     * has a mic key of its own), [recognitionActive] is another app driving a system voice-input session
+     * (#67), and [screenOn] is the display being interactive — the button's window layer deliberately
+     * outlives the keyguard, so nobody takes it away for us and an always-on display would happily draw
+     * it on a phone its owner believes to be off (#269).
+     *
+     * [allowedInApp] is the per-app filter (#392), and it sits among the suppressors on purpose: it beats
+     * [pinsBubble] too. Someone who has said "never over my banking app" has said it about the whole
+     * window, not about the windows that happen to appear while nothing is running — a dictation started
+     * in another app and carried in here is exactly the moment the promise would otherwise break. The
+     * recording itself is untouched: it belongs to the microphone foreground service, not to this window,
+     * so it keeps running and gets its button back on the way out (#293).
+     *
+     * [keyboardRequired] is the "only while a keyboard is open" choice (#439), and [keyboardShown] an
+     * input-method window being on screen — any keyboard, not only ours. With that choice, [focused] is
+     * no longer enough by itself: a messenger focuses its composer the moment a chat is opened, long before
+     * anyone means to type into it. It narrows only the reason to *appear*, not [pinsBubble] — closing the
+     * keyboard in the middle of a recording must not take the stop button away with it.
+     */
+    fun shouldShow(
+        enabled: Boolean,
+        focused: Boolean,
+        keyboardRequired: Boolean,
+        keyboardShown: Boolean,
+        state: DictateController.UiState,
+        hiddenByOwnKeyboard: Boolean,
+        recognitionActive: Boolean,
+        screenOn: Boolean,
+        allowedInApp: Boolean,
+    ): Boolean = enabled &&
+        ((focused && (keyboardShown || !keyboardRequired)) || pinsBubble(state)) &&
+        !hiddenByOwnKeyboard &&
+        !recognitionActive &&
+        screenOn &&
+        allowedInApp
+
+    /**
+     * Whether the button has to report a dictation that has just ended in [state], an error or a notice.
+     * It has no text of its own, so it reports with a toast.
+     *
+     * Always when the button started the dictation itself ([startedHere]). It also reports one the keyboard
+     * started that was still transcribing or rewording ([previous]) while the button was on screen
+     * ([wasShown]) and the keyboard was not ([keyboardShown]). That is the user who started a dictation, left
+     * for another app while it was sent, and watched the button's spinner instead (#437). The keyboard's chip
+     * is nowhere on screen for them, so a failure used to pass in silence: the spinner just went away, while
+     * the recording was kept the whole time. Where the keyboard is on screen, its chip says it, and a second
+     * report would only repeat it.
+     */
+    fun reportsEnd(
+        state: DictateController.UiState,
+        previous: DictateController.UiState,
+        startedHere: Boolean,
+        wasShown: Boolean,
+        keyboardShown: Boolean,
+    ): Boolean = state is DictateController.UiState.Error && (
+        startedHere ||
+            (wasShown && !keyboardShown && (previous is DictateController.UiState.Transcribing ||
+                previous is DictateController.UiState.Rewording))
+        )
+}

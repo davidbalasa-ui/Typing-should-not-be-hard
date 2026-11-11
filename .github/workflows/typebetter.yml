@@ -1,0 +1,211 @@
+# Builds, tests and publishes the TypeBetter keyboard.
+#
+# - Every push and pull request: run the unit tests and build a release APK.
+# - Push to main: publish the APK as a GitHub release (Obtainium installs and updates from these).
+# - Push to a claude/* work branch: publish it as a pre-release once the release key exists, so work in progress can be tried on
+#   the phone before it is merged.
+#
+# The cloud container used for development cannot download Android SDK packages, so this workflow is
+# the only place the app is compiled.
+#
+# Signing: Android only installs an update over an app signed with the same key. The key lives in
+# signing/typebetter-release.p12, encrypted with the password in the repository secret
+# TYPEBETTER_KEYSTORE_PASSWORD. The first build that sees the secret and no key file creates the key
+# and commits the encrypted file. See signing/README.md.
+name: TypeBetter build
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: typebetter-${{ github.ref }}
+  # main is never cancelled half way, so a release (or the first key commit) always finishes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  translator:
+    # The on-device translator (Bergamot) is a native library built from source; the app refuses to
+    # build without it. Built once here and cached until its build script or tool versions change.
+    name: Translator library
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/jniLibs/arm64-v8a/libdictate_bergamot.so
+          key: bergamot-${{ hashFiles('tools/bergamot/**', 'gradle/tools.versions.toml') }}
+      - name: Install NDK and CMake
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          ndk=$(grep '^ndk ' gradle/tools.versions.toml | sed -E 's/.*"(.*)".*/\1/')
+          cmake=$(grep '^cmake ' gradle/tools.versions.toml | sed -E 's/.*"(.*)".*/\1/')
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$ndk" "cmake;$cmake" > /dev/null
+      - name: Build the translator library
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: tools/bergamot/build-android.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bergamot
+          path: app/src/main/jniLibs/arm64-v8a/libdictate_bergamot.so
+          retention-days: 1
+
+  test:
+    name: Unit tests
+    needs: translator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Accept Android SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: Fetch on-device speech libraries
+        run: tools/fetch-sherpa-onnx.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: bergamot
+          path: app/src/main/jniLibs/arm64-v8a
+      - name: TypeBetter rules tests
+        run: ./gradlew --no-daemon :lib:typebetter:test
+      - name: App unit tests
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
+      - name: Keep test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/**"
+          if-no-files-found: ignore
+
+  apk:
+    name: Build APK
+    needs: translator
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: write # only used to commit the encrypted key file the first time
+    outputs:
+      signed: ${{ steps.signing.outputs.signed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Accept Android SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: Fetch on-device speech libraries
+        run: tools/fetch-sherpa-onnx.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: bergamot
+          path: app/src/main/jniLibs/arm64-v8a
+      - name: Signing setup
+        id: signing
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.TYPEBETTER_KEYSTORE_PASSWORD }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref_name }}
+        run: |
+          key=signing/typebetter-release.p12
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::warning::TYPEBETTER_KEYSTORE_PASSWORD is not set. This APK is signed with a throwaway key and cannot update an installed TypeBetter."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ ! -f "$key" ]; then
+            # One key for every build, made once on main: a key made on a work branch would differ from
+            # main's, and phones only accept updates signed with the key they installed.
+            if [ "$EVENT" != "push" ] || [ "$REF" != "main" ]; then
+              echo "::warning::No release key yet; it is made by the first build of main. This APK uses a throwaway key."
+              echo "signed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            mkdir -p signing
+            keytool -genkeypair -keystore "$key" -storetype PKCS12 -alias typebetter \
+              -keyalg RSA -keysize 4096 -validity 36500 \
+              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" \
+              -dname "CN=TypeBetter, O=TypeBetter personal build"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$key"
+            git commit -m "Add the TypeBetter release key (encrypted with the repository secret)"
+            git push origin "HEAD:$REF"
+          fi
+          {
+            echo "storeFile=$key"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=typebetter"
+            echo "keyPassword=$KEYSTORE_PASSWORD"
+          } > keystore.properties
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - name: Build release APK
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          # Upstream Dictate's versionCode is 142; ours counts on from 142000 so every build is an update.
+          TB_VERSION_CODE=$((142000 + GITHUB_RUN_NUMBER))
+          BASE_VERSION=$(grep '^projectVersionName=' gradle.properties | cut -d= -f2 | cut -d- -f1)
+          TB_VERSION_NAME="$BASE_VERSION-typebetter.$GITHUB_RUN_NUMBER"
+          if [ "$SIGNED" = "true" ]; then
+            ./gradlew --no-daemon :app:assembleRelease \
+              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
+          else
+            # Without the secret, the benchmark type is the release build signed with a debug key.
+            ./gradlew --no-daemon :app:assembleBenchmark \
+              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
+          fi
+      - name: Name the APK
+        run: |
+          rm -f keystore.properties
+          mkdir -p out
+          apk=$(find app/build/outputs/apk -name '*.apk' \( -path '*release*' -o -path '*benchmark*' \) | head -n 1)
+          [ -n "$apk" ] || { echo "::error::No APK was built"; exit 1; }
+          cp "$apk" "out/TypeBetter-${{ github.run_number }}.apk"
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TypeBetter-apk
+          path: out/*.apk
+
+  publish:
+    name: Publish
+    needs: [test, apk]
+    if: github.event_name == 'push' && needs.apk.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TypeBetter-apk
+          path: out
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref_name }}
+          RUN: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$REF" = "main" ]; then
+            tag="v$RUN"; title="TypeBetter build $RUN"; pre=""
+          else
+            tag="dev-$RUN"; title="TypeBetter test build $RUN"; pre="--prerelease"
+          fi
+          notes="Built from ${SHA:0:7} on $REF. Install the APK below, or let Obtainium keep it updated."
+          gh release create "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            --title "$title" --notes "$notes" $pre

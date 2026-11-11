@@ -1,0 +1,52 @@
+[
+  {
+    "repo": "LeanType",
+    "compiled": true,
+    "exit_code": 0,
+    "log": "evidence/LeanType-components.log",
+    "source_files": [
+      "app/src/main/java/helium314/keyboard/latin/voice/AudioUtils.kt",
+      "app/src/test/java/helium314/keyboard/latin/voice/AudioUtilsTest.kt"
+    ],
+    "test_classes": [
+      "helium314.keyboard.latin.voice.AudioUtilsTest"
+    ]
+  },
+  {
+    "repo": "DictateKeyboard",
+    "compiled": true,
+    "exit_code": 0,
+    "log": "evidence/DictateKeyboard-components.log",
+    "source_files": [
+      "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/WordRun.kt",
+      "app/src/test/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/WordRunTest.kt",
+      "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/AutoCorrectStrength.kt",
+      "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/AutoCommitGate.kt",
+      "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/symbols/CustomSymbols.kt",
+      "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/symbols/SymbolDefaults.kt",
+      "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/field/FieldText.kt",
+      "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/field/WordChars.kt",
+      "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/field/TranscriptHandover.kt"
+    ],
+    "test_classes": [
+      "dev.patrickgold.florisboard.ime.nlp.latin.WordRunTest",
+      "KeyboardBehaviorTest"
+    ]
+  },
+  {
+    "repo": "WMKeyboard",
+    "compiled": true,
+    "exit_code": 0,
+    "log": "evidence/WMKeyboard-components.log",
+    "source_files": [
+      "core/voice/src/main/java/com/wasimaster/wmkeyboard/core/voice/VoiceSpacing.kt",
+      "app/src/test/java/com/wasimaster/wmkeyboard/core/voice/VoiceSpacingTest.kt",
+      "core/voice/src/main/java/com/wasimaster/wmkeyboard/core/voice/VoiceClipGate.kt",
+      "app/src/test/java/com/wasimaster/wmkeyboard/core/voice/VoiceClipGateTest.kt"
+    ],
+    "test_classes": [
+      "com.wasimaster.wmkeyboard.core.voice.VoiceSpacingTest",
+      "com.wasimaster.wmkeyboard.core.voice.VoiceClipGateTest"
+    ]
+  }
+]

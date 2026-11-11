@@ -1,0 +1,470 @@
+/*
+ * Copyright (C) 2026 DevEmperor (Dictate)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+package dev.patrickgold.florisboard.dictate.data.history
+
+import android.content.Context
+import android.provider.BaseColumns
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Database
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import dev.patrickgold.florisboard.app.FlorisPreferenceModel
+import dev.patrickgold.florisboard.dictate.provider.AudioContainer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
+import java.io.File
+
+private const val DICTATE_HISTORY_TABLE = "dictate_history"
+
+/** Where a stored dictation originated — persisted verbatim in [DictateHistoryEntry.source]. */
+object DictateHistorySource {
+    const val KEYBOARD = "keyboard"
+    const val OVERLAY = "overlay"
+    const val REALTIME = "realtime"
+    const val IMPORT = "import"
+}
+
+/**
+ * One stored dictation (issue #140): the finished transcript plus enough metadata to browse, re-insert,
+ * re-transcribe and manage it later. [audioPath] is the absolute path of the audio copied into the
+ * app's private history dir when audio retention is on — a WAV for a dictation, and since #322 the
+ * original container for an imported file rather than a WAV name over other bytes. It is nullable
+ * because retention is opt-in and some paths (e.g. realtime after a clean finish, or a text-only
+ * re-insert) leave no audio to keep.
+ */
+@Serializable
+@Entity(tableName = DICTATE_HISTORY_TABLE)
+data class DictateHistoryEntry(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = BaseColumns._ID, index = true)
+    val id: Long = 0,
+    /** The final committed transcript (post rewording/formatting/mappings), exactly what the user got. */
+    val text: String,
+    /**
+     * The transcript as the speech model returned it, before any prompt ran (issue #240) — kept so a
+     * rewrite that changed more than intended can still be undone, without paying for another request.
+     *
+     * Empty unless the prompt chain (auto-formatting, auto-apply prompts, a live prompt) actually changed
+     * the text, so a plain dictation stores no duplicate. Deliberately not populated for the deterministic
+     * steps that run afterwards — paragraph splitting and custom mappings — since a near-identical second
+     * copy differing only in line breaks would be noise rather than a recovery path.
+     */
+    val originalText: String = "",
+    /** Wall-clock creation time in epoch millis. */
+    val createdAt: Long,
+    /** Provider id of the transcription account (e.g. "openai"); for grouping/debugging. */
+    val providerId: String,
+    /** Human-readable provider label shown in the UI (falls back to the id when blank). */
+    val providerName: String,
+    /** Resolved transcription/realtime model name. */
+    val model: String,
+    /** Input language code, or "" for auto-detect. */
+    val language: String,
+    /** Recorded audio length in seconds (0 when unknown). */
+    val durationSecs: Long,
+    /** Absolute path of the retained WAV in the private history dir, or null when no audio is kept. */
+    val audioPath: String?,
+    /** Size of the retained WAV in bytes (0 when no audio). */
+    val audioBytes: Long,
+    /** Where the dictation came from: "keyboard", "overlay", "realtime" or "import". */
+    val source: String,
+    /** True when an AI rewording/live-prompt pass produced the text (vs. a plain transcript). */
+    val reworded: Boolean,
+    /** Pinned entries are shown with a marker and are never dropped by pruning. */
+    val pinned: Boolean = false,
+    /** True for a dictation whose transcription failed; [text] holds a placeholder and the retained audio
+     * can be re-transcribed to recover it (issue #140 safety net). Cleared on a successful re-transcribe. */
+    val failed: Boolean = false,
+)
+
+@Dao
+interface DictateHistoryDao {
+    // Pinned entries float to the top; otherwise newest first.
+    @Query("SELECT * FROM $DICTATE_HISTORY_TABLE ORDER BY pinned DESC, createdAt DESC")
+    fun getAllAsFlow(): Flow<List<DictateHistoryEntry>>
+
+    @Query("SELECT * FROM $DICTATE_HISTORY_TABLE ORDER BY createdAt DESC")
+    suspend fun getAllNewestFirst(): List<DictateHistoryEntry>
+
+    @Query("SELECT * FROM $DICTATE_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id")
+    suspend fun getById(id: Long): DictateHistoryEntry?
+
+    @Insert
+    suspend fun insert(entry: DictateHistoryEntry): Long
+
+    // A successful re-transcribe also clears the failed flag (the recovery succeeded). [originalText] is
+    // rewritten in the same statement on purpose: the new run produced its own raw transcript, and leaving
+    // the previous one behind would pair a result with an "original" it never came from (issue #240). The
+    // engine is rewritten with it for the same reason: the text now comes from this run's (issue #457).
+    @Query(
+        "UPDATE $DICTATE_HISTORY_TABLE SET text = :text, originalText = :originalText, " +
+            "providerId = :providerId, providerName = :providerName, model = :model, failed = 0 " +
+            "WHERE ${BaseColumns._ID} = :id"
+    )
+    suspend fun updateText(
+        id: Long,
+        text: String,
+        originalText: String,
+        providerId: String,
+        providerName: String,
+        model: String,
+    )
+
+    @Query("UPDATE $DICTATE_HISTORY_TABLE SET pinned = :pinned WHERE ${BaseColumns._ID} = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
+
+    @Query("UPDATE $DICTATE_HISTORY_TABLE SET audioPath = :path, audioBytes = :bytes WHERE ${BaseColumns._ID} = :id")
+    suspend fun setAudio(id: Long, path: String?, bytes: Long)
+
+    @Query("UPDATE $DICTATE_HISTORY_TABLE SET audioPath = NULL, audioBytes = 0 WHERE ${BaseColumns._ID} = :id")
+    suspend fun clearAudio(id: Long)
+
+    @Query("DELETE FROM $DICTATE_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM $DICTATE_HISTORY_TABLE")
+    suspend fun deleteAll()
+}
+
+/**
+ * Adds the raw transcript column (issue #240). Written by hand rather than as an auto-migration because
+ * schemas were not exported before version 3, so Room has nothing to diff against for this step. Later
+ * changes can use auto-migrations now that `exportSchema` is on.
+ */
+internal val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE $DICTATE_HISTORY_TABLE ADD COLUMN originalText TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+@Database(entities = [DictateHistoryEntry::class], version = 3, exportSchema = true)
+abstract class DictateHistoryDatabase : RoomDatabase() {
+    abstract fun dao(): DictateHistoryDao
+
+    companion object {
+        fun new(context: Context): DictateHistoryDatabase {
+            return Room
+                .databaseBuilder(context, DictateHistoryDatabase::class.java, DICTATE_HISTORY_TABLE)
+                .addMigrations(MIGRATION_2_3)
+                // Only reachable if no migration path exists at all. Kept as a last resort: losing the log
+                // is bad, but an input method that crash-loops on every open is worse, and the user could
+                // not even switch keyboards to fix it.
+                .fallbackToDestructiveMigration()
+                .build()
+        }
+    }
+}
+
+/**
+ * The backed-up entries a merge restore should add: [incoming] minus those [existing] already holds. A
+ * dictation is identified by when it was made and what it said; ids are re-issued on every import, so they
+ * say nothing. A merge used to append the whole backup, so restoring the same archive twice listed every
+ * dictation twice, as it did the prompts.
+ */
+internal fun historyEntriesMissingFrom(
+    existing: List<DictateHistoryEntry>,
+    incoming: List<DictateHistoryEntry>,
+): List<DictateHistoryEntry> {
+    val have = existing.mapTo(HashSet()) { it.createdAt to it.text }
+    return incoming.filter { have.add(it.createdAt to it.text) }
+}
+
+/**
+ * Single write/read path for the dictation history (issue #140), mirroring [dev.patrickgold.florisboard
+ * .dictate.data.stats.DictateStats]. Owns the Room database and the private audio directory so the
+ * keyboard, the floating button and the settings/panel UIs all share one store.
+ *
+ * Retained audio lives in `filesDir/dictate_history/` (never cacheDir, which is wiped on every process
+ * start) and is copied in on [record] before the caller deletes the original cache WAV. Pruning enforces
+ * three independent caps: newest-N entries, a max age, and a total audio byte budget (oldest audio is
+ * dropped first while the transcript text is kept).
+ */
+object DictateHistoryStore {
+
+    @Volatile
+    private var instance: DictateHistoryDatabase? = null
+
+    private fun db(context: Context): DictateHistoryDatabase =
+        instance ?: synchronized(this) {
+            instance ?: DictateHistoryDatabase.new(context.applicationContext).also { instance = it }
+        }
+
+    /** Private directory holding the retained WAVs (survives the cacheDir wipe). */
+    fun audioDir(context: Context): File = File(context.applicationContext.filesDir, "dictate_history")
+
+    /**
+     * What to call entry [id]'s retained copy of [audio] (issue #322).
+     *
+     * This used to be `<id>.wav` for everything, which is true of a dictation and a lie about an
+     * imported file — and the lie was believed later: re-transcribing such an entry sent Ogg or MP3
+     * bytes to the provider under a `.wav` name and an `audio/wav` content type. The name now follows
+     * the container actually in the file, read from its first bytes.
+     *
+     * Entries written before this keep their `.wav` name on disk and go on working: nothing looks a
+     * history file up by extension, the path is stored per row — see [audioFileFor] for the one place
+     * that had to reconstruct a name and now searches instead.
+     */
+    private fun audioFileName(id: Long, audio: File): String {
+        val container = AudioContainer.of(audio)
+        val extension = container.extension.ifEmpty { audio.extension.lowercase().ifEmpty { "bin" } }
+        return "$id.$extension"
+    }
+
+    /** An entry's retained audio in [dir], whatever extension it was stored under. */
+    private fun audioFileFor(dir: File, id: Long): File? =
+        dir.listFiles { file -> file.isFile && file.nameWithoutExtension == id.toString() }
+            ?.firstOrNull { it.length() > 0L }
+
+    /** Reactive stream of all entries, newest first — for the settings screen and the in-keyboard panel. */
+    fun flow(context: Context): Flow<List<DictateHistoryEntry>> = db(context).dao().getAllAsFlow()
+
+    suspend fun getById(context: Context, id: Long): DictateHistoryEntry? = db(context).dao().getById(id)
+
+    /**
+     * Records one finished dictation: inserts the transcript row, copies the audio in when retention is on,
+     * then prunes to the configured caps. Blank text is ignored (nothing was produced). Returns the new
+     * row id, or null when nothing was stored.
+     */
+    suspend fun record(
+        context: Context,
+        prefs: FlorisPreferenceModel,
+        text: String,
+        // The raw transcript, when the prompt chain changed the text; empty otherwise (issue #240).
+        originalText: String = "",
+        providerId: String,
+        providerName: String,
+        model: String,
+        language: String,
+        durationSecs: Long,
+        source: String,
+        reworded: Boolean,
+        audioFile: File?,
+        failed: Boolean = false,
+        // Keep the audio regardless of the audio-retention pref (used for failed entries, whose audio is
+        // the only recovery path).
+        forceAudio: Boolean = false,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Long? {
+        if (text.isBlank()) return null
+        val dao = db(context).dao()
+        val id = dao.insert(
+            DictateHistoryEntry(
+                text = text,
+                originalText = originalText,
+                createdAt = nowMs,
+                providerId = providerId,
+                providerName = providerName.ifBlank { providerId },
+                model = model,
+                language = language,
+                durationSecs = durationSecs.coerceAtLeast(0L),
+                audioPath = null,
+                audioBytes = 0L,
+                source = source,
+                reworded = reworded,
+                failed = failed,
+            )
+        )
+        if ((forceAudio || prefs.dictate.historyAudioRetention.get()) && audioFile != null &&
+            audioFile.exists() && audioFile.length() > 0L
+        ) {
+            val dest = File(audioDir(context).apply { mkdirs() }, audioFileName(id, audioFile))
+            runCatching { audioFile.copyTo(dest, overwrite = true) }
+                .onSuccess { dao.setAudio(id, dest.absolutePath, dest.length()) }
+        }
+        prune(context, prefs)
+        // A failed row is a placeholder — either the "sent, no transcript yet" one from #358 or a genuine
+        // failure — and neither is something to hand a folder watcher (issue #379).
+        if (!failed) DictateHistoryExporter.enqueue(context, id)
+        return id
+    }
+
+    /**
+     * Overwrites an existing entry's transcript in place (used when re-transcribing its audio), naming the
+     * [engine] that produced it: a re-transcribe runs on whichever provider is active now (issue #457).
+     */
+    suspend fun updateText(
+        context: Context,
+        id: Long,
+        text: String,
+        originalText: String = "",
+        engine: HistoryEngine,
+    ) {
+        if (text.isBlank()) return
+        db(context).dao().updateText(id, text, originalText, engine)
+        // The file already in the export folder now says something this entry no longer does.
+        DictateHistoryExporter.enqueue(context, id)
+    }
+
+    private suspend fun DictateHistoryDao.updateText(
+        id: Long,
+        text: String,
+        originalText: String,
+        engine: HistoryEngine,
+    ) = updateText(
+        id, text, originalText,
+        providerId = engine.providerId,
+        providerName = engine.providerName.ifBlank { engine.providerId },
+        model = engine.model,
+    )
+
+    /**
+     * Turns the placeholder row written when the audio was sent (issue #358) into the finished dictation:
+     * the transcript replaces the placeholder and [DictateHistoryDao.updateText] clears the failed flag.
+     * The placeholder named the provider the audio was sent to; [engine] is the one whose text came back,
+     * which after the offline fallback or a held stop button is the phone's own model (issue #457).
+     *
+     * [keepAudio] is the audio-retention preference. The placeholder had to force the WAV in — a
+     * dictation that never comes back has nothing else to recover from — but retention governs
+     * *successful* dictations, so a success with retention off drops it again here. Without this the
+     * change would quietly start keeping everyone's audio.
+     */
+    suspend fun completePending(
+        context: Context,
+        id: Long,
+        text: String,
+        originalText: String = "",
+        keepAudio: Boolean,
+        engine: HistoryEngine,
+    ) {
+        if (text.isBlank()) return
+        val dao = db(context).dao()
+        dao.updateText(id, text, originalText, engine)
+        if (!keepAudio) {
+            dao.getById(id)?.audioPath?.let { runCatching { File(it).delete() } }
+            dao.clearAudio(id)
+        }
+        // Only now is there a transcript to export (issue #379) — the placeholder written when the audio
+        // was sent carried a caption, not a dictation. Queued after the audio decision above, so an entry
+        // whose recording is about to be dropped cannot have it copied into the folder on the way out.
+        DictateHistoryExporter.enqueue(context, id)
+    }
+
+    /**
+     * Drops the placeholder row again (issue #358) for an attempt that ended in neither a transcript nor
+     * a failure — silence, or a model echoing the style prompt back. Neither logs anything today, and a
+     * red "failed" entry for a recording that simply had no words in it would be a lie with a retry
+     * button on it.
+     */
+    suspend fun deleteById(context: Context, id: Long) {
+        val dao = db(context).dao()
+        dao.getById(id)?.audioPath?.let { runCatching { File(it).delete() } }
+        dao.delete(id)
+    }
+
+    /** Pins or unpins an entry; pinned entries survive pruning and are marked in the UI. */
+    suspend fun setPinned(context: Context, id: Long, pinned: Boolean) {
+        db(context).dao().setPinned(id, pinned)
+    }
+
+    /** Deletes one entry and its retained audio file (if any). */
+    suspend fun delete(context: Context, entry: DictateHistoryEntry) {
+        entry.audioPath?.let { runCatching { File(it).delete() } }
+        db(context).dao().delete(entry.id)
+    }
+
+    /** Clears the whole history and every retained audio file. */
+    suspend fun clearAll(context: Context) {
+        db(context).dao().deleteAll()
+        runCatching { audioDir(context).deleteRecursively() }
+    }
+
+    /** All entries (newest first) — for a backup export. */
+    suspend fun exportAll(context: Context): List<DictateHistoryEntry> = db(context).dao().getAllNewestFirst()
+
+    /**
+     * Restores backed-up [entries] (backup/restore). Each is re-inserted with a fresh id; when
+     * [backupAudioDir] contains a WAV named by the entry's ORIGINAL id (as written by the backup), it is
+     * copied into the history audio dir and linked, otherwise the entry restores text-only. [replace]
+     * clears the store first (the Erase restore strategy); otherwise the entries that are not already here
+     * are appended (Merge) — see [historyEntriesMissingFrom].
+     *
+     * Writes to the DAO directly and **never** notifies the folder export (issue #379): a restore puts a
+     * whole history back at once, and going through [record] would spray hundreds of files into a folder
+     * someone has synced. Getting them there is what "export everything" is for, on purpose and once.
+     */
+    suspend fun importEntries(
+        context: Context,
+        entries: List<DictateHistoryEntry>,
+        backupAudioDir: File?,
+        replace: Boolean,
+    ) {
+        val dao = db(context).dao()
+        if (replace) clearAll(context)
+        val destDir = audioDir(context)
+        val toImport = if (replace) entries else historyEntriesMissingFrom(dao.getAllNewestFirst(), entries)
+        for (entry in toImport) {
+            if (entry.text.isBlank()) continue
+            val newId = dao.insert(entry.copy(id = 0, audioPath = null, audioBytes = 0L))
+            // Found by id rather than by name: since #322 a retained file carries the extension of what
+            // is actually in it, so a backup holds a mix of `.wav` and everything else.
+            val source = backupAudioDir?.let { audioFileFor(it, entry.id) }
+            if (source != null) {
+                val dest = File(destDir.apply { mkdirs() }, "$newId.${source.extension}")
+                runCatching { source.copyTo(dest, overwrite = true) }
+                    .onSuccess { dao.setAudio(newId, dest.absolutePath, dest.length()) }
+            }
+        }
+    }
+
+    /** Total bytes currently used by retained audio (for the settings-screen disk-usage readout). */
+    suspend fun totalAudioBytes(context: Context): Long =
+        db(context).dao().getAllNewestFirst().sumOf { it.audioBytes }
+
+    /**
+     * Enforces the three caps, newest-first: drop entries beyond [historyMaxEntries] or older than
+     * [historyMaxAgeDays] entirely (row + audio), then walk the survivors and drop the *audio only* of the
+     * oldest ones once the [historyAudioBudgetMb] byte budget is exceeded (their text is preserved).
+     */
+    private suspend fun prune(context: Context, prefs: FlorisPreferenceModel, nowMs: Long = System.currentTimeMillis()) {
+        val d = prefs.dictate
+        val dao = db(context).dao()
+        val maxEntries = d.historyMaxEntries.get().coerceAtLeast(1)
+        val maxAgeMs = d.historyMaxAgeDays.get().toLong().coerceAtLeast(0L) * 86_400_000L
+        val budgetBytes = d.historyAudioBudgetMb.get().toLong().coerceAtLeast(0L) * 1_000_000L
+        val all = dao.getAllNewestFirst()
+        val ageCutoff = if (maxAgeMs > 0L) nowMs - maxAgeMs else Long.MIN_VALUE
+
+        // Pinned entries are never evicted and are not counted against the entry cap.
+        val survivors = ArrayList<DictateHistoryEntry>(all.size)
+        var unpinned = 0
+        all.forEach { entry ->
+            if (entry.pinned) {
+                survivors.add(entry)
+                return@forEach
+            }
+            unpinned++
+            if (unpinned > maxEntries || entry.createdAt < ageCutoff) {
+                entry.audioPath?.let { runCatching { File(it).delete() } }
+                dao.delete(entry.id)
+            } else {
+                survivors.add(entry)
+            }
+        }
+        var used = 0L
+        for (entry in survivors) {
+            val path = entry.audioPath ?: continue
+            if (entry.pinned || used + entry.audioBytes <= budgetBytes) {
+                // Pinned audio is always kept; it still counts toward the running total.
+                used += entry.audioBytes
+            } else {
+                runCatching { File(path).delete() }
+                dao.clearAudio(entry.id)
+            }
+        }
+    }
+}

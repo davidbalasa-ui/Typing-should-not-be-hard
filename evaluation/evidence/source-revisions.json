@@ -1,0 +1,42 @@
+[
+  {
+    "name": "DictateKeyboard",
+    "remote": "https://github.com/DevEmperor/DictateKeyboard.git",
+    "sha": "39f33c968995796d6857f56b07df148df6ba963b",
+    "date": "2026-10-24T16:43:31+02:00",
+    "clean": true,
+    "submodules": ""
+  },
+  {
+    "name": "LeanType",
+    "remote": "https://github.com/LeanBitLab/LeanType.git",
+    "sha": "d634e262ebb7a7bb07226d95282ddfe433520ecf",
+    "date": "2026-10-31T04:36:34Z",
+    "clean": true,
+    "submodules": ""
+  },
+  {
+    "name": "LeanType-Gif-Plugin",
+    "remote": "https://github.com/LeanBitLab/LeanType-Gif-Plugin.git",
+    "sha": "40fda13e99d205d687edfc53dad4da927840b32a",
+    "date": "2026-10-26T02:01:51+05:30",
+    "clean": true,
+    "submodules": ""
+  },
+  {
+    "name": "LeanType-Voice-Plugin",
+    "remote": "https://github.com/LeanBitLab/Leantype-Voice-Plugin.git",
+    "sha": "f8a42adc856191ae70e33bad89d0a33153e1e577",
+    "date": "2026-10-11T23:05:42+05:30",
+    "clean": true,
+    "submodules": "-1fe009caeda75f69bc864d6370b10674e45a92bd app/src/main/cpp/whisper.cpp"
+  },
+  {
+    "name": "WMKeyboard",
+    "remote": "https://github.com/wasi-master/wmkeyboard.git",
+    "sha": "7df37b56ae8ed7245ccb217f479392ba369a63e4",
+    "date": "2026-10-31T18:03:13+06:00",
+    "clean": true,
+    "submodules": ""
+  }
+]

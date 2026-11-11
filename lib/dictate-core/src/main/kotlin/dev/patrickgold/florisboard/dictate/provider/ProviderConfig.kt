@@ -1,0 +1,274 @@
+/*
+ * Copyright (C) 2026 DevEmperor (Dictate)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+package dev.patrickgold.florisboard.dictate.provider
+
+import java.net.InetSocketAddress
+import java.net.Proxy
+
+/**
+ * Runtime configuration for a single OpenAI-compatible endpoint call.
+ *
+ * @param baseUrl OpenAI-compatible base URL (e.g. `https://openrouter.ai/api/v1/`). A trailing
+ *   slash is added automatically if missing.
+ * @param apiKey bearer token; may be blank for keyless local servers (e.g. Ollama).
+ * @param extraHeaders provider-specific headers (e.g. OpenRouter's `X-Title`).
+ */
+data class ProviderConfig(
+    val baseUrl: String,
+    val apiKey: String,
+    val extraHeaders: Map<String, String> = emptyMap(),
+    val proxy: ProxyConfig? = null,
+    /**
+     * How long a single read or write may take no bytes at all before the connection counts as dead.
+     *
+     * **Not a budget for the whole request.** It is the gap between bytes, which is why it also decides
+     * how long a model may think: while the server works on the audio it sends nothing, and that
+     * silence is one long read. Two minutes suits a dictation; an import raises it, because a piece of
+     * one can be ten minutes of speech for the model to get through.
+     */
+    val timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
+    /**
+     * Budget for a whole call — connect, upload, wait, read — where it must differ from
+     * [timeoutSeconds] (issue #337).
+     *
+     * The two were the same number until a shared file went up. A whole call is a different question
+     * from a stalled socket, and for an import it can honestly take longer than two minutes: 25 MB of
+     * audio on a mobile connection, and then a model reading ten minutes of speech. Worse, a timeout
+     * counts as retryable, so the same bytes went up four times before the failure appeared.
+     *
+     * It is also how long a request goes on being retried: once it has been going for one call's budget,
+     * no further attempt starts (#438).
+     *
+     * Null keeps the old behaviour: the call budget is [timeoutSeconds]. Only the file import raises
+     * it, and only because it runs on a screen with visible progress and a cancel button.
+     */
+    val callTimeoutSeconds: Long? = null,
+    val transcriptionApi: TranscriptionApi = TranscriptionApi.OPENAI_MULTIPART,
+    /**
+     * Single-call multimodal transcription (issue #130): when true, audio is sent to `chat/completions`
+     * as an `input_audio` content part of a multimodal model (e.g. Gemini Flash) instead of using the
+     * dedicated speech-to-text endpoint, so transcription + formatting happen in one request. Overrides
+     * [transcriptionApi] for the transcribe path. Only valid for models that accept audio input.
+     */
+    val useChatAudio: Boolean = false,
+    /**
+     * Trust user-installed CA certificates in addition to the system ones (issue #137). Android's
+     * default trust manager (API 24+) honours only system CAs, so a self-hosted HTTPS endpoint behind
+     * a private/internal CA fails with "Trust anchor … not found". When true, this client also trusts
+     * the device's user-added CAs (via the `AndroidCAStore` keystore). Default false keeps the strict,
+     * system-CAs-only posture, and the relaxation applies only to this app's own client – never
+     * system-wide.
+     */
+    val trustUserCerts: Boolean = false,
+    /**
+     * Curated model ids for providers without an OpenAI-style `/models` catalog (ElevenLabs, Deepgram,
+     * AssemblyAI, issue #143): [OpenAiCompatibleClient.listModels] returns these offline so the model
+     * picker fills without a live `/models` call. Not a connection test — that has its own authenticated
+     * request per provider, because a list compiled into the app can never fail (#384).
+     */
+    val curatedModels: List<String> = emptyList(),
+    /**
+     * Another provider is waiting to take over if this one cannot be reached (#455): give up on a server
+     * that does not answer the connection after a short [UNREACHABLE_CONNECT_TIMEOUT_SECONDS], and do not
+     * retry a connection that could not be made at all ([DictateApiException.isConnectFailure]).
+     *
+     * Without this the hand-over came too late to be of use. A home server seen from mobile data is a
+     * private address nothing routes to, so each attempt runs the full connect timeout, and three retries
+     * three seconds apart made every dictation away from home wait up to forty seconds before the other
+     * provider was even asked. Everything after a connection was made keeps its retries: there the
+     * provider has the audio, and the answer is still worth waiting for.
+     */
+    val handOverUnreachable: Boolean = false,
+) {
+    /** Base URL guaranteed to end with a single trailing slash. */
+    val normalizedBaseUrl: String
+        get() = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+
+    companion object {
+        /** Two minutes per read or write, which is the app's answer to "is this connection alive?". */
+        const val DEFAULT_TIMEOUT_SECONDS = 120L
+
+        /**
+         * The connect timeout while another provider is waiting ([handOverUnreachable]). A server on the
+         * same network answers in milliseconds and a cloud provider on a usable mobile link in well under a
+         * second; four seconds still allows two lost connection attempts (TCP resends after one second,
+         * then after two more) before the dictation moves on.
+         */
+        const val UNREACHABLE_CONNECT_TIMEOUT_SECONDS = 4L
+    }
+}
+
+/**
+ * Wire format of a provider's speech-to-text endpoint. Most providers (OpenAI, Groq, Mistral, …) accept
+ * the OpenAI `multipart/form-data` file upload at `audio/transcriptions`. OpenRouter currently accepts
+ * that same fast wire format and has a documented JSON fallback; it keeps a dedicated enum value because
+ * its catalog and retry policy also differ. Soniox uses a multi-step async REST flow.
+ */
+enum class TranscriptionApi {
+    /** OpenAI-style `multipart/form-data` upload with a `file` part. */
+    OPENAI_MULTIPART,
+
+    /** Multipart fast path plus documented JSON fallback and OpenRouter-specific retry handling. */
+    OPENROUTER_MULTIPART,
+
+    /**
+     * Soniox async flow against `api.soniox.com/v1/`: upload the file (`POST /files`), create a
+     * transcription job (`POST /transcriptions` with `file_id`), poll `GET /transcriptions/{id}` until
+     * `status == completed`, then fetch `GET /transcriptions/{id}/transcript`. See [OpenAiCompatibleClient].
+     */
+    SONIOX_ASYNC,
+
+    /**
+     * Google Gemini has no dedicated speech-to-text endpoint and its OpenAI-compatible layer (used for
+     * chat/rewording) does not accept audio. Instead the audio is base64-inlined into a single
+     * `POST {baseUrl}/../models/{model}:generateContent` call against the native Gemini API, instructing
+     * the multimodal model to emit only the verbatim transcript. See [OpenAiCompatibleClient].
+     */
+    GEMINI_GENERATE_CONTENT,
+
+    /**
+     * ElevenLabs Scribe (issue #143): `multipart/form-data` upload to `speech-to-text` with a `model_id`
+     * field and an `xi-api-key` header (not Bearer). Response holds the transcript in `text`.
+     */
+    ELEVENLABS_MULTIPART,
+
+    /**
+     * Deepgram (issue #143): the raw audio bytes are POSTed to `listen?model=…` with an
+     * `Authorization: Token <key>` header; the transcript is nested at
+     * `results.channels[0].alternatives[0].transcript`.
+     */
+    DEEPGRAM,
+
+    /**
+     * AssemblyAI (issue #143): async upload → create → poll flow (like [SONIOX_ASYNC]) against the
+     * `api.assemblyai.com/v2` upload/transcript endpoints with a raw `authorization: <key>` header.
+     */
+    ASSEMBLYAI_ASYNC,
+
+    /**
+     * Azure Speech, Fast Transcription with MAI-Transcribe (issue #349): one `multipart/form-data` POST
+     * to `speechtotext/transcriptions:transcribe?api-version=…` carrying an `audio` file part and a
+     * `definition` part holding the options as JSON, authenticated with `Ocp-Apim-Subscription-Key`.
+     *
+     * The `definition` part is what makes this its own wire format rather than another multipart
+     * variant: every option — the model, the language, the vocabulary — lives inside one JSON string
+     * instead of beside the file as its own form field. Selecting MAI is itself two of those options
+     * (`enhancedMode.enabled` and `enhancedMode.model`), not a value the endpoint takes on its own.
+     *
+     * The transcript comes back as `combinedPhrases[].text`, one entry per channel, speaker or
+     * language rather than one per response. See [OpenAiCompatibleClient].
+     */
+    AZURE_FAST_TRANSCRIPTION,
+
+    /**
+     * xAI Grok Voice Transcribe (issue #435): one `multipart/form-data` POST to `stt` with a Bearer key,
+     * the transcript in `text`.
+     *
+     * Not [OPENAI_MULTIPART] under another path, for three reasons that each change the request: the
+     * vocabulary travels as repeated `keyterm` fields rather than a free-text `prompt`, which the
+     * endpoint does not have; `language` only switches on number formatting — recognition is
+     * multilingual regardless — and needs `format=true` beside it; and the `file` part has to come
+     * **last**, because xAI streams the upload and may ignore fields that arrive after it.
+     */
+    XAI_STT,
+
+    /**
+     * On-device transcription (issue #104): no network call at all. Handled by
+     * [dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider] (sherpa-onnx), not by
+     * [OpenAiCompatibleClient]; this value only marks a provider preset as local so the dictation flow
+     * dispatches to the offline engine instead of building an HTTP client.
+     */
+    LOCAL_ONDEVICE,
+}
+
+/**
+ * Proxy protocol exposed in the settings UI. Maps onto the JVM [Proxy.Type] used by OkHttp; kept as a
+ * dedicated enum so it can be persisted by name as a JetPref `enum` preference and shown in a dropdown.
+ */
+enum class DictateProxyType(val javaType: Proxy.Type) {
+    /** HTTP CONNECT proxy. Supports username/password via the `Proxy-Authorization` header. */
+    HTTP(Proxy.Type.HTTP),
+
+    /** SOCKS5 proxy. Credentials are not currently forwarded (OkHttp/JVM limitation). */
+    SOCKS5(Proxy.Type.SOCKS),
+}
+
+/**
+ * Parsed proxy specification. Accepts `socks5|http://user:pass@host:port` (scheme + credentials
+ * optional). Ported from the original Dictate `DictateUtils.isValidProxy` / `applyProxy`.
+ */
+data class ProxyConfig(
+    val type: Proxy.Type,
+    val host: String,
+    val port: Int,
+    val username: String? = null,
+    val password: String? = null,
+) {
+    fun toJavaProxy(): Proxy = Proxy(type, InetSocketAddress(host, port))
+
+    val hasCredentials: Boolean
+        get() = !username.isNullOrEmpty() && !password.isNullOrEmpty()
+
+    companion object {
+        private val REGEX =
+            Regex("^(?:(socks5|http)://)?(?:(\\w+):(\\w+)@)?([\\w.-]+):(\\d+)$")
+        private val IPV4_REGEX = Regex("\\d+\\.\\d+\\.\\d+\\.\\d+")
+
+        /**
+         * Builds a config from the individual settings fields, or `null` when the proxy is disabled or
+         * incompletely/invalidly configured (in which case calls go out directly). [host] may be a
+         * hostname or IPv4 literal; [port] must be a valid TCP port. Blank credentials become `null`.
+         */
+        fun of(
+            enabled: Boolean,
+            type: DictateProxyType,
+            host: String,
+            port: Int,
+            username: String,
+            password: String,
+        ): ProxyConfig? {
+            if (!enabled) return null
+            val trimmedHost = host.trim()
+            if (trimmedHost.isEmpty() || port !in 1..65535) return null
+            return ProxyConfig(
+                type = type.javaType,
+                host = trimmedHost,
+                port = port,
+                username = username.trim().ifEmpty { null },
+                password = password.ifEmpty { null },
+            )
+        }
+
+        /** Returns true if [spec] is a syntactically valid proxy string. */
+        fun isValid(spec: String?): Boolean {
+            if (spec.isNullOrEmpty()) return false
+            val match = REGEX.matchEntire(spec) ?: return false
+            val host = match.groupValues[4]
+            if (host.matches(IPV4_REGEX)) {
+                return host.split(".").all { part -> part.toIntOrNull()?.let { it in 0..255 } == true }
+            }
+            return true
+        }
+
+        /** Parses [spec] into a [ProxyConfig], or null if invalid. */
+        fun parse(spec: String?): ProxyConfig? {
+            if (!isValid(spec)) return null
+            val match = REGEX.matchEntire(spec!!) ?: return null
+            val scheme = match.groupValues[1]
+            val user = match.groupValues[2].ifEmpty { null }
+            val pass = match.groupValues[3].ifEmpty { null }
+            val host = match.groupValues[4]
+            val port = match.groupValues[5].toIntOrNull() ?: return null
+            val type = if (scheme.equals("socks5", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
+            return ProxyConfig(type, host, port, user, pass)
+        }
+    }
+}

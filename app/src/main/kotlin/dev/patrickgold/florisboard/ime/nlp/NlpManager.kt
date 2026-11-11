@@ -1,0 +1,1001 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.nlp
+
+import android.content.Context
+import android.os.SystemClock
+import android.util.LruCache
+import com.typebetter.keyboard.PersonalWords
+import com.typebetter.keyboard.TypeBetterSuggestions
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.clipboardManager
+import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.glideTypingManager
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
+import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.ime.editor.EditorContent
+import dev.patrickgold.florisboard.ime.editor.EditorRange
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordsStore
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.media.emoji.emojiQuerySource
+import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
+import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
+import dev.patrickgold.florisboard.ime.nlp.math.Calculator
+import dev.patrickgold.florisboard.ime.nlp.math.MathSuggestionCandidate
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.util.NetworkUtils
+import dev.patrickgold.florisboard.subtypeManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.florisboard.lib.kotlin.guardedByLock
+import org.florisboard.lib.kotlin.collectLatestIn
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.properties.Delegates
+
+private const val BLANK_STR_PATTERN = "^\\s*$"
+
+// Frequency stored for a word learned from the suggestion strip (issue #241) — the maximum, matching what
+// the user dictionary settings screen assigns to a hand-added word.
+private const val USER_DICTIONARY_FREQ = 255
+
+/**
+ * Whether the word provider should be asked at all, given the user's "Display suggestions" switch and
+ * whether the active provider insists (issue #297).
+ *
+ * Its own decision, because [NlpManager.isSuggestionOn] is not one: that is an OR across three unrelated
+ * features, and using it as the single gate meant emoji suggestions — on by default — held the door open
+ * for the word suggestions the user had just switched off.
+ *
+ * The exception is not a courtesy. A shape-based provider *types* through its candidate list: switching
+ * that off does not declutter the strip, it takes the language away. So the override lives here, beside
+ * the rule it overrides, instead of waiting to be rediscovered the next time someone tidies this up.
+ */
+internal fun wantsWordSuggestions(
+    displaySuggestions: Boolean,
+    providerForcesSuggestionOn: Boolean,
+): Boolean = displaySuggestions || providerForcesSuggestionOn
+
+/**
+ * Which of the two things the strip could hold it actually holds, once a math result has been ruled out
+ * (issue #360).
+ *
+ * The clipboard offer used to be reachable only in an empty field, so the first character typed took it
+ * away and nothing ever brought it back — not a space, not a new line, not an hour of the clip sitting
+ * unused on the clipboard. That reads as the offer being *withdrawn* when what actually happened is that
+ * the word suggestions borrowed the strip. Every other keyboard treats the clip as what is shown when
+ * there is nothing better, and that is what this does.
+ *
+ * The blank field keeps its old precedence: there the clip is the whole point, and a generic prediction
+ * must not push it out.
+ *
+ * [isAtWordBoundary] is the part that is a judgement rather than a rule. Falling back mid-word would put
+ * the chip on screen for exactly as long as the dictionary has nothing for the letters typed so far, so
+ * it would blink in and out under the user's hands while they write an unknown word. Waiting for the word
+ * to be finished costs the user nothing — one more keystroke and the offer is back — and keeps the strip
+ * still while it is being read.
+ */
+internal fun <T> chooseStripCandidates(
+    words: List<T>,
+    clip: List<T>,
+    isFieldBlank: Boolean,
+    isAtWordBoundary: Boolean,
+): List<T> = when {
+    isFieldBlank -> clip.ifEmpty { words }
+    words.isNotEmpty() -> words
+    isAtWordBoundary -> clip
+    else -> emptyList()
+}
+
+class NlpManager(context: Context) {
+    private val blankStrRegex = Regex(BLANK_STR_PATTERN)
+
+    private val prefs by FlorisPreferenceStore
+    private val appContext by context.appContext()
+    private val clipboardManager by context.clipboardManager()
+    private val editorInstance by context.editorInstance()
+    private val keyboardManager by context.keyboardManager()
+    private val subtypeManager by context.subtypeManager()
+    // Kept as the Lazy rather than unwrapped with `by`: the glide manager reaches back for this very
+    // NlpManager, so it must not be built while this one is still being constructed.
+    private val glideTypingManager = context.glideTypingManager()
+
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    /**
+     * Whether a selection was already running the last time the Smartbar's expanded state was decided, so
+     * the start of one can be told apart from a change to one (issue #335).
+     */
+    private var wasSelectionActive = false
+
+    private val clipboardSuggestionProvider = ClipboardSuggestionProvider(context)
+    private val emojiSuggestionProvider = EmojiSuggestionProvider(context)
+    private val providers = guardedByLock {
+        mapOf(
+            LatinLanguageProvider.ProviderId to ProviderInstanceWrapper(LatinLanguageProvider(context)),
+            HanShapeBasedLanguageProvider.ProviderId to ProviderInstanceWrapper(HanShapeBasedLanguageProvider(context)),
+        )
+    }
+    // lock unnecessary because values constant
+    private val providersForceSuggestionOn = mutableMapOf<String, Boolean>()
+
+    private val internalSuggestionsGuard = Mutex()
+    private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->
+        scope.launch { assembleCandidates() }
+    }
+
+    private val _activeCandidatesFlow = MutableStateFlow(listOf<SuggestionCandidate>())
+    val activeCandidatesFlow = _activeCandidatesFlow.asStateFlow()
+    inline var activeCandidates
+        get() = activeCandidatesFlow.value
+        private set(v) {
+            _activeCandidatesFlow.value = v
+        }
+
+    val debugOverlaySuggestionsInfos = LruCache<Long, Pair<String, SpellingResult>>(10)
+    var debugOverlayVersion = MutableStateFlow(0)
+
+    init {
+        clipboardManager.primaryClipFlow.collectLatestIn(scope) {
+            assembleCandidates()
+        }
+        prefs.suggestion.enabled.asFlow().collectLatestIn(scope) {
+            // Cleared, not merely reassembled: the words from before the flip are still sitting in
+            // [internalSuggestions], and reassembling publishes them straight back — the strip would stay
+            // exactly as it was until the next keystroke, which is what made switching this off look like
+            // it did nothing (issue #297). Clearing reassembles by itself.
+            clearSuggestions()
+        }
+        prefs.clipboard.suggestionEnabled.asFlow().collectLatestIn(scope) {
+            assembleCandidates()
+        }
+        prefs.emoji.suggestionEnabled.asFlow().collectLatestIn(scope) {
+            assembleCandidates()
+        }
+        prefs.suggestion.mathSuggestions.asFlow().collectLatestIn(scope) {
+            assembleCandidates()
+        }
+        subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
+            preload(subtype)
+        }
+        // TypeBetter: a change to My words or My fixes takes effect from the very next keystroke.
+        PersonalWords.changes.collectLatestIn(scope) {
+            val subtype = subtypeManager.activeSubtype
+            notePersonalVocabularyChanged(subtype)
+            glideTypingManager.value.invalidateWordData()
+            suggest(subtype, editorInstance.activeContent)
+        }
+        PersonalWords.offers.collectLatestIn(scope) {
+            assembleCandidates()
+        }
+    }
+
+    /**
+     * Gets the punctuation rule from the currently active subtype and returns it. Falls back to a default one if the
+     * subtype does not exist or defines an invalid punctuation rule.
+     *
+     * @return The punctuation rule or a fallback.
+     */
+    fun getActivePunctuationRule(): PunctuationRule {
+        return getPunctuationRule(subtypeManager.activeSubtype)
+    }
+
+    /**
+     * Gets the punctuation rule from the given subtype and returns it. Falls back to a default one if the subtype does
+     * not exist or defines an invalid punctuation rule.
+     *
+     * @return The punctuation rule or a fallback.
+     */
+    fun getPunctuationRule(subtype: Subtype): PunctuationRule {
+        return keyboardManager.resources.punctuationRules.value[subtype.punctuationRule] ?: PunctuationRule.Fallback
+    }
+
+    private suspend fun getSpellingProvider(subtype: Subtype): SpellingProvider {
+        return providers.withLock { it[subtype.nlpProviders.spelling] }?.provider as? SpellingProvider
+            ?: FallbackNlpProvider
+    }
+
+    private suspend fun getSuggestionProvider(subtype: Subtype): SuggestionProvider {
+        return providers.withLock { it[subtype.nlpProviders.suggestion] }?.provider as? SuggestionProvider
+            ?: FallbackNlpProvider
+    }
+
+    fun preload(subtype: Subtype) {
+        scope.launch {
+            emojiSuggestionProvider.preload(subtype)
+            providers.withLock { providers ->
+                subtype.nlpProviders.forEach { _, providerId ->
+                    providers[providerId]?.let { provider ->
+                        provider.createIfNecessary()
+                        provider.preload(subtype)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Spell wrapper helper which calls the spelling provider and returns the result. Coroutine management must be done
+     * by the source spell checker service.
+     */
+    suspend fun spell(
+        subtype: Subtype,
+        word: String,
+        precedingWords: List<String>,
+        followingWords: List<String>,
+        maxSuggestionCount: Int,
+    ): SpellingResult {
+        return getSpellingProvider(subtype).spell(
+            subtype = subtype,
+            word = word,
+            precedingWords = precedingWords,
+            followingWords = followingWords,
+            maxSuggestionCount = maxSuggestionCount,
+            allowPossiblyOffensive = true,
+            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+        )
+    }
+
+    suspend fun determineLocalComposing(
+        textBeforeSelection: CharSequence, breakIterators: BreakIteratorGroup, localLastCommitPosition: Int
+    ): EditorRange {
+        return getSuggestionProvider(subtypeManager.activeSubtype).determineLocalComposing(
+            subtypeManager.activeSubtype, textBeforeSelection, breakIterators, localLastCommitPosition
+        )
+    }
+
+    /**
+     * [SuggestionProvider.continuesWord] for the active subtype: may [char] be written into
+     * [composingWord] without ending it (issue #318)?
+     *
+     * Asked by the input path, which is neither a coroutine nor allowed to be slow, hence the
+     * `runBlocking` — the same trade [providerForcesSuggestionOn] makes, and a cheaper one, because this
+     * is only reached when a separator is pressed rather than on every keystroke. Uncached on purpose: a
+     * stale boolean is harmless, a stale provider instance is not.
+     */
+    fun continuesWord(composingWord: String, char: Char): Boolean {
+        if (composingWord.isEmpty()) return false
+        val subtype = subtypeManager.activeSubtype
+        return runBlocking { getSuggestionProvider(subtype) }.continuesWord(composingWord, char)
+    }
+
+    /**
+     * The capitalised form the active language insists on for [word], or null — see
+     * [SuggestionProvider.standaloneCapitalization]. Reached once per word boundary, on the same terms
+     * as [continuesWord].
+     */
+    fun standaloneCapitalization(word: String): String? {
+        if (word.isEmpty()) return null
+        val subtype = subtypeManager.activeSubtype
+        return runBlocking { getSuggestionProvider(subtype) }.standaloneCapitalization(word, subtype)
+    }
+
+    fun providerForcesSuggestionOn(subtype: Subtype): Boolean {
+        // Using a cache because I have no idea how fast the runBlocking is
+        return providersForceSuggestionOn.getOrPut(subtype.nlpProviders.suggestion) {
+            runBlocking {
+                getSuggestionProvider(subtype).forcesSuggestionOn
+            }
+        }
+    }
+
+    fun isSuggestionOn(): Boolean =
+        prefs.suggestion.enabled.get()
+            || prefs.emoji.suggestionEnabled.get()
+            || providerForcesSuggestionOn(subtypeManager.activeSubtype)
+
+    /**
+     * [wantsWordSuggestions] answered for the active subtype — the one question worth asking before doing
+     * any word work: does the user want them, or does the provider insist?
+     *
+     * Everyone who needs it used to build the pair themselves, which is how the composing region ended up
+     * hanging off [isSuggestionOn] instead (issue #298).
+     */
+    fun wordSuggestionsWanted(): Boolean = wantsWordSuggestions(
+        displaySuggestions = prefs.suggestion.enabled.get(),
+        providerForcesSuggestionOn = providerForcesSuggestionOn(subtypeManager.activeSubtype),
+    )
+
+    // Set by a glide-typing commit: the word commit itself triggers one resetSuggestions → suggest() that
+    // would immediately wipe the just-shown glide alternatives. This one-shot flag makes that next suggest()
+    // a no-op so the alternatives stay in the strip until the user's next input (issue #127).
+    @Volatile
+    private var holdNextSuggest = false
+
+    /**
+     * The suggestion work for the previous keystroke, cancelled as soon as the next one arrives (issue
+     * #381). Each keystroke used to launch its own computation and none was ever stopped, so fast typing
+     * left several running side by side for words already gone — each one's result thrown away, but only
+     * after it had taken its share of the CPU from the one that mattered.
+     */
+    @Volatile
+    private var suggestJob: Job? = null
+
+    fun suggest(subtype: Subtype, content: EditorContent) {
+        if (holdNextSuggest) {
+            holdNextSuggest = false
+            return
+        }
+        val reqTime = SystemClock.uptimeMillis()
+        val word = content.composingText.toString()
+        suggestJob?.cancel()
+        suggestJob = scope.launch {
+            val candidates = computeSuggestions(subtype, content)
+            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqTime) {
+                    suggestionsWord = word
+                    internalSuggestions = reqTime to candidates
+                }
+            }
+        }
+    }
+
+    /**
+     * The word being composed when the suggestions now in [internalSuggestions] were computed, or null
+     * where they did not come from [suggest] and belong to no typed word (a glide's alternatives, a clear).
+     * See [getAutoCommitCandidate] for why it is kept.
+     */
+    @Volatile
+    private var suggestionsWord: String? = null
+
+    /**
+     * The candidates for a keyboard-internal field (issue #424) — the translate bar or one of the searches —
+     * computed exactly as for the app's field but not published: the strip shows them only through
+     * [showFieldCandidates], so the app's suggestions and this list never overwrite each other.
+     */
+    suspend fun suggestionsFor(subtype: Subtype, content: EditorContent): List<SuggestionCandidate> =
+        computeSuggestions(subtype, content)
+
+    private suspend fun computeSuggestions(subtype: Subtype, content: EditorContent): List<SuggestionCandidate> {
+        val emojiSuggestions = when {
+            prefs.emoji.suggestionEnabled.get() -> {
+                emojiSuggestionProvider.suggest(
+                    subtype = subtype,
+                    content = content,
+                    maxCandidateCount = prefs.emoji.suggestionCandidateMaxCount.get(),
+                    allowPossiblyOffensive = true,
+                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                )
+            }
+            else -> emptyList()
+        }
+        // A colon query is a *search* for an emoji, and a search takes the whole strip — that is
+        // what the mode is for. A plainly typed word is not a search (issue #338): there the emoji
+        // joins the words rather than replacing them. Read from the input rather than from the
+        // trigger setting, because the colon search stays available in both modes.
+        val emojiSearch = emojiQuerySource(content.composingText, content.currentWordText)
+            .startsWith(EmojiSuggestionType.LEADING_COLON.prefix)
+        val suggestions = when {
+            // The switch that says "Display suggestions" was read nowhere below this line (issue
+            // #297): [isSuggestionOn] let emoji suggestions keep the gate open, and since turning
+            // words off also turns composing off, the provider fell straight through to next-word
+            // predictions — the one kind of suggestion nothing was gating.
+            !wordSuggestionsWanted() -> {
+                emptyList()
+            }
+            emojiSuggestions.isNotEmpty() && emojiSearch -> {
+                emptyList()
+            }
+            else -> {
+                val provider = getSuggestionProvider(subtype)
+                val stock = provider.suggest(
+                    subtype = subtype,
+                    content = content,
+                    maxCandidateCount = provider.maxCandidates,
+                    allowPossiblyOffensive = true,
+                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                )
+                // TypeBetter: My fixes, Never change and My words decide before the keyboard's own guess.
+                TypeBetterSuggestions.shape(content.composingText.toString(), stock) { word ->
+                    provider.getFrequencyForWord(subtype, word) > 0.0
+                }
+            }
+        }
+        // Words first, emoji after — a flat list, because where they end up on screen is
+        // the strip's business, not this one's: [CandidatesRow] gives an emoji a narrow
+        // cell of its own so it costs no word its place (#338).
+        return when {
+            emojiSuggestions.isEmpty() -> suggestions
+            emojiSearch -> emojiSuggestions + suggestions
+            else -> suggestions + emojiSuggestions
+        }
+    }
+
+    /**
+     * What the strip shows while one of the keyboard's own fields has the keys (issue #424), or `null`
+     * while none does. Set, it takes the strip over from the app's suggestions — which go on being
+     * computed underneath, since the translate bar keeps writing into the app's field — and the actions
+     * row follows it the way it follows those: shown while the list is empty, folded away while it is not.
+     */
+    @Volatile
+    private var fieldCandidates: List<SuggestionCandidate>? = null
+
+    /**
+     * Where the cursor of a field that offers the copied text stands — the translate bar (issue #433) —
+     * so the clip is shown by the same rule as in the app's field. `null` for every other field.
+     */
+    data class FieldClipSpot(val isBlank: Boolean, val isAtWordBoundary: Boolean)
+
+    @Volatile
+    private var fieldClipSpot: FieldClipSpot? = null
+
+    val isFieldMode: Boolean get() = fieldCandidates != null
+
+    fun showFieldCandidates(candidates: List<SuggestionCandidate>?, clipSpot: FieldClipSpot? = null) {
+        fieldCandidates = candidates
+        fieldClipSpot = clipSpot.takeIf { candidates != null }
+        scope.launch { assembleCandidates() }
+    }
+
+    fun suggestDirectly(suggestions: List<SuggestionCandidate>, holdNext: Boolean = false) {
+        // Glide's alternatives reach the strip without passing through [suggest], so the word switch has
+        // to be honoured here as well — otherwise "Display suggestions" off would go on filling the strip
+        // after every swipe, which is the same complaint one path further along (issue #297). The word is
+        // still committed; only the alternatives are withheld, and holding the next suggest is left alone
+        // so nothing changes for the case this was written for (#127).
+        val wanted = wordSuggestionsWanted()
+        // A glide into one of the keyboard's own fields: the alternatives belong to that field's strip,
+        // and holding the app's next suggest would only swallow the first one after the field closes.
+        if (fieldCandidates != null) {
+            showFieldCandidates(if (wanted) suggestions else emptyList())
+            return
+        }
+        val reqTime = SystemClock.uptimeMillis()
+        holdNextSuggest = holdNext
+        runBlocking {
+            suggestionsWord = null
+            internalSuggestions = reqTime to if (wanted) suggestions else emptyList()
+        }
+    }
+
+    fun clearSuggestions() {
+        val reqTime = SystemClock.uptimeMillis()
+        runBlocking {
+            suggestionsWord = null
+            internalSuggestions = reqTime to emptyList()
+        }
+    }
+
+    /**
+     * The candidate Space may swap in for [composingWord], if the strip holds one *for that word*.
+     *
+     * The strip is computed off the typing path and can lag behind it — most of all for the first words
+     * after a word list loads. Asked without checking, Space took whatever eligible candidate was still
+     * standing there from the word before and wrote it over the new one: `Ek Ek` when Afrikaans was added
+     * (only that trigger was removed then), and on Polish, where a restored `Cześć` sits eligible in the
+     * strip, `Cześć Cześć` for "czesc wiem" (issue #451). A word whose suggestions have not arrived yet
+     * now stands as typed.
+     */
+    fun getAutoCommitCandidate(composingWord: CharSequence): SuggestionCandidate? {
+        val forWord = suggestionsWord
+        if (forWord != null && forWord != composingWord.toString()) return null
+        return activeCandidates.firstOrNull { it.isEligibleForAutoCommit }
+    }
+
+    /** Outcome of [addToUserDictionary], so the caller knows what (if anything) to tell the user. */
+    enum class AddToDictionaryResult { ADDED, ALREADY_PRESENT, UNAVAILABLE }
+
+    /**
+     * Adds [candidate]'s word to the personal dictionary for [subtype]'s language (issue #241) and re-runs
+     * the suggestions so it is treated as known from the very next keystroke — which is the point of the
+     * feature: [LatinLanguageProvider] consults the user dictionary in `isKnownWord`, so a learned word is
+     * never autocorrected again.
+     *
+     * Stored at the maximum frequency, matching what the settings screen uses when a word is added by hand.
+     */
+    fun addToUserDictionary(subtype: Subtype, candidate: SuggestionCandidate): AddToDictionaryResult {
+        val word = candidate.text.toString().trim()
+        if (word.isEmpty()) return AddToDictionaryResult.UNAVAILABLE
+        val dao = DictionaryManager.default().florisUserDictionaryDao()
+            ?: return AddToDictionaryResult.UNAVAILABLE // the personal dictionary is switched off
+        val locale = subtype.primaryLocale
+        return runCatching {
+            if (dao.queryExactFuzzyLocale(word, locale).isNotEmpty()) {
+                AddToDictionaryResult.ALREADY_PRESENT
+            } else {
+                dao.insert(
+                    UserDictionaryEntry(
+                        id = 0,
+                        word = word,
+                        freq = USER_DICTIONARY_FREQ,
+                        locale = locale.localeTag(),
+                        shortcut = null,
+                    )
+                )
+                scope.launch {
+                    notePersonalVocabularyChanged(subtype)
+                    suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
+                }
+                // Glide builds its index up front, so a word added mid-session would otherwise be typable
+                // but not swipeable until the next subtype change (issue #263).
+                glideTypingManager.value.invalidateWordData()
+                AddToDictionaryResult.ADDED
+            }
+        }.getOrDefault(AddToDictionaryResult.UNAVAILABLE)
+    }
+
+    /**
+     * Offers a finished word to the active provider for learning, and carries out the promotion when it
+     * has earned one (issue #318).
+     *
+     * The split is deliberate. The provider owns the vocabulary and decides whether a word is worth
+     * remembering; promotion means writing into the personal dictionary and rebuilding the glide index,
+     * which is plumbing this manager already owns for [addToUserDictionary] and which a language provider
+     * has no business reaching into.
+     *
+     * Everything the decision needs is passed in rather than read here, because by the time this
+     * coroutine runs the separator has been committed, the composing region is gone and the tap trace
+     * has been reset for the next word.
+     */
+    fun learnFinishedWord(
+        word: String,
+        origin: WordOrigin,
+        tapPoints: FloatArray?,
+        weight: Int = 1,
+        trustedByUser: Boolean = false,
+    ) {
+        if (word.isBlank() || !prefs.wordLearningIsOn) return
+        val subtype = subtypeManager.activeSubtype
+        val isPrivate = keyboardManager.activeState.isIncognitoMode || !wordSuggestionsWanted()
+        scope.launch {
+            val provider = getSuggestionProvider(subtype) as? LearningProvider ?: return@launch
+            val outcome = provider.learnTypedWord(
+                subtype = subtype,
+                word = word,
+                origin = origin,
+                tapPoints = tapPoints,
+                isPrivateSession = isPrivate,
+                weight = weight,
+                trustedByUser = trustedByUser,
+            )
+            if (!outcome.learned) return@launch
+            if (outcome.readyForPromotion) promoteLearnedWord(subtype, outcome)
+            // From the second sighting the word may appear in the strip, so the suggestions standing on
+            // screen are now out of date for the word that is about to be typed next.
+            suggest(subtype, editorInstance.activeContent)
+        }
+    }
+
+    /**
+     * Counts a tap on the suggestion strip as a use of that word (issue #375).
+     *
+     * Same tail as [learnFinishedWord] — promote when the ladder says so, then refresh the strip — but
+     * no origin and no tap points, because there was no typing to judge. The provider only bumps words
+     * it already holds; see [LearningProvider.learnPickedWord].
+     */
+    fun learnPickedWord(word: String) {
+        if (word.isBlank() || !prefs.wordLearningIsOn) return
+        if (keyboardManager.activeState.isIncognitoMode || !wordSuggestionsWanted()) return
+        val subtype = subtypeManager.activeSubtype
+        scope.launch {
+            val provider = getSuggestionProvider(subtype) as? LearningProvider ?: return@launch
+            val outcome = provider.learnPickedWord(subtype, word)
+            if (!outcome.learned) return@launch
+            if (outcome.readyForPromotion) promoteLearnedWord(subtype, outcome)
+        }
+    }
+
+    /**
+     * Moves a word that has been seen often enough into the personal dictionary, where it becomes an
+     * ordinary entry: known to autocorrect, swipeable, visible in settings, part of the backup.
+     *
+     * The row in the learned store is kept and marked, rather than deleted — it is the record of *why*
+     * that dictionary entry exists, which is what lets the settings screen tell a word the user added by
+     * hand from one the keyboard picked up.
+     */
+    private suspend fun promoteLearnedWord(subtype: Subtype, outcome: LearnOutcome) {
+        val dao = DictionaryManager.default().florisUserDictionaryDao() ?: return
+        val locale = subtype.primaryLocale
+        val promoted = runCatching {
+            if (dao.queryExactFuzzyLocale(outcome.word, locale).isEmpty()) {
+                dao.insert(
+                    UserDictionaryEntry(
+                        id = 0,
+                        word = outcome.word,
+                        freq = USER_DICTIONARY_FREQ,
+                        locale = locale.localeTag(),
+                        shortcut = null,
+                    )
+                )
+            }
+            true
+        }.getOrDefault(false)
+        if (!promoted) return
+        LearnedWordsStore.setPromoted(appContext, outcome.entryId, true, outcome.lang)
+        notePersonalVocabularyChanged(subtype)
+        // Glide builds its index up front, so without this the freshly promoted word would be typable
+        // but not swipeable until the next subtype change (issue #263).
+        glideTypingManager.value.invalidateWordData()
+    }
+
+    /**
+     * Forgets a word the keyboard had picked up, from the long-press on its suggestion (issue #318).
+     *
+     * If it had already been promoted, the copy in the personal dictionary goes too. Anything less would
+     * be a lie: the strip would keep offering the word from the dictionary while the settings screen
+     * showed nothing learned, and there would be no obvious way to get rid of it.
+     */
+    fun forgetLearnedWord(subtype: Subtype, candidate: SuggestionCandidate) {
+        val word = candidate.text.toString().trim()
+        if (word.isEmpty()) return
+        scope.launch {
+            val provider = getSuggestionProvider(subtype) as? LearningProvider ?: return@launch
+            val wasPromoted = provider.forgetLearnedWord(subtype, word)
+            if (wasPromoted) {
+                val dao = DictionaryManager.default().florisUserDictionaryDao()
+                runCatching {
+                    dao?.queryExactFuzzyLocale(word, subtype.primaryLocale)?.forEach { dao.delete(it) }
+                }
+                notePersonalVocabularyChanged(subtype)
+                glideTypingManager.value.invalidateWordData()
+            }
+            suggest(subtype, editorInstance.activeContent)
+        }
+    }
+
+    /** Tells the active provider its cached copy of the personal dictionary is stale. */
+    private suspend fun notePersonalVocabularyChanged(subtype: Subtype) {
+        (getSuggestionProvider(subtype) as? LearningProvider)?.onPersonalVocabularyChanged()
+    }
+
+    /** Records that [word] followed [previousWord], for the personal half of next-word prediction. */
+    fun learnWordPair(previousWord: String, word: String) {
+        if (previousWord.isBlank() || word.isBlank() || !prefs.wordLearningIsOn) return
+        if (keyboardManager.activeState.isIncognitoMode) return
+        val subtype = subtypeManager.activeSubtype
+        scope.launch {
+            (getSuggestionProvider(subtype) as? LearningProvider)?.learnWordPair(subtype, previousWord, word)
+        }
+    }
+
+    fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
+        return runBlocking { candidate.sourceProvider?.removeSuggestion(subtype, candidate) == true }.also { result ->
+            if (result) {
+                scope.launch {
+                    // Need to re-trigger the suggestions algorithm
+                    if (candidate is ClipboardSuggestionCandidate) {
+                        assembleCandidates()
+                    } else {
+                        suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
+                    }
+                }
+            }
+        }
+    }
+
+    fun getListOfWords(subtype: Subtype): List<String> {
+        return runBlocking { getSuggestionProvider(subtype).getListOfWords(subtype) }
+    }
+
+    fun getFrequencyForWord(subtype: Subtype, word: String): Double {
+        return runBlocking { getSuggestionProvider(subtype).getFrequencyForWord(subtype, word) }
+    }
+
+    /**
+     * The answer to a sum standing at the cursor, or an empty list (issues #329, #440).
+     *
+     * Ahead of both the clipboard and the word suggestions in [assembleCandidates], because a sum is what
+     * the user is writing right now and a clipboard offer is a guess. It only borrows the strip: nothing
+     * is dismissed or marked used, so the clip and the words are back by themselves with the first
+     * character that is not part of the sum. Never in a password field: the strip is the one place a
+     * keyboard shows back what is being typed, and there it must not.
+     */
+    private fun mathCandidates(): List<SuggestionCandidate> {
+        if (!prefs.suggestion.mathSuggestions.get()) return emptyList()
+        val state = keyboardManager.activeState
+        if (state.keyVariation == KeyVariation.PASSWORD) return emptyList()
+        if (editorInstance.activeInfo.isRawInputEditor) return emptyList()
+        val answer = Calculator.evaluateTrailing(
+            textBeforeCursor = editorInstance.activeContent.textBeforeSelection,
+            locale = subtypeManager.activeSubtype.primaryLocale.base,
+        ) ?: return emptyList()
+        return listOf(MathSuggestionCandidate(result = answer.result, completion = answer.completion))
+    }
+
+    private fun assembleCandidates() {
+        runBlocking {
+            fieldCandidates?.let { field ->
+                // No sum here: it reads the app's field, not the one being typed in. The copied text is
+                // offered only where the field asks for it, and only as text — a picture has no place in it.
+                val spot = fieldClipSpot
+                val shown = when {
+                    !isSuggestionOn() -> emptyList()
+                    spot == null -> field
+                    else -> chooseStripCandidates(
+                        words = field,
+                        clip = clipboardSuggestionProvider.suggest(
+                            subtype = Subtype.DEFAULT,
+                            content = editorInstance.activeContent,
+                            maxCandidateCount = 8,
+                            allowPossiblyOffensive = true,
+                            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                        ).filter { (it as? ClipboardSuggestionCandidate)?.clipboardItem?.type == ItemType.TEXT },
+                        isFieldBlank = spot.isBlank,
+                        isAtWordBoundary = spot.isAtWordBoundary,
+                    )
+                }
+                activeCandidates = shown
+                autoExpandCollapseSmartbarActions(shown, null)
+                return@runBlocking
+            }
+            val candidates = when {
+                isSuggestionOn() -> mathCandidates().ifEmpty {
+                    val content = editorInstance.activeContent
+                    chooseStripCandidates(
+                        words = buildList {
+                            internalSuggestionsGuard.withLock {
+                                addAll(internalSuggestions.second)
+                            }
+                        },
+                        clip = clipboardSuggestionProvider.suggest(
+                            subtype = Subtype.DEFAULT,
+                            content = content,
+                            maxCandidateCount = 8,
+                            allowPossiblyOffensive = true,
+                            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                        ),
+                        isFieldBlank = content.text.isBlank(),
+                        // A promised space finishes a word as surely as a typed one (issue #266), which is
+                        // the same reading [LatinLanguageProvider.isAtPredictionPoint] takes.
+                        isAtWordBoundary = content.currentWordText.isEmpty() || content.phantomSpacePending,
+                    )
+                }
+                else -> emptyList()
+            }
+            // TypeBetter: a one-tap offer ("+ Kasmyra") leads the strip until the next word is started.
+            val withOffers = if (isSuggestionOn()) {
+                TypeBetterSuggestions.withOffers(
+                    candidates = candidates,
+                    composingText = editorInstance.activeContent.composingText.toString(),
+                    isPassword = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD,
+                    context = appContext,
+                )
+            } else {
+                candidates
+            }
+            activeCandidates = withOffers
+            autoExpandCollapseSmartbarActions(withOffers, NlpInlineAutofill.suggestions.value)
+        }
+    }
+
+    fun autoExpandCollapseSmartbarActions(list1: List<*>?, list2: List<*>?) {
+        if (!prefs.smartbar.enabled.get()) {// || !prefs.smartbar.sharedActionsAutoExpandCollapse.get()) {
+            return
+        }
+        // TODO: this is a mess and needs to be cleaned up in v0.5 with the NLP development
+        /*if (keyboardManager.inputEventDispatcher.isRepeatableCodeLastDown()
+            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.DELETE)
+            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.FORWARD_DELETE)
+            || keyboardManager.activeState.isActionsOverflowVisible
+        ) {
+            return // We do not auto switch if a repeatable action key was last pressed or if the actions overflow
+                   // menu is visible to prevent annoying UI changes
+        }*/
+        val isSelection = editorInstance.activeContent.selection.isSelectionMode
+        val selectionJustStarted = isSelection && !wasSelectionActive
+        wasSelectionActive = isSelection
+        // With the selection counter switched on (issue #335), a selection is the one moment the strip has
+        // something of its own to say, so it must not also be the moment the actions take the row.
+        //
+        // Collapsed once, when the selection starts, and then left alone for as long as it lasts. That is
+        // the whole point: this method runs again on every change to the selection, and deciding the state
+        // afresh each time would flicker between the count and the buttons while dragging a handle — and
+        // would undo a deliberate tap on the chevron a moment after it was made. Not touching it means
+        // changing the selection only changes the numbers, and asking for the actions keeps them.
+        if (isSelection && prefs.smartbar.selectionMetrics.get()) {
+            if (selectionJustStarted && prefs.smartbar.sharedActionsExpanded.get()) {
+                scope.launch {
+                    prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
+                    prefs.smartbar.sharedActionsExpanded.set(false)
+                }
+            }
+            return
+        }
+        val isExpanded = list1.isNullOrEmpty() && list2.isNullOrEmpty() || isSelection
+        // Only write when the expanded state actually changes. This runs on every keystroke (via
+        // assembleCandidates); the state usually stays the same while typing a word, so the guard avoids
+        // two redundant pref writes per character that would otherwise bounce the Smartbar flows into a
+        // recomposition (and schedule a datastore persist) each time — a contributor to the typing jank.
+        if (prefs.smartbar.sharedActionsExpanded.get() != isExpanded) {
+            scope.launch {
+                prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
+                prefs.smartbar.sharedActionsExpanded.set(isExpanded)
+            }
+        }
+    }
+
+    fun addToDebugOverlay(word: String, info: SpellingResult) {
+        debugOverlaySuggestionsInfos.put(System.currentTimeMillis(), word to info)
+        debugOverlayVersion.update { it + 1 }
+    }
+
+    fun clearDebugOverlay() {
+        debugOverlaySuggestionsInfos.evictAll()
+        debugOverlayVersion.update { it + 1 }
+    }
+
+    private class ProviderInstanceWrapper(val provider: NlpProvider) {
+        private var isInstanceAlive = AtomicBoolean(false)
+
+        suspend fun createIfNecessary() {
+            if (!isInstanceAlive.getAndSet(true)) provider.create()
+        }
+
+        suspend fun preload(subtype: Subtype) {
+            provider.preload(subtype)
+        }
+
+        suspend fun destroyIfNecessary() {
+            if (isInstanceAlive.getAndSet(true)) provider.destroy()
+        }
+    }
+
+    inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
+        /**
+         * The clip the user is finished with — pasted or dismissed — identified by the moment it was
+         * copied.
+         *
+         * Not by [ClipboardItem.id], which is what this was (issue #360). That is the Room row id, and
+         * Room only ever sees a clip while the clipboard *history* is enabled — off by default. Without
+         * it every clip carries id 0, so the first paste or dismiss pinned this to 0 and every later copy
+         * was then rejected as "already used": the clipboard suggestion silently stopped existing for the
+         * rest of the process. Even with history on, a re-copied duplicate takes the `moveToTheBeginning`
+         * path, which never writes the new row id back into the item.
+         *
+         * [ClipboardItem.creationTimestampMs] is stamped per copy event and is always populated. It also
+         * keeps the one thing the row id got right: the address/link/number chips extracted below are
+         * copies of the same item and carry its timestamp, so accepting one still retires the whole clip.
+         */
+        private var lastUsedClipTimestamp: Long = -1
+
+        // The strip is reassembled on every keystroke, and building the candidates walks the whole clip
+        // text with three regexes. That was affordable while the blank-field check rejected almost every
+        // call before reaching it; now that the clip is offered as a fallback too, the work is memoised
+        // per copy so it is paid once instead of per character.
+        private var cachedForItem: ClipboardItem? = null
+        private var cachedWithExtracted = true
+        private var cachedCandidates: List<SuggestionCandidate> = emptyList()
+
+        override val providerId = "org.florisboard.nlp.providers.clipboard"
+
+        override suspend fun create() {
+            // Do nothing
+        }
+
+        override suspend fun preload(subtype: Subtype) {
+            // Do nothing
+        }
+
+        override suspend fun suggest(
+            subtype: Subtype,
+            content: EditorContent,
+            maxCandidateCount: Int,
+            allowPossiblyOffensive: Boolean,
+            isPrivateSession: Boolean,
+        ): List<SuggestionCandidate> {
+            // Check if enabled
+            if (!prefs.clipboard.suggestionEnabled.get()) return emptyList()
+
+            val currentItem = validateClipboardItem(clipboardManager.primaryClip, lastUsedClipTimestamp)
+                ?: return emptyList()
+
+            val now = System.currentTimeMillis()
+            if ((now - currentItem.creationTimestampMs) >= prefs.clipboard.suggestionTimeout.get() * 1000) {
+                return emptyList()
+            }
+            // Identity, not equality: the primary clip is one instance per copy, and the same instance
+            // always yields the same chips — as long as the extraction switch has not been flipped since,
+            // which a trip to the settings within the suggestion timeout can easily do.
+            val showExtracted = prefs.clipboard.suggestionShowExtracted.get()
+            if (cachedForItem === currentItem && cachedWithExtracted == showExtracted) return cachedCandidates
+
+            val candidates = buildList {
+                add(ClipboardSuggestionCandidate(currentItem, sourceProvider = this@ClipboardSuggestionProvider, context = context))
+                if (currentItem.isSensitive || !showExtracted) {
+                    return@buildList
+                }
+                if (currentItem.type == ItemType.TEXT) {
+                    val text = currentItem.stringRepresentation()
+                    val matches = buildList {
+                        addAll(NetworkUtils.getEmailAddresses(text))
+                        addAll(NetworkUtils.getUrls(text))
+                        addAll(NetworkUtils.getPhoneNumbers(text))
+                    }
+                    matches.forEachIndexed { i, match ->
+                        val isUniqueMatch = matches.subList(0, i).all { prevMatch ->
+                            prevMatch.value != match.value && prevMatch.range.intersect(match.range).isEmpty()
+                        }
+                        if (match.value != text && isUniqueMatch) {
+                            add(ClipboardSuggestionCandidate(
+                                clipboardItem = currentItem.copy(
+                                    // TODO: adjust regex of phone number so we don't need to manually strip the
+                                    //  parentheses from the match results
+                                    text = if (match.value.startsWith("(") && match.value.endsWith(")")) {
+                                        match.value.substring(1, match.value.length - 1)
+                                    } else {
+                                        match.value
+                                    }
+                                ),
+                                sourceProvider = this@ClipboardSuggestionProvider,
+                                context = context,
+                            ))
+                        }
+                    }
+                }
+            }
+            cachedForItem = currentItem
+            cachedWithExtracted = showExtracted
+            cachedCandidates = candidates
+            return candidates
+        }
+
+        override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
+            if (candidate is ClipboardSuggestionCandidate) {
+                lastUsedClipTimestamp = candidate.clipboardItem.creationTimestampMs
+            }
+        }
+
+        override suspend fun notifySuggestionReverted(subtype: Subtype, candidate: SuggestionCandidate) {
+            // Do nothing
+        }
+
+        override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
+            if (candidate is ClipboardSuggestionCandidate) {
+                lastUsedClipTimestamp = candidate.clipboardItem.creationTimestampMs
+                return true
+            }
+            return false
+        }
+
+        override suspend fun getListOfWords(subtype: Subtype): List<String> {
+            return emptyList()
+        }
+
+        override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
+            return 0.0
+        }
+
+        override suspend fun destroy() {
+            // Do nothing
+        }
+
+        // Nothing here looks at the editor any more: where the clip may show is [chooseStripCandidates]'
+        // decision, and this one only answers whether there is a clip worth offering at all.
+        private fun validateClipboardItem(currentItem: ClipboardItem?, lastUsedTimestamp: Long) =
+            currentItem?.takeIf {
+                // Check if already used
+                it.creationTimestampMs != lastUsedTimestamp
+                    // Check if clipboard content has any valid characters
+                    && !currentItem.text.isNullOrBlank()
+                    && !blankStrRegex.matches(currentItem.text)
+            }
+    }
+}

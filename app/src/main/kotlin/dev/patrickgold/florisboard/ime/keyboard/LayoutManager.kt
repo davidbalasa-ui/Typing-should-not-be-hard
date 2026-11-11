@@ -1,0 +1,467 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.keyboard
+
+import android.content.Context
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsLayout
+import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsStore
+import dev.patrickgold.florisboard.extensionManager
+import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.ime.popup.PopupMapping
+import dev.patrickgold.florisboard.ime.popup.PopupMappingComponent
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
+import dev.patrickgold.florisboard.ime.text.key.KeyType
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogDebug
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.lib.io.ZipUtils
+import dev.patrickgold.florisboard.lib.io.loadJsonAsset
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.florisboard.lib.kotlin.DeferredResult
+import org.florisboard.lib.kotlin.runCatchingAsync
+
+private data class LTN(
+    val type: LayoutType,
+    val name: ExtensionComponentName,
+)
+
+data class CachedLayout(
+    val type: LayoutType,
+    val name: ExtensionComponentName,
+    val meta: LayoutArrangementComponent,
+    val arrangement: LayoutArrangement,
+)
+
+/** Stands in for the extension's entry when a symbols page is the user's own (issue #342). */
+private val CustomSymbolsMeta = LayoutArrangementComponent(
+    id = "custom_symbols",
+    label = "Custom symbols",
+    authors = listOf(),
+    direction = "ltr",
+)
+
+private data class CachedPopupMapping(
+    val name: ExtensionComponentName,
+    val meta: PopupMappingComponent,
+    val mapping: PopupMapping,
+)
+
+data class DebugLayoutComputationResult(
+    val main: Result<CachedLayout?>,
+    val mod: Result<CachedLayout?>,
+    val ext: Result<CachedLayout?>,
+) {
+    fun allLayoutsSuccess(): Boolean {
+        return main.isSuccess && mod.isSuccess && ext.isSuccess
+    }
+}
+
+/**
+ * Class which manages layout loading and caching.
+ */
+class LayoutManager(context: Context) {
+    private val prefs by FlorisPreferenceStore
+    private val appContext by context.appContext()
+    private val extensionManager by context.extensionManager()
+    private val keyboardManager by context.keyboardManager()
+
+    private val layoutCache: HashMap<LTN, DeferredResult<CachedLayout>> = hashMapOf()
+    private val layoutCacheGuard: Mutex = Mutex(locked = false)
+    private val popupMappingCache: HashMap<ExtensionComponentName, DeferredResult<CachedPopupMapping>> = hashMapOf()
+    private val popupMappingCacheGuard: Mutex = Mutex(locked = false)
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    val debugLayoutComputationResultFlow = MutableStateFlow<DebugLayoutComputationResult?>(null)
+
+    /**
+     * Loads the layout for the specified type and name.
+     *
+     * @return A deferred result for a layout.
+     */
+    private fun loadLayoutAsync(ltn: LTN?, allowNullLTN: Boolean) = ioScope.runCatchingAsync {
+        if (!allowNullLTN) {
+            requireNotNull(ltn) { "Invalid argument value for 'ltn': null" }
+        }
+        if (ltn == null) {
+            return@runCatchingAsync null
+        }
+        layoutCacheGuard.withLock {
+            val cached = layoutCache[ltn]
+            if (cached != null) {
+                flogDebug(LogTopic.LAYOUT_MANAGER) { "Using cache for '${ltn.name}'" }
+                return@withLock cached
+            } else {
+                flogDebug(LogTopic.LAYOUT_MANAGER) { "Loading '${ltn.name}'" }
+                val meta = keyboardManager.resources.layouts.value[ltn.type]?.get(ltn.name)
+                    ?: error("No indexed entry found for ${ltn.type} - ${ltn.name}")
+                val ext = extensionManager.getExtensionById(ltn.name.extensionId)
+                    ?: error("Extension ${ltn.name.extensionId} not found")
+                val path = meta.arrangementFile(ltn.type)
+                val layout = async {
+                    runCatching {
+                        val jsonStr = ZipUtils.readFileFromArchive(appContext, ext.sourceRef!!, path).getOrThrow()
+                        val arrangement = loadJsonAsset<LayoutArrangement>(jsonStr).getOrThrow()
+                        CachedLayout(ltn.type, ltn.name, meta, arrangement)
+                    }
+                }
+                layoutCache[ltn] = layout
+                return@withLock layout
+            }
+        }.await().getOrThrow()
+    }
+
+    private fun loadPopupMappingAsync(subtype: Subtype? = null) = ioScope.runCatchingAsync {
+        val name = subtype?.popupMapping ?: extCorePopupMapping("default")
+        popupMappingCacheGuard.withLock {
+            val cached = popupMappingCache[name]
+            if (cached != null) {
+                flogDebug(LogTopic.LAYOUT_MANAGER) { "Using cache for '$name'" }
+                return@withLock cached
+            } else {
+                flogDebug(LogTopic.LAYOUT_MANAGER) { "Loading '$name'" }
+                val meta = keyboardManager.resources.popupMappings.value[name]
+                    ?: error("No indexed entry found for $name")
+                val ext = extensionManager.getExtensionById(name.extensionId)
+                    ?: error("Extension ${name.extensionId} not found")
+                val path = meta.mappingFile()
+                val popupMapping = async {
+                    runCatching {
+                        val jsonStr = ZipUtils.readFileFromArchive(appContext, ext.sourceRef!!, path).getOrThrow()
+                        val mapping = loadJsonAsset<PopupMapping>(jsonStr).getOrThrow()
+                        CachedPopupMapping(name, meta, mapping)
+                    }
+                }
+                popupMappingCache[name] = popupMapping
+                return@withLock popupMapping
+            }
+        }.await().getOrThrow()
+    }
+
+    /**
+     * Merges the specified layouts (LTNs) and returns the computed layout.
+     * The computed layout may looks like this:
+     *   e e e e e e e e e e      e = extension
+     *   c c c c c c c c c c      c = main
+     *    c c c c c c c c c       m = mod
+     *   m c c c c c c c c m
+     *   m m m m m m m m m m
+     *
+     * @param keyboardMode The keyboard mode for the returning [TextKeyboard].
+     * @param subtype The subtype used for populating the extended popups.
+     * @param main The main layout type and name.
+     * @param modifier The modifier (mod) layout type and name.
+     * @param extension The extension layout type and name.
+     * @param customMain The user's own symbol page (issue #342), standing in for the [main] layout.
+     * @return a [TextKeyboard] object, regardless of the specified LTNs or errors.
+     */
+    private suspend fun mergeLayouts(
+        keyboardMode: KeyboardMode,
+        subtype: Subtype,
+        main: LTN? = null,
+        modifier: LTN? = null,
+        extension: LTN? = null,
+        isSplit: Boolean = false,
+        customMain: LayoutArrangement? = null,
+    ): TextKeyboard {
+        val extendedPopupsDefault = loadPopupMappingAsync()
+        val extendedPopups = loadPopupMappingAsync(subtype)
+
+        val mainLayoutResult = if (customMain != null && main != null) {
+            Result.success(CachedLayout(main.type, main.name, CustomSymbolsMeta, customMain))
+        } else {
+            loadLayoutAsync(main, allowNullLTN = false).await()
+        }
+        fun mainKey(data: AbstractKeyData) = TextKey(data).also { it.ownPopupsOnly = customMain != null }
+        val mainLayout = mainLayoutResult.onFailure {
+            flogWarning { "$keyboardMode - main - $it" }
+        }.getOrNull()
+        val modifierToLoad = if (mainLayout?.meta?.modifier != null) {
+            val layoutType = when (mainLayout.type) {
+                LayoutType.SYMBOLS -> {
+                    LayoutType.SYMBOLS_MOD
+                }
+                LayoutType.SYMBOLS2 -> {
+                    LayoutType.SYMBOLS2_MOD
+                }
+                else -> {
+                    LayoutType.CHARACTERS_MOD
+                }
+            }
+            LTN(layoutType, mainLayout.meta.modifier)
+        } else {
+            modifier
+        }
+        val modifierLayoutResult = loadLayoutAsync(modifierToLoad, allowNullLTN = true).await()
+        val modifierLayout = modifierLayoutResult.onFailure {
+            flogWarning { "$keyboardMode - mod - $it" }
+        }.getOrNull()
+        val extensionLayoutResult = loadLayoutAsync(extension, allowNullLTN = true).await()
+        val extensionLayout = extensionLayoutResult.onFailure {
+            flogWarning { "$keyboardMode - ext - $it" }
+        }.getOrNull()
+
+        debugLayoutComputationResultFlow.value = DebugLayoutComputationResult(
+            main = mainLayoutResult,
+            mod = modifierLayoutResult,
+            ext = extensionLayoutResult,
+        )
+
+        val computedArrangement: ArrayList<Array<TextKey>> = arrayListOf()
+
+        if (extensionLayout != null) {
+            for (row in extensionLayout.arrangement) {
+                val rowArray = Array(row.size) { TextKey(row[it]) }
+                computedArrangement.add(rowArray)
+            }
+        }
+
+        if (mainLayout != null && modifierLayout != null) {
+            for (mainRowI in mainLayout.arrangement.indices) {
+                val mainRow = mainLayout.arrangement[mainRowI]
+                if (mainRowI + 1 < mainLayout.arrangement.size) {
+                    val rowArray = Array(mainRow.size) { mainKey(mainRow[it]) }
+                    computedArrangement.add(rowArray)
+                } else {
+                    // merge main and mod here
+                    val rowArray = arrayListOf<TextKey>()
+                    val firstModRow = modifierLayout.arrangement.firstOrNull()
+                    for (modKey in (firstModRow ?: listOf())) {
+                        if (modKey is TextKeyData && modKey.code == 0) {
+                            rowArray.addAll(mainRow.map { mainKey(it) })
+                        } else {
+                            rowArray.add(TextKey(modKey))
+                        }
+                    }
+                    val temp = Array(rowArray.size) { rowArray[it] }
+                    computedArrangement.add(temp)
+                }
+            }
+            for (modRowI in 1 until modifierLayout.arrangement.size) {
+                val modRow = modifierLayout.arrangement[modRowI]
+                val rowArray = Array(modRow.size) { TextKey(modRow[it]) }
+                computedArrangement.add(rowArray)
+            }
+        } else if (mainLayout != null && modifierLayout == null) {
+            for (mainRow in mainLayout.arrangement) {
+                val rowArray = Array(mainRow.size) { mainKey(mainRow[it]) }
+                computedArrangement.add(rowArray)
+            }
+        } else if (mainLayout == null && modifierLayout != null) {
+            for (modRow in modifierLayout.arrangement) {
+                val rowArray = Array(modRow.size) { TextKey(modRow[it]) }
+                computedArrangement.add(rowArray)
+            }
+        }
+
+        // Add hints to keys
+        if (keyboardMode == KeyboardMode.CHARACTERS && computedArrangement.isNotEmpty()) {
+            val symbolsComputedArrangement = computeKeyboardAsync(KeyboardMode.SYMBOLS, subtype).await().arrangement
+            // The digit hints belong on the first *letter* row — which is row 0 only while the digit row
+            // is switched off (issue #329). With it on, row 0 IS the digit row: the hints were being
+            // written onto the digits themselves, where each one already carries its own digit and the
+            // hint does nothing, and the letters below lost their long-press digits entirely. Turning the
+            // digit row on therefore took a feature away instead of adding one.
+            val firstCharacterRow = if (extensionLayout != null) 1 else 0
+            if (prefs.keyboard.hintedNumberRowEnabled.get() && symbolsComputedArrangement.isNotEmpty() &&
+                computedArrangement.size > firstCharacterRow
+            ) {
+                val row = computedArrangement[firstCharacterRow]
+                val symbolRow = symbolsComputedArrangement[0]
+                addRowHints(row, symbolRow, KeyType.NUMERIC)
+                // Reachable, but not printed a second time right underneath the row it came from.
+                if (firstCharacterRow > 0) {
+                    row.forEach { it.suppressNumberHintLabel = true }
+                }
+            }
+            // all other symbols are added bottom-aligned
+            val rOffset = computedArrangement.size - symbolsComputedArrangement.size
+            for ((r, row) in computedArrangement.withIndex()) {
+                if (r < rOffset) {
+                    continue
+                }
+                val symbolRow = symbolsComputedArrangement.getOrNull(r - rOffset)
+                if (symbolRow != null) {
+                    addRowHints(row, symbolRow, KeyType.CHARACTER)
+                }
+            }
+        }
+
+        if (isSplit && keyboardMode.isSplittable()) {
+            addSecondSpaceBar(computedArrangement)
+        }
+
+        val array = Array(computedArrangement.size) { computedArrangement[it] }
+        return TextKeyboard(
+            arrangement = array,
+            mode = keyboardMode,
+            extendedPopupMapping = extendedPopups.await().onFailure {
+                flogWarning(LogTopic.LAYOUT_MANAGER) { it.toString() }
+            }.getOrNull()?.mapping,
+            extendedPopupMappingDefault = extendedPopupsDefault.await().onFailure {
+                flogWarning(LogTopic.LAYOUT_MANAGER) { it.toString() }
+            }.getOrNull()?.mapping
+        )
+    }
+
+    /**
+     * Gives the row that carries the space bar a second one, so a split keyboard has a space key under
+     * each thumb (issue #362) — the way Gboard and Samsung's keyboard split that row.
+     *
+     * The copy carries the seam, which is the whole reason it is made here and not in the layout pass:
+     * by width alone the seam of that row falls before the space bar, and the left half would end up
+     * with the symbol and comma keys and no way to type a space. Both keys are the same key data, so
+     * both behave identically — the swipe gestures, the language label, the long press, all of it.
+     */
+    private fun addSecondSpaceBar(arrangement: ArrayList<Array<TextKey>>) {
+        for ((r, row) in arrangement.withIndex()) {
+            val spaceIndex = row.indexOfFirst { key ->
+                val data = key.data
+                data is TextKeyData && (data.code == KeyCode.SPACE || data.code == KeyCode.CJK_SPACE)
+            }
+            if (spaceIndex < 0) continue
+            val secondSpaceBar = TextKey(row[spaceIndex].data).also { it.isSplitSeamStart = true }
+            arrangement[r] = Array(row.size + 1) { k ->
+                when {
+                    k <= spaceIndex -> row[k]
+                    k == spaceIndex + 1 -> secondSpaceBar
+                    else -> row[k - 1]
+                }
+            }
+            return
+        }
+    }
+
+    private fun addRowHints(main: Array<TextKey>, hint: Array<TextKey>, hintType: KeyType) {
+        for ((k,key) in main.withIndex()) {
+            val hintKey = hint.getOrNull(k)?.data?.compute(DefaultComputingEvaluator)
+            if (hintKey?.type != hintType) {
+                continue
+            }
+
+            when (hintType) {
+                KeyType.CHARACTER -> {
+                    key.computedSymbolHint = hintKey
+                }
+                KeyType.NUMERIC -> {
+                    key.computedNumberHint = hintKey
+                }
+                else -> {
+                    // do nothing
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes a layout for [keyboardMode] based on the given [subtype] and returns it.
+     *
+     * @param keyboardMode The keyboard mode for which the layout should be computed.
+     * @param subtype The subtype which localizes the computed layout.
+     * @param isSplit Whether the keyboard is currently split into two halves (issue #362), which is the
+     *  one thing about the window that reaches into the arrangement: a split keyboard gets a second
+     *  space bar so that each half has one.
+     */
+    fun computeKeyboardAsync(
+        keyboardMode: KeyboardMode,
+        subtype: Subtype,
+        isSplit: Boolean = false,
+    ): Deferred<TextKeyboard> = ioScope.async {
+        var main: LTN? = null
+        var modifier: LTN? = null
+        var extension: LTN? = null
+        var customMain: LayoutArrangement? = null
+
+        when (keyboardMode) {
+            KeyboardMode.CHARACTERS -> {
+                // A subtype may overrule the global switch in either direction (issue #315): a script
+                // that fills five rows on its own wants the digit row gone without taking it away
+                // from every other language.
+                if (subtype.numberRow ?: prefs.keyboard.numberRow.get()) {
+                    extension = LTN(LayoutType.NUMERIC_ROW, subtype.layoutMap.numericRow)
+                }
+                main = LTN(LayoutType.CHARACTERS, subtype.layoutMap.characters)
+                modifier = LTN(LayoutType.CHARACTERS_MOD, extCoreLayout("default"))
+            }
+            KeyboardMode.NUMERIC -> {
+                main = LTN(LayoutType.NUMERIC, subtype.layoutMap.numeric)
+            }
+            KeyboardMode.NUMERIC_ADVANCED -> {
+                main = LTN(LayoutType.NUMERIC_ADVANCED, subtype.layoutMap.numericAdvanced)
+            }
+            KeyboardMode.PHONE -> {
+                main = LTN(LayoutType.PHONE, subtype.layoutMap.phone)
+            }
+            KeyboardMode.PHONE2 -> {
+                main = LTN(LayoutType.PHONE2, subtype.layoutMap.phone2)
+            }
+            KeyboardMode.SYMBOLS -> {
+                extension = LTN(LayoutType.NUMERIC_ROW, subtype.layoutMap.numericRow)
+                main = LTN(LayoutType.SYMBOLS, subtype.layoutMap.symbols)
+                modifier = LTN(LayoutType.SYMBOLS_MOD, extCoreLayout("default"))
+                customMain = customSymbolsPage(0)
+            }
+            KeyboardMode.SYMBOLS2 -> {
+                main = LTN(LayoutType.SYMBOLS2, subtype.layoutMap.symbols2)
+                modifier = LTN(LayoutType.SYMBOLS2_MOD, extCoreLayout("default"))
+                customMain = customSymbolsPage(1)
+            }
+            KeyboardMode.SMARTBAR_CLIPBOARD_CURSOR_ROW -> {
+                extension = LTN(LayoutType.EXTENSION, extCoreLayout("clipboard_cursor_row"))
+            }
+            KeyboardMode.SMARTBAR_NUMBER_ROW -> {
+                extension = LTN(LayoutType.NUMERIC_ROW, subtype.layoutMap.numericRow)
+            }
+            else -> {
+                // Default values are already provided
+            }
+        }
+
+        return@async mergeLayouts(keyboardMode, subtype, main, modifier, extension, isSplit, customMain)
+    }
+
+    /**
+     * The user's own symbol [page] (issue #342), or null while they use the language's. It takes the
+     * page in every language, the digit row above page 1 staying the language's own. The letters take
+     * their long-press symbols from page 1 too, by position, as they do from the built-in page.
+     */
+    private fun customSymbolsPage(page: Int): LayoutArrangement? {
+        if (!prefs.keyboard.customSymbolsEnabled.get()) return null
+        return CustomSymbolsLayout.arrangement(CustomSymbolsStore.current(appContext), page)
+    }
+
+    /**
+     * Called when the application is destroyed. Used to cancel any pending coroutines.
+     */
+    fun onDestroy() {
+        ioScope.cancel()
+    }
+}
