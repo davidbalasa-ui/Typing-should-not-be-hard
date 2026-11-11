@@ -1,0 +1,170 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.app.settings.theme
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brightness2
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.WbTwilight
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
+import dev.patrickgold.florisboard.app.ext.AddonManagementReferenceBox
+import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
+import dev.patrickgold.florisboard.ime.theme.HighContrastDayTheme
+import dev.patrickgold.florisboard.ime.theme.HighContrastNightTheme
+import dev.patrickgold.florisboard.ime.theme.ThemeManager
+import dev.patrickgold.florisboard.ime.theme.ThemeMode
+import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.themeManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.ui.ColorPickerPreference
+import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.LocalTimePickerPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.jetpref.datastore.ui.isMaterialYou
+import kotlinx.coroutines.launch
+import org.florisboard.lib.color.ColorMappings
+import org.florisboard.lib.compose.stringRes
+
+@Composable
+fun ThemeScreen() = FlorisScreen {
+    title = stringRes(R.string.settings__theme__title)
+    previewFieldVisible = true
+
+    val context = LocalContext.current
+    val navController = LocalNavController.current
+    val themeManager by context.themeManager()
+
+    @Composable
+    fun ThemeManager.getThemeLabel(id: ExtensionComponentName): String {
+        val configs by indexedThemeConfigs.collectAsState()
+        configs.first[id]?.let { return it.label }
+        return id.toString()
+    }
+
+    content {
+        val dayThemeId by prefs.theme.dayThemeId.collectAsState()
+        val nightThemeId by prefs.theme.nightThemeId.collectAsState()
+        val scope = rememberCoroutineScope()
+
+        // Not a preference of its own: the switch *is* the pair of theme ids, so choosing another theme
+        // by hand below turns it off rather than leaving a stored "on" that contradicts the keyboard.
+        val highContrast = dayThemeId == HighContrastDayTheme && nightThemeId == HighContrastNightTheme
+        Preference(
+            icon = Icons.Default.Contrast,
+            modifier = Modifier.settingsSearchAnchor("pref__theme__high_contrast__label"),
+            title = stringRes(R.string.pref__theme__high_contrast__label),
+            summary = stringRes(R.string.pref__theme__high_contrast__summary),
+            trailing = {
+                Switch(checked = highContrast, onCheckedChange = null)
+            },
+            onClick = {
+                scope.launch {
+                    if (highContrast) {
+                        // Whatever was there before, unless the stored value is the pair itself — which
+                        // it is for anyone who installed with high contrast already on.
+                        val day = prefs.theme.themeIdBeforeHighContrastDay.get()
+                        val night = prefs.theme.themeIdBeforeHighContrastNight.get()
+                        prefs.theme.dayThemeId.set(day.takeUnless { it == HighContrastDayTheme }
+                            ?: prefs.theme.dayThemeId.default)
+                        prefs.theme.nightThemeId.set(night.takeUnless { it == HighContrastNightTheme }
+                            ?: prefs.theme.nightThemeId.default)
+                    } else {
+                        prefs.theme.themeIdBeforeHighContrastDay.set(dayThemeId)
+                        prefs.theme.themeIdBeforeHighContrastNight.set(nightThemeId)
+                        prefs.theme.dayThemeId.set(HighContrastDayTheme)
+                        prefs.theme.nightThemeId.set(HighContrastNightTheme)
+                    }
+                }
+            },
+        )
+        ListPreference(
+            prefs.theme.mode,
+            icon = Icons.Default.BrightnessAuto,
+            modifier = Modifier.settingsSearchAnchor("pref__theme__mode__label"),
+            title = stringRes(R.string.pref__theme__mode__label),
+            entries = enumDisplayEntriesOf(ThemeMode::class),
+        )
+        Preference(
+            icon = Icons.Default.LightMode,
+            modifier = Modifier.settingsSearchAnchor("pref__theme__day"),
+            title = stringRes(R.string.pref__theme__day),
+            summary = themeManager.getThemeLabel(dayThemeId),
+            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_NIGHT },
+            onClick = {
+                navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_DAY))
+            },
+        )
+        Preference(
+            icon = Icons.Default.DarkMode,
+            modifier = Modifier.settingsSearchAnchor("pref__theme__night"),
+            title = stringRes(R.string.pref__theme__night),
+            summary = themeManager.getThemeLabel(nightThemeId),
+            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_DAY },
+            onClick = {
+                navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_NIGHT))
+            },
+        )
+        LocalTimePickerPreference(
+            pref = prefs.theme.sunriseTime,
+            title = stringRes(R.string.pref__theme__sunrise_time__label),
+            icon = Icons.Default.WbTwilight,
+            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
+        )
+        LocalTimePickerPreference(
+            pref = prefs.theme.sunsetTime,
+            title = stringRes(R.string.pref__theme__sunset_time__label),
+            icon = Icons.Default.Brightness2,
+            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
+        )
+        ColorPickerPreference(
+            pref = prefs.theme.accentColor,
+            modifier = Modifier.settingsSearchAnchor("pref__theme__theme_accent_color__label"),
+            title = stringRes(R.string.pref__theme__theme_accent_color__label),
+            defaultValueLabel = stringRes(R.string.action__default),
+            icon = Icons.Default.ColorLens,
+            defaultColors = ColorMappings.colors,
+            showAlphaSlider = false,
+            enableAdvancedLayout = true,
+            colorOverride = {
+                if (it.isMaterialYou(context)) {
+                    Color.Unspecified
+                } else {
+                    it
+                }
+            }
+        )
+
+        AddonManagementReferenceBox(type = ExtensionListScreenType.EXT_THEME)
+    }
+}

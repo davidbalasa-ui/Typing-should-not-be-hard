@@ -1,0 +1,635 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.app.settings.advanced
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.BuildConfig
+import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceModel
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.cacheManager
+import dev.patrickgold.florisboard.clipboardManager
+import dev.patrickgold.florisboard.dictate.data.prefs.DictateLegacyMigrator
+import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryEntry
+import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
+import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
+import dev.patrickgold.florisboard.dictate.data.prompts.PromptsDatabaseHelper
+import dev.patrickgold.florisboard.dictate.data.prompts.promptsMissingFrom
+import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
+import dev.patrickgold.florisboard.dictate.provider.hasNoSecrets
+import dev.patrickgold.florisboard.dictate.symbols.CustomSymbols
+import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsJson
+import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsStore
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
+import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.lib.cache.CacheManager
+import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.ext.ExtensionManager
+import dev.patrickgold.florisboard.lib.io.ZipUtils
+import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
+import dev.patrickgold.jetpref.datastore.runtime.DataStoreReader
+import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
+import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
+import dev.patrickgold.jetpref.datastore.ui.Preference
+import java.io.FileNotFoundException
+import java.text.DateFormat
+import java.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.florisboard.lib.android.readToFile
+import org.florisboard.lib.android.showLongToast
+import org.florisboard.lib.android.showLongToastSync
+import org.florisboard.lib.compose.FlorisButton
+import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisCardDefaults
+import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisOutlinedButton
+import org.florisboard.lib.compose.defaultFlorisOutlinedBox
+import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.io.FsFile
+import org.florisboard.lib.kotlin.io.deleteContentsRecursively
+import org.florisboard.lib.kotlin.io.readJson
+import org.florisboard.lib.kotlin.io.subDir
+import org.florisboard.lib.kotlin.io.subFile
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.LearnedBigramEntry
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordEntry
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordsStore
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
+import dev.patrickgold.florisboard.lib.FlorisLocale
+
+object Restore {
+    const val MIN_VERSION_CODE = 64
+    // Dictate's own application id (base, without the .debug/.beta variant suffixes) — a backup whose
+    // metadata package starts with this is a genuine Dictate backup, not a "third-party" one. Was still
+    // the upstream FlorisBoard id after the fork, which made every Dictate backup falsely warn.
+    const val PACKAGE_NAME = "net.devemperor.dictate"
+    const val BACKUP_ARCHIVE_FILE_NAME = "backup.zip"
+    // The plain archive inside a password-protected one (issue #470), deleted again once it is unpacked.
+    const val DECRYPTED_ARCHIVE_FILE_NAME = "decrypted_backup.zip"
+}
+
+/**
+ * Unpacks the plain backup [archive] into this workspace and reads what the restore screen shows about it.
+ *
+ * Shared by an ordinary archive and the one inside a password-protected archive, which is what makes a
+ * decrypted backup restore exactly like any other.
+ */
+private fun CacheManager.BackupAndRestoreWorkspace.readArchive(archive: FsFile) {
+    ZipUtils.unzip(archive, outputDir)
+    metadata = try {
+        outputDir.subFile(Backup.METADATA_JSON_NAME).readJson()
+    } catch (e: FileNotFoundException) {
+        error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
+    }
+    restoreWarningId = when {
+        metadata.versionCode != BuildConfig.VERSION_CODE -> {
+            R.string.backup_and_restore__restore__metadata_warn_different_version
+        }
+        !metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
+            R.string.backup_and_restore__restore__metadata_warn_different_vendor
+        }
+        else -> null
+    }
+    restoreErrorId = when {
+        metadata.packageName.isBlank() || metadata.versionCode < Restore.MIN_VERSION_CODE -> {
+            R.string.backup_and_restore__restore__metadata_error_invalid_metadata
+        }
+        else -> null
+    }
+    // Say up front that no keys will come back from this one (issue #367). Found by looking at the keyring
+    // the archive carries rather than at a flag, so it is equally true of an archive written by any
+    // version — and of one whose owner simply never set a key up.
+    restoreCredentialsMissing = runCatching {
+        val prefsFile = outputDir
+            .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
+            .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
+        prefsFile.exists() &&
+            BackupRedaction.accountsFrom(prefsFile.readText())?.hasNoSecrets == true
+    }.getOrDefault(false)
+}
+
+/**
+ * The preference import with the device's own credentials filled into whatever gaps the archive leaves
+ * (issue #367).
+ *
+ * JetPref hands the whole document over in one `read`, so one pass is the whole job — and doing it here
+ * rather than by rewriting the unpacked file leaves the archive in the cache exactly as it arrived.
+ */
+private class SecretPreservingReader(
+    private val delegate: DataStoreReader,
+    private val local: ProviderAccounts,
+) : DataStoreReader {
+    override suspend fun read() = BackupRedaction.restoreSecrets(delegate.read(), local)
+}
+
+@Composable
+fun RestoreScreen() = FlorisScreen {
+    title = stringRes(R.string.backup_and_restore__restore__title)
+    previewFieldVisible = false
+
+    val prefs by FlorisPreferenceStore
+    val navController = LocalNavController.current
+    val context = LocalContext.current
+    val cacheManager by context.cacheManager()
+
+    val restoreFilesSelector = remember { Backup.FilesSelector() }
+    var importStrategy by remember { mutableStateOf(ImportStrategy.Merge) }
+    // TODO: rememberCoroutineScope() is unusable because it provides the scope in a cancelled state, which does
+    //  not make sense at all. I suspect that this is a bug and once it is resolved we can use it here again.
+    val restoreScope = remember { CoroutineScope(Dispatchers.Main) }
+    var restoreWorkspace by remember {
+        mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
+    }
+    // A password-protected archive (issue #470) stays locked until its password is in: there is nothing in
+    // it to show or restore before that. Screen state rather than workspace fields, because unlocking
+    // changes what is shown without replacing the workspace, and only state makes Compose look again.
+    var archiveLocked by remember { mutableStateOf(false) }
+    var unlockPassword by remember { mutableStateOf("") }
+    var unlockReveal by remember { mutableStateOf(false) }
+    var unlockErrorId by remember { mutableStateOf<Int?>(null) }
+    var unlocking by remember { mutableStateOf(false) }
+
+    val restoreDataFromFileSystemLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            runCatching {
+                restoreWorkspace?.close()
+                restoreWorkspace = null
+                archiveLocked = false
+                unlockPassword = ""
+                unlockErrorId = null
+                val workspace = cacheManager.backupAndRestore.new()
+                workspace.zipFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
+                context.contentResolver.readToFile(uri, workspace.zipFile)
+                if (BackupEncryption.isEncrypted(workspace.zipFile)) {
+                    archiveLocked = true
+                } else {
+                    workspace.readArchive(workspace.zipFile)
+                }
+                restoreWorkspace = workspace
+            }.onFailure { error ->
+                context.showLongToastSync(
+                    R.string.backup_and_restore__restore__failure,
+                    "error_message" to error.localizedMessage,
+                )
+            }
+        },
+    )
+
+    // Off the main thread: the key alone takes about a second to derive, and the payload can run to
+    // hundreds of megabytes. A wrong password leaves the archive locked and the password in the field.
+    fun unlock(workspace: CacheManager.BackupAndRestoreWorkspace) {
+        if (unlocking || unlockPassword.isEmpty()) return
+        unlocking = true
+        unlockErrorId = null
+        val password = unlockPassword
+        restoreScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val plainArchive = workspace.inputDir.subFile(Restore.DECRYPTED_ARCHIVE_FILE_NAME)
+                    try {
+                        BackupEncryption.decrypt(workspace.zipFile, password, plainArchive)
+                        workspace.readArchive(plainArchive)
+                    } finally {
+                        plainArchive.delete()
+                    }
+                }
+            }
+            unlocking = false
+            result.onSuccess {
+                unlockPassword = ""
+                archiveLocked = false
+            }.onFailure { error ->
+                when (error) {
+                    is BackupEncryption.WrongPasswordException -> {
+                        unlockErrorId = R.string.backup_and_restore__restore__wrong_password
+                    }
+                    is BackupEncryption.UnreadableArchiveException -> {
+                        unlockErrorId = R.string.backup_and_restore__restore__encrypted_unreadable
+                    }
+                    else -> context.showLongToast(
+                        R.string.backup_and_restore__restore__failure,
+                        "error_message" to error.localizedMessage,
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun performRestore() {
+        val workspace = restoreWorkspace!!
+        val shouldReset = importStrategy == ImportStrategy.Erase
+        if (restoreFilesSelector.jetprefDatastore) {
+            val file = workspace.outputDir
+                .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
+                .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
+            if (file.exists()) {
+                val fileBasedStorage = FileBasedStorage(file.path)
+                // The keyring is a single preference, so merging an archive whose keys were left out would
+                // replace real keys with nothing (issue #367). Fill its gaps from what is already here on
+                // the way in. Erase is left alone: wiping is what that mode was chosen for.
+                val reader = if (importStrategy == ImportStrategy.Merge) {
+                    SecretPreservingReader(fileBasedStorage, prefs.dictate.providerAccounts.get())
+                } else {
+                    fileBasedStorage
+                }
+                FlorisPreferenceStore.import(importStrategy, reader).getOrThrow()
+                // An archive from before 2026-11-04 carries the reasoning effort as one global setting;
+                // move it into the accounts now rather than at the next app start.
+                DictateLegacyMigrator.migrateReasoningToAccountsIfNeeded()
+                // And a backup can name a transcription provider whose region no longer transcribes.
+                DictateLegacyMigrator.moveTranscriptionOffUnsupportedAccounts()
+            }
+            // The symbol pages are one setting (issue #342): restored whole, never merged key by key. An
+            // archive without them had every key at its default, which only Erase takes literally.
+            val symbolsFile = workspace.outputDir.subDir("dictate").subFile(Backup.CUSTOM_SYMBOLS_JSON_NAME)
+            val restoredSymbols = symbolsFile.takeIf { it.exists() }?.readText()?.let(CustomSymbolsJson::decode)
+            when {
+                restoredSymbols != null -> CustomSymbolsStore.set(context, restoredSymbols)
+                shouldReset -> CustomSymbolsStore.set(context, CustomSymbols())
+            }
+        }
+        if (restoreFilesSelector.dictatePrompts) {
+            val promptsFile = workspace.outputDir.subDir("dictate").subFile(Backup.DICTATE_PROMPTS_JSON_NAME)
+            if (promptsFile.exists()) {
+                val prompts = promptsFile.readJson<List<PromptModel>>()
+                val db = PromptsDatabaseHelper.getInstance(context)
+                if (shouldReset) {
+                    // Erase mode: replace the whole prompt list with the backed-up one.
+                    db.replaceAll(prompts)
+                } else {
+                    // Merge mode: append the backed-up prompts that are not already here.
+                    db.addAll(promptsMissingFrom(db.getAll(), prompts))
+                }
+            }
+        }
+        if (restoreFilesSelector.dictateHistory) {
+            // Older backups (before the history feature) simply have no such file → skipped, staying
+            // compatible. Erase replaces the store, Merge appends.
+            val dictateDir = workspace.outputDir.subDir("dictate")
+            val historyFile = dictateDir.subFile(Backup.DICTATE_HISTORY_JSON_NAME)
+            if (historyFile.exists()) {
+                val entries = historyFile.readJson<List<DictateHistoryEntry>>()
+                val audioDir = dictateDir.subDir(Backup.DICTATE_HISTORY_AUDIO_DIR)
+                DictateHistoryStore.importEntries(
+                    context, entries, audioDir.takeIf { it.exists() }, replace = shouldReset,
+                )
+            }
+        }
+        if (restoreFilesSelector.personalDictionary) {
+            // Older backups have no such directory → skipped, same as every other component here.
+            val dictionaryDir = workspace.outputDir.subDir(Backup.DICTIONARY_DIR)
+            val personalFile = dictionaryDir.subFile(Backup.PERSONAL_DICTIONARY_JSON_NAME)
+            if (personalFile.exists()) {
+                val dm = DictionaryManager.default().also { it.loadUserDictionariesIfNecessary() }
+                val dao = dm.florisUserDictionaryDao()
+                if (dao != null) {
+                    if (shouldReset) dao.deleteAll()
+                    for (entry in personalFile.readJson<List<UserDictionaryEntry>>()) {
+                        val locale = entry.locale?.let { runCatching { FlorisLocale.fromTag(it) }.getOrNull() }
+                        // Merge mode must not create a second row for a word that is already there;
+                        // a restore is usually adding one device's vocabulary to another's, not
+                        // replacing it.
+                        if (dao.queryExact(entry.word, locale).isEmpty()) {
+                            dao.insert(entry.copy(id = 0))
+                        }
+                    }
+                }
+            }
+            val learnedFile = dictionaryDir.subFile(Backup.LEARNED_WORDS_JSON_NAME)
+            val pairsFile = dictionaryDir.subFile(Backup.LEARNED_BIGRAMS_JSON_NAME)
+            if (learnedFile.exists() || pairsFile.exists()) {
+                // [wipeAll], not [forgetAll]: a reset restore replaces the vocabulary wholesale, and
+                // sparing promoted rows here would leave two vocabularies merged into one (issue #375).
+                if (shouldReset) LearnedWordsStore.wipeAll(context)
+                LearnedWordsStore.importAll(
+                    context = context,
+                    words = if (learnedFile.exists()) learnedFile.readJson<List<LearnedWordEntry>>() else emptyList(),
+                    bigrams = if (pairsFile.exists()) pairsFile.readJson<List<LearnedBigramEntry>>() else emptyList(),
+                )
+            }
+        }
+        val workspaceFilesDir = workspace.outputDir.subDir("files")
+        if (restoreFilesSelector.imeKeyboard) {
+            val srcDir = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH)
+            val dstDir = context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH)
+            if (shouldReset) {
+                dstDir.deleteContentsRecursively()
+            }
+            if (srcDir.exists()) {
+                srcDir.copyRecursively(dstDir, overwrite = true)
+            }
+        }
+        if (restoreFilesSelector.imeTheme) {
+            val srcDir = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH)
+            val dstDir = context.filesDir.subDir(ExtensionManager.IME_THEME_PATH)
+            if (shouldReset) {
+                dstDir.deleteContentsRecursively()
+            }
+            if (srcDir.exists()) {
+                srcDir.copyRecursively(dstDir, overwrite = true)
+            }
+        }
+        val clipboardManager = context.clipboardManager().value
+        // Erase replaces what is ticked. An unticked clipboard is not part of this restore, and it used to be
+        // wiped all the same.
+        if (shouldReset && restoreFilesSelector.provideClipboardItems()) {
+            clipboardManager.clearFullHistory()
+            ClipboardFileStorage.resetClipboardFileStorage(context)
+        }
+
+        if (restoreFilesSelector.provideClipboardItems()) {
+            val clipboardFilesDir = workspace.outputDir.subDir("clipboard")
+
+            if (restoreFilesSelector.clipboardTextItems) {
+                val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
+                if (clipboardItems.exists()) {
+                    val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
+                    clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.TEXT })
+                }
+            }
+            if (restoreFilesSelector.clipboardImageItems) {
+                val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
+                if (clipboardItems.exists()) {
+                    val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
+                    for (item in clipboardItemsList.filter { it.type == ItemType.IMAGE }) {
+                        ClipboardFileStorage.insertFileFromBackupIfNotExisting(
+                            context,
+                            clipboardFilesDir.subFile(
+                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/${
+                                    item.uri!!.path!!.split(
+                                        '/'
+                                    ).last()
+                                }"
+                            )
+                        )
+                    }
+                    clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.IMAGE })
+                }
+            }
+            if (restoreFilesSelector.clipboardVideoItems) {
+                val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
+                if (clipboardItems.exists()) {
+                    val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
+                    for (item in clipboardItemsList.filter { it.type == ItemType.VIDEO }) {
+                        ClipboardFileStorage.insertFileFromBackupIfNotExisting(
+                            context,
+                            clipboardFilesDir.subFile(
+                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/${
+                                    item.uri!!.path!!.split(
+                                        '/'
+                                    ).last()
+                                }"
+                            )
+                        )
+                    }
+                    clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.VIDEO })
+                }
+            }
+        }
+    }
+
+    bottomBar {
+        FlorisButtonBar {
+            ButtonBarSpacer()
+            ButtonBarTextButton(
+                onClick = {
+                    restoreWorkspace?.close()
+                    navController.navigateUp()
+                },
+                text = stringRes(R.string.action__cancel),
+            )
+            ButtonBarButton(
+                onClick = {
+                    restoreScope.launch(Dispatchers.Main) {
+                        try {
+                            performRestore()
+                            // Done with the unpacked archive. Nothing else ever clears it, and what it holds
+                            // is readable, keys included — for a password-protected archive, the only
+                            // readable copy there is (issue #470).
+                            restoreWorkspace?.close()
+                            context.showLongToast(R.string.backup_and_restore__restore__success)
+                            navController.navigateUp()
+                        } catch (e: Throwable) {
+                            e.printStackTrace()
+                            context.showLongToast(
+                                R.string.backup_and_restore__restore__failure,
+                                "error_message" to e.localizedMessage,
+                            )
+                        }
+                    }
+                },
+                text = stringRes(R.string.action__restore),
+                enabled = restoreWorkspace != null && !archiveLocked && restoreWorkspace?.restoreErrorId == null,
+            )
+        }
+    }
+
+    content {
+        FlorisOutlinedBox(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            title = stringRes(R.string.backup_and_restore__restore__mode),
+        ) {
+            RadioListItem(
+                onClick = {
+                    importStrategy = ImportStrategy.Merge
+                },
+                selected = importStrategy == ImportStrategy.Merge,
+                text = stringRes(R.string.backup_and_restore__restore__mode_merge),
+            )
+            RadioListItem(
+                onClick = {
+                    importStrategy = ImportStrategy.Erase
+                },
+                selected = importStrategy == ImportStrategy.Erase,
+                text = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite),
+            )
+        }
+        FlorisOutlinedButton(
+            onClick = {
+                runCatching {
+                    restoreDataFromFileSystemLauncher.launch("*/*")
+                }.onFailure { error ->
+                    context.showLongToastSync(
+                        R.string.backup_and_restore__restore__failure,
+                        "error_message" to error.localizedMessage,
+                    )
+                }
+            },
+            modifier = Modifier
+                .padding(vertical = 16.dp)
+                .align(Alignment.CenterHorizontally),
+            text = stringRes(R.string.action__select_file),
+            // Not while an archive is being unlocked: it would close the workspace that is being read.
+            enabled = !unlocking,
+        )
+        val workspace = restoreWorkspace
+        if (workspace == null) {
+            Text(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 16.dp),
+                text = stringRes(R.string.state__no_file_selected),
+                fontStyle = FontStyle.Italic,
+            )
+        } else if (archiveLocked) {
+            FlorisOutlinedBox(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                title = stringRes(R.string.backup_and_restore__restore__metadata),
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = stringRes(R.string.backup_and_restore__restore__encrypted),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    BackupPasswordField(
+                        value = unlockPassword,
+                        onValueChange = {
+                            unlockPassword = it
+                            unlockErrorId = null
+                        },
+                        label = stringRes(R.string.backup_and_restore__password),
+                        reveal = unlockReveal,
+                        onRevealChange = { unlockReveal = it },
+                        error = unlockErrorId?.let { stringRes(it) },
+                        imeAction = ImeAction.Done,
+                        onDone = { unlock(workspace) },
+                        enabled = !unlocking,
+                    )
+                    if (unlocking) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    FlorisButton(
+                        onClick = { unlock(workspace) },
+                        modifier = Modifier.align(Alignment.End),
+                        text = stringRes(R.string.backup_and_restore__restore__unlock),
+                        enabled = !unlocking && unlockPassword.isNotEmpty(),
+                    )
+                }
+            }
+        } else {
+            FlorisOutlinedBox(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                title = stringRes(R.string.backup_and_restore__restore__metadata),
+            ) {
+                Preference(
+                    icon = Icons.Default.Code,
+                    title = workspace.metadata.packageName,
+                )
+                Preference(
+                    icon = Icons.Outlined.Info,
+                    title = "${workspace.metadata.versionName} (${workspace.metadata.versionCode})",
+                )
+                Preference(
+                    icon = Icons.Default.Schedule,
+                    title = remember(workspace.metadata.timestamp) {
+                        val formatter = DateFormat.getDateTimeInstance()
+                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                        calendar.timeInMillis = workspace.metadata.timestamp
+                        formatter.format(calendar.time)
+                    },
+                )
+                if (workspace.restoreErrorId != null) {
+                    Column(modifier = Modifier.padding(FlorisCardDefaults.ContentPadding)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(9.dp)
+                                .padding(bottom = 8.dp)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.56f))
+                        )
+                        Text(
+                            text = stringRes(workspace.restoreErrorId!!),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            fontStyle = FontStyle.Italic,
+                        )
+                    }
+                } else if (workspace.restoreWarningId != null) {
+                    Column(modifier = Modifier.padding(FlorisCardDefaults.ContentPadding)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(9.dp)
+                                .padding(bottom = 8.dp)
+                                .background(LocalContentColor.current)
+                        )
+                        Text(
+                            text = stringRes(workspace.restoreWarningId!!),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LocalContentColor.current,
+                            fontStyle = FontStyle.Italic,
+                        )
+                    }
+                }
+                // A plain statement of fact, not a warning: an archive can legitimately carry no keys, and
+                // the point is only that the user learns it here rather than after the device change.
+                if (workspace.restoreErrorId == null && workspace.restoreCredentialsMissing) {
+                    Text(
+                        modifier = Modifier.padding(FlorisCardDefaults.ContentPadding),
+                        text = stringRes(R.string.backup_and_restore__restore__metadata_note_no_credentials),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontStyle = FontStyle.Italic,
+                    )
+                }
+            }
+            if (workspace.restoreErrorId == null) {
+                BackupFilesSelector(
+                    filesSelector = restoreFilesSelector,
+                    title = stringRes(R.string.backup_and_restore__restore__files),
+                    showCredentials = false,
+                )
+            }
+        }
+    }
+}

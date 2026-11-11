@@ -1,0 +1,674 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard
+
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.content.res.Configuration
+import android.inputmethodservice.ExtractEditText
+import android.os.Build
+import android.os.Bundle
+import android.os.LocaleList
+import android.util.Size
+import android.view.KeyEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InlineSuggestionsRequest
+import android.view.inputmethod.InlineSuggestionsResponse
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.inline.InlinePresentationSpec
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import android.view.WindowManager
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.app.FlorisAppActivity
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.editor.EditorRange
+import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
+import dev.patrickgold.florisboard.ime.input.InputFeedbackController
+import dev.patrickgold.florisboard.ime.keyboard.isFullscreenInputRequired
+import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
+import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
+import dev.patrickgold.florisboard.ime.landscapeinput.showsFullscreenInput
+import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
+import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
+import dev.patrickgold.florisboard.ime.window.ImeFormFactor
+import dev.patrickgold.florisboard.ime.window.ImeRootView
+import dev.patrickgold.florisboard.ime.window.ImeWindowController
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.devtools.flogInfo
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
+import dev.patrickgold.florisboard.lib.util.InputMethodUtils
+import dev.patrickgold.florisboard.lib.util.debugSummarize
+import dev.patrickgold.florisboard.lib.util.launchActivity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
+import org.florisboard.lib.android.AndroidInternalR
+import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.android.systemServiceOrNull
+import org.florisboard.lib.kotlin.collectIn
+import org.florisboard.lib.kotlin.collectLatestIn
+import java.lang.ref.WeakReference
+
+/**
+ * Global weak reference for the [FlorisImeService] class. This is needed as certain actions (request hide, switch to
+ * another input method, getting the editor instance / input connection, etc.) can only be performed by an IME
+ * service class and no context-bound managers. This reference is exclusively used by the companion helper methods
+ * of [FlorisImeService], which provide a safe and memory-leak-free way of performing certain actions on the Floris
+ * input method service instance.
+ */
+private var FlorisImeServiceReference = WeakReference<FlorisImeService?>(null)
+
+/**
+ * Core class responsible for linking together all managers and UI composables to provide an IME service. Sets
+ * up the window and context to be lifecycle-aware, so LiveData and Jetpack Compose can be used without issues.
+ */
+class FlorisImeService : LifecycleInputMethodService() {
+    companion object {
+        private val InlineSuggestionUiSmallestSize = Size(0, 0)
+        private val InlineSuggestionUiBiggestSize = Size(Int.MAX_VALUE, Int.MAX_VALUE)
+
+        fun currentInputConnection(): InputConnection? {
+            return FlorisImeServiceReference.get()?.currentInputConnection
+        }
+
+        fun inputFeedbackController(): InputFeedbackController? {
+            return FlorisImeServiceReference.get()?.inputFeedbackController
+        }
+
+        /**
+         * Hides the IME and launches [FlorisAppActivity]. When [deepLinkPath] is given (e.g.
+         * `"settings/dictate/prompts"`), the activity opens directly on that screen via the same
+         * `ui://florisboard/...` deep-link mechanism used for external links.
+         */
+        fun launchSettings(deepLinkPath: String? = null) {
+            val ims = FlorisImeServiceReference.get() ?: return
+            ims.requestHideSelf(0)
+            ims.launchActivity(FlorisAppActivity::class) {
+                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+                if (deepLinkPath != null) {
+                    it.action = Intent.ACTION_VIEW
+                    it.addCategory(Intent.CATEGORY_BROWSABLE)
+                    it.data = Uri.parse("ui://florisboard/$deepLinkPath")
+                }
+            }
+        }
+
+        fun showUi() {
+            val ims = FlorisImeServiceReference.get() ?: return
+            ims.showUi()
+        }
+
+        fun hideUi() {
+            val ims = FlorisImeServiceReference.get() ?: return
+            ims.hideUi()
+        }
+
+        fun switchToPrevInputMethod(): Boolean {
+            val ims = FlorisImeServiceReference.get() ?: return false
+            return ims.switchToPrevInputMethod()
+        }
+
+        fun switchToNextInputMethod(): Boolean {
+            val ims = FlorisImeServiceReference.get() ?: return false
+            return ims.switchToNextInputMethod()
+        }
+
+        fun showImePicker(): Boolean {
+            val ims = FlorisImeServiceReference.get() ?: return false
+            return InputMethodUtils.showImePicker(ims)
+        }
+
+        fun windowControllerOrNull(): ImeWindowController? {
+            val ims = FlorisImeServiceReference.get() ?: return null
+            return ims.windowController
+        }
+    }
+
+    fun hideUi() {
+        requestHideSelf(0)
+    }
+
+    /**
+     * Show the Ime UI
+     *
+     * Note: This function can be replaced with a `requestShowSelf(0)`
+     * call once we've set the minApiLevel to 28 (Android 9)
+     */
+    fun showUi() {
+        if (AndroidVersion.ATLEAST_API28_P) {
+            requestShowSelf(0)
+        } else {
+            @Suppress("DEPRECATION")
+            systemServiceOrNull(InputMethodManager::class)
+                ?.showSoftInputFromInputMethod(currentInputBinding.connectionToken, 0)
+        }
+    }
+
+
+    /**
+     * Switch to previous input method
+     *
+     * Note: This function can be replaced with a `switchToPreviousInputMethod()`
+     * call once we've set the minApiLevel to 28 (Android 9)
+     *
+     * @return true if the switch was successful
+     */
+    fun switchToPrevInputMethod(): Boolean {
+        val imm = systemServiceOrNull(InputMethodManager::class)
+        try {
+            if (AndroidVersion.ATLEAST_API28_P) {
+                return switchToPreviousInputMethod().also { armInstantRecordingIfSwitched(it) }
+            } else {
+                window.window?.let { window ->
+                    @Suppress("DEPRECATION")
+                    return (imm?.switchToLastInputMethod(window.attributes.token) == true)
+                        .also { armInstantRecordingIfSwitched(it) }
+                }
+            }
+        } catch (e: Exception) {
+            flogError { "Unable to switch to the previous IME" }
+            imm?.showInputMethodPicker()
+        }
+        return false
+    }
+
+    /**
+     * Switch to next input method
+     *
+     * Note: This function can be replaced with a `switchToNextInputMethod(false)`
+     * call once we've set the minApiLevel to 28 (Android 9)
+     *
+     * @return true if the switch was successful
+     */
+    /**
+     * Notes that the user is leaving through our own switch key, so the next open can be recognised as
+     * coming back (issue #224). Only a successful switch counts, so the worst case is a missed
+     * auto-start, never a surprising one. See [InstantRecordingArm] for why this is not a preference.
+     */
+    private fun armInstantRecordingIfSwitched(switched: Boolean) {
+        if (!switched) return
+        dev.patrickgold.florisboard.dictate.InstantRecordingArm.arm(this)
+    }
+
+    fun switchToNextInputMethod(): Boolean {
+        val imm = systemServiceOrNull(InputMethodManager::class)
+        try {
+            if (AndroidVersion.ATLEAST_API28_P) {
+                return switchToNextInputMethod(false).also { armInstantRecordingIfSwitched(it) }
+            } else {
+                window.window?.let { window ->
+                    @Suppress("DEPRECATION")
+                    return (imm?.switchToNextInputMethod(window.attributes.token, false) == true)
+                        .also { armInstantRecordingIfSwitched(it) }
+                }
+            }
+        } catch (e: Exception) {
+            flogError { "Unable to switch to the next IME" }
+            imm?.showInputMethodPicker()
+        }
+        return false
+    }
+
+
+    private val prefs by FlorisPreferenceStore
+    val editorInstance by editorInstance()
+    private val keyboardManager by keyboardManager()
+    private val nlpManager by nlpManager()
+    private val subtypeManager by subtypeManager()
+    private val themeManager by themeManager()
+
+    val windowController = ImeWindowController(prefs, lifecycleScope)
+
+    private val activeState get() = keyboardManager.activeState
+    val inputFeedbackController by lazy { InputFeedbackController.new(this) }
+    private val systemLocalesFlow = MutableStateFlow(LocaleList())
+    var resourcesContext by mutableStateOf(this as Context)
+        private set
+
+    private val wallpaperChangeReceiver = WallpaperChangeReceiver()
+
+    init {
+        setTheme(R.style.FlorisImeTheme)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        FlorisImeServiceReference = WeakReference(this)
+        // A keyboard service is created when it becomes the selected input method and destroyed when
+        // another one takes over, so being created *is* the "the user came to me" signal instant
+        // recording's third mode asks for (issue #224) — and unlike watching our own switch key, it sees
+        // the switch however it was made: our globe, the system picker, the notification shade. A plain
+        // field tap never reaches here, because the service is already alive by then.
+        dev.patrickgold.florisboard.dictate.InstantRecordingArm.arm(this)
+        systemLocalesFlow.value = resources.configuration.locales
+
+        WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
+        windowController.onConfigurationChanged(resources.configuration)
+        windowController.activeWindowConfig.collectLatestIn(lifecycleScope) {
+            keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now
+        }
+
+        combine(
+            systemLocalesFlow,
+            subtypeManager.activeSubtypeFlow,
+            prefs.localization.displayKeyboardLabelsInSubtypeLanguage.asFlow(),
+        ) { systemLocales, subtype, shouldUseSubtypeLanguage ->
+            systemLocales to (if (shouldUseSubtypeLanguage) subtype.primaryLocale else null)
+        }.collectIn(lifecycleScope) { (systemLocales, subtypeLocale) ->
+            val config = Configuration().apply {
+                setToDefaults()
+                if (subtypeLocale != null) {
+                    setLocale(subtypeLocale.base)
+                } else {
+                    setLocales(systemLocales)
+                }
+            }
+            resourcesContext = createConfigurationContext(config)
+        }
+
+        prefs.physicalKeyboard.showOnScreenKeyboard.asFlow().collectIn(lifecycleScope) {
+            updateInputViewShown()
+        }
+
+        // Keep the screen on for the whole dictation (issue #231), applied to the IME window itself.
+        // This used to live in the Smartbar's recording UI, but that composable is not composed while a
+        // panel (prompts / history / GIF) is open — so the flag silently dropped mid-dictation, and with
+        // no recent touch input the screen then turned off almost immediately, killing the recording.
+        // Driving it from the controller state at window level makes it independent of what UI is shown.
+        // Also held through transcribing/rewording so the finished text can't be lost to a sleeping screen.
+        combine(
+            DictateController.state,
+            prefs.dictate.keepScreenAwake.asFlow(),
+        ) { state, keepAwake ->
+            keepAwake && (
+                state is DictateController.UiState.Recording ||
+                    state is DictateController.UiState.Transcribing ||
+                    state is DictateController.UiState.Rewording
+                )
+        }.collectIn(lifecycleScope) { keepOn ->
+            val imeWindow = window?.window ?: return@collectIn
+            if (keepOn) {
+                imeWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                imeWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+
+        @Suppress("DEPRECATION") // We do not retrieve the wallpaper but only listen to changes
+        registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+    }
+
+    override fun onCreateInputView(): View? {
+        super.installViewTreeOwners()
+        val content = window.window!!.findViewById<ViewGroup>(android.R.id.content)
+        content.addView(ImeRootView(this))
+        // Disable the default input view placement
+        return null
+    }
+
+    override fun onCreateCandidatesView(): View? {
+        // Disable the default candidates view
+        return null
+    }
+
+    override fun onCreateExtractTextView(): View {
+        super.installViewTreeOwners()
+        // Consider adding a fallback to the default extract edit layout if user reports come
+        // that this causes a crash, especially if the device manufacturer of the user device
+        // is a known one to break AOSP standards...
+        val defaultExtractView = super.onCreateExtractTextView()
+        if (defaultExtractView == null || defaultExtractView !is ViewGroup) {
+            return ExtractedInputRootView(this, null)
+        }
+        val extractEditText = defaultExtractView.findViewById<ExtractEditText>(android.R.id.inputExtractEditText)
+        (extractEditText?.parent as? ViewGroup)?.removeView(extractEditText)
+        defaultExtractView.let {
+            it.removeAllViews()
+            it.addView(ExtractedInputRootView(this, extractEditText))
+        }
+        return defaultExtractView
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        systemLocalesFlow.value = newConfig.locales
+        windowController.onConfigurationChanged(newConfig)
+        themeManager.configurationChangeCounter.update { it + 1 }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // If the service is torn down mid-recording, finalize and keep the audio and release the mic
+        // instead of leaking the (process-scoped) recorder (issue #147). No-op when not recording, and
+        // for a dictation the keyboard does not own — the floating button's outlives it (issue #293).
+        dev.patrickgold.florisboard.dictate.DictateController.stashRecordingOnHide(this)
+        unregisterReceiver(wallpaperChangeReceiver)
+        FlorisImeServiceReference = WeakReference(null)
+    }
+
+    override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
+        flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
+        super.onStartInput(info, restarting)
+        if (info == null) return
+        val editorInfo = FlorisEditorInfo.wrap(info)
+        editorInstance.handleStartInput(editorInfo)
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
+        super.onStartInputView(info, restarting)
+        if (info == null) return
+        val editorInfo = FlorisEditorInfo.wrap(info)
+        activeState.batchEdit {
+            // A new editor field invalidates any in-progress emoji search (issue #110); drop it so we
+            // don't reappear on an unrelated field. imeUiMode is reset to TEXT just below anyway.
+            keyboardManager.closeEmojiSearch(returnToMedia = false)
+            // The same for every other field of the keyboard's own (issue #424) — the GIF, sticker and
+            // clipboard searches used to survive into the next app's field. The translate bar writes into
+            // the field it was opened on, so a new field ends it without a last write, which would land in
+            // the wrong place. A restart of the same field (an app changing its input type) leaves them.
+            if (!restarting) keyboardManager.closeInternalFields(finishTranslate = false)
+            if (activeState.imeUiMode != ImeUiMode.CLIPBOARD || prefs.clipboard.historyHideOnNextTextField.get()) {
+                activeState.imeUiMode = ImeUiMode.TEXT
+            }
+            activeState.isSelectionMode = editorInfo.initialSelection.isSelectionMode
+            editorInstance.handleStartInputView(editorInfo, isRestart = restarting)
+        }
+
+        // Typed snippet triggers (issue #283) are plain local text and must work without rewording ever
+        // being switched on — so they get their own refresh here rather than riding on the prompt strip's.
+        dev.patrickgold.florisboard.dictate.snippet.SnippetTriggers.refresh(this)
+
+        // File transcription: if the user picked a file via the long-press mic trampoline, transcribe
+        // it now that we are back on the field. Skips instant-recording when it kicks in.
+        val startedFileTranscription =
+            dev.patrickgold.florisboard.dictate.DictateController.consumePendingFileTranscription(this)
+
+        // Scan text (issue #390): the same trampoline shape as the file transcription above. A scan that
+        // belongs to another app is dropped inside consumePendingScan rather than shown here; a session
+        // left over from a previous field is dropped for the same reason.
+        dev.patrickgold.florisboard.dictate.scan.ScanController.clearIfForeign(this)
+        val startedScan = dev.patrickgold.florisboard.dictate.scan.ScanController.consumePendingScan(this)
+
+        val instantRecordingOn = prefs.dictate.instantRecording.get()
+
+        // "Only after switching to Dictate" (issue #224). The IME API cannot say how the keyboard was
+        // opened, so the question is answered from the other side: leaving through our own switch key is
+        // something we can see, and this open is the return trip. Consumed on *every* open, whether or
+        // not it fires — see [InstantRecordingArm].
+        val armedForSwitchIn = dev.patrickgold.florisboard.dictate.InstantRecordingArm.consume(this)
+        val instantRecordingAllowedHere =
+            instantRecordingOn && (!prefs.dictate.instantRecordingAfterSwitchOnly.get() || armedForSwitchIn)
+
+        // Don't auto-start on number-only fields (number/phone/PIN/date-time), where dictation rarely
+        // makes sense, when the user opted to skip them (issue #146).
+        val isNumericField = editorInfo.inputAttributes.type in setOf(
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Type.NUMBER,
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Type.PHONE,
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Type.DATETIME,
+        )
+        val skipInstantForNumeric = isNumericField && prefs.dictate.instantRecordingSkipNumeric.get()
+
+        // Interrupted recording: if a recording was finalized because the keyboard closed mid-recording,
+        // offer to send it now. This recovery feature is mutually exclusive with instant recording: when
+        // instant recording is on we never offer (and never stash — see stashRecordingOnHide), so opening
+        // the keyboard always starts a fresh recording instead of being blocked (issue #120). The user is
+        // told about this trade-off when enabling instant recording.
+        val offeredInterrupted = !instantRecordingOn &&
+            dev.patrickgold.florisboard.dictate.DictateController.maybeOfferInterruptedRecording(this)
+
+        // Instant recording: optionally start dictation as soon as the keyboard opens on a field.
+        if (!startedFileTranscription &&
+            !startedScan &&
+            !offeredInterrupted &&
+            !restarting &&
+            instantRecordingAllowedHere &&
+            !skipInstantForNumeric &&
+            dev.patrickgold.florisboard.dictate.DictateController.state.value is
+                dev.patrickgold.florisboard.dictate.DictateController.UiState.Idle &&
+            androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            dev.patrickgold.florisboard.dictate.DictateController.onMicClick(this)
+        }
+
+        // "Dictate was updated" nudge (roadmap 11.9): shown in the Smartbar after an app update so users
+        // who rarely open the settings still discover the changelog. Checked first so it takes priority
+        // over the rate/donate nudge; both no-op unless idle, so neither interrupts a recording above.
+        dev.patrickgold.florisboard.dictate.DictateController.maybePromptChangelog(this)
+        // Low credit, SayOVA, then rate/donate once enough audio was dictated (roadmap 9.7/9.8).
+        // Guarded internally to no-op unless idle, so it never interrupts a recording started above.
+        dev.patrickgold.florisboard.dictate.DictateController.maybePromptForReview()
+    }
+
+    override fun onEvaluateInputViewShown(): Boolean {
+        val config = resources.configuration
+        return super.onEvaluateInputViewShown()
+            || config.keyboard == Configuration.KEYBOARD_NOKEYS
+            || prefs.physicalKeyboard.showOnScreenKeyboard.get()
+    }
+
+    /**
+     * The user tapped the app's text field. Only the keyboard's own fields care: the translate bar
+     * (issue #424) hands the keys back to the app, a search closes (#394). Not every app reports this — a
+     * tap that moves the cursor is also caught in [onUpdateSelection] — but it is the one signal for a tap
+     * that lands exactly where the cursor already was.
+     */
+    override fun onViewClicked(focusChanged: Boolean) {
+        super.onViewClicked(focusChanged)
+        if (keyboardManager.translateQuery.value != null || keyboardManager.activeInternalField() != null) {
+            keyboardManager.onEditorClicked()
+        }
+    }
+
+    override fun onUpdateSelection(
+        oldSelStart: Int,
+        oldSelEnd: Int,
+        newSelStart: Int,
+        newSelEnd: Int,
+        candidatesStart: Int,
+        candidatesEnd: Int,
+    ) {
+        flogInfo { "old={start=$oldSelStart,end=$oldSelEnd} new={start=$newSelStart,end=$newSelEnd} composing={start=$candidatesStart,end=$candidatesEnd}" }
+        super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        // A cursor the keyboard did not move means the user is working in the app's field again: the
+        // translate bar gives the keys back (#424), a search closes (#394).
+        keyboardManager.onAppSelectionChanged(oldSelStart, oldSelEnd, newSelStart, newSelEnd)
+        activeState.batchEdit {
+            activeState.isSelectionMode = (newSelEnd - newSelStart) != 0
+            editorInstance.handleSelectionUpdate(
+                oldSelection = EditorRange.normalized(oldSelStart, oldSelEnd),
+                newSelection = EditorRange.normalized(newSelStart, newSelEnd),
+                composing = EditorRange.normalized(candidatesStart, candidatesEnd),
+            )
+        }
+    }
+
+    override fun onFinishInputView(finishingInput: Boolean) {
+        flogInfo { "finishing=$finishingInput" }
+        super.onFinishInputView(finishingInput)
+        editorInstance.handleFinishInputView()
+    }
+
+    override fun onFinishInput() {
+        flogInfo { "(no args)" }
+        super.onFinishInput()
+        editorInstance.handleFinishInput()
+        NlpInlineAutofill.clearInlineSuggestions()
+    }
+
+    override fun onWindowShown() {
+        super.onWindowShown()
+        if (windowController.onWindowShown()) {
+            flogInfo(LogTopic.IMS_EVENTS)
+            inputFeedbackController.updateSystemPrefsState()
+        } else {
+            flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already shown)" }
+        }
+        // Fallback for the file-transcription handoff: depending on how the user returns from the
+        // picker the keyboard may reappear without a fresh onStartInputView, so also check here. The
+        // claim mechanism makes this idempotent with the onStartInputView call.
+        dev.patrickgold.florisboard.dictate.DictateController.consumePendingFileTranscription(this)
+        // And the same fallback for a scan (issue #390) — returning from a camera app is exactly the
+        // route that brings the window back without a new input view. Claiming is a single directory
+        // rename, so whichever hook runs first wins and the other finds nothing.
+        dev.patrickgold.florisboard.dictate.scan.ScanController.consumePendingScan(this)
+    }
+
+    override fun onWindowHidden() {
+        super.onWindowHidden()
+        // Collapsing the keyboard during a recording finalizes and keeps the audio so far (instead of
+        // discarding it): the next keyboard open then offers to send the interrupted recording. Outside
+        // an active recording this is the normal teardown. A recording the keyboard does not own — the
+        // floating button's, or the system voice input's — is left running (issue #293).
+        dev.patrickgold.florisboard.dictate.DictateController.stashRecordingOnHide(this)
+        // Hiding the keyboard closes its own fields (issue #424). A translation ends the way closing the
+        // bar does: what was typed is still translated into the field, which has not changed.
+        keyboardManager.closeInternalFields(finishTranslate = true)
+        if (windowController.onWindowHidden()) {
+            flogInfo(LogTopic.IMS_EVENTS)
+            // The scan session deliberately survives a hidden window: the trip to the camera is itself
+            // one, so clearing here would mean backing out of the camera landed on an empty panel. What
+            // bounds it instead is ScanController.clearIfForeign (issue #390).
+            activeState.batchEdit {
+                activeState.imeUiMode = ImeUiMode.TEXT
+                activeState.isActionsOverflowVisible = false
+                activeState.isActionsEditorVisible = false
+                activeState.isTranscriptionProviderSelectionVisible = false
+            }
+        } else {
+            flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
+        }
+    }
+
+    override fun onEvaluateFullscreenMode(): Boolean {
+        val config = resources.configuration
+        if (config.orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            return false
+        }
+        // The window controller's root insets are measured by the keyboard view, which does not exist
+        // yet the first time the framework asks – so the window size comes from the configuration, the
+        // same source the platform reads the orientation from a few lines up.
+        val formFactor = ImeFormFactor.of(
+            DpRect(0.dp, 0.dp, config.screenWidthDp.dp, config.screenHeightDp.dp),
+        )
+        return prefs.keyboard.landscapeInputUiMode.get().showsFullscreenInput(
+            formFactor = formFactor,
+            platformWouldShow = super.onEvaluateFullscreenMode(),
+        )
+    }
+
+    override fun onUpdateExtractingVisibility(info: EditorInfo?) {
+        if (info != null) {
+            editorInstance.handleStartInputView(FlorisEditorInfo.wrap(info), isRestart = true)
+        }
+        when (prefs.keyboard.landscapeInputUiMode.get()) {
+            LandscapeInputUiMode.DYNAMICALLY_SHOW -> super.onUpdateExtractingVisibility(info)
+            LandscapeInputUiMode.NEVER_SHOW -> isExtractViewShown = false
+            LandscapeInputUiMode.ALWAYS_SHOW -> isExtractViewShown = true
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest? {
+        if (!prefs.smartbar.enabled.get() || !prefs.suggestion.api30InlineSuggestionsEnabled.get()) {
+            flogInfo(LogTopic.IMS_EVENTS) {
+                "Ignoring inline suggestions request because Smartbar and/or inline suggestions are disabled."
+            }
+            return null
+        }
+
+        flogInfo(LogTopic.IMS_EVENTS) { "Creating inline suggestions request" }
+        val stylesBundle = themeManager.createInlineSuggestionUiStyleBundle(this)
+        if (stylesBundle == null) {
+            flogWarning(LogTopic.IMS_EVENTS) { "Failed to retrieve inline suggestions style bundle" }
+            return null
+        }
+        val spec = InlinePresentationSpec.Builder(
+            InlineSuggestionUiSmallestSize,
+            InlineSuggestionUiBiggestSize,
+        ).run {
+            setStyle(stylesBundle)
+            build()
+        }
+
+        return InlineSuggestionsRequest.Builder(listOf(spec)).run {
+            setMaxSuggestionCount(InlineSuggestionsRequest.SUGGESTION_COUNT_UNLIMITED)
+            build()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    override fun onInlineSuggestionsResponse(response: InlineSuggestionsResponse): Boolean {
+        val inlineSuggestions = response.inlineSuggestions
+        flogInfo(LogTopic.IMS_EVENTS) {
+            "Received inline suggestions response with ${inlineSuggestions.size} suggestion(s) provided."
+        }
+        return NlpInlineAutofill.showInlineSuggestions(this, inlineSuggestions)
+    }
+
+    override fun onComputeInsets(outInsets: Insets?) {
+        if (outInsets == null) return
+        val state = keyboardManager.activeState.snapshot()
+        windowController.onComputeInsets(outInsets, state.isFullscreenInputRequired())
+    }
+
+    override fun getTextForImeAction(imeOptions: Int): String? {
+        return try {
+            when (imeOptions and EditorInfo.IME_MASK_ACTION) {
+                EditorInfo.IME_ACTION_NONE -> null
+                EditorInfo.IME_ACTION_GO -> resourcesContext.getString(AndroidInternalR.string.ime_action_go)
+                EditorInfo.IME_ACTION_SEARCH -> resourcesContext.getString(AndroidInternalR.string.ime_action_search)
+                EditorInfo.IME_ACTION_SEND -> resourcesContext.getString(AndroidInternalR.string.ime_action_send)
+                EditorInfo.IME_ACTION_NEXT -> resourcesContext.getString(AndroidInternalR.string.ime_action_next)
+                EditorInfo.IME_ACTION_DONE -> resourcesContext.getString(AndroidInternalR.string.ime_action_done)
+                EditorInfo.IME_ACTION_PREVIOUS -> resourcesContext.getString(AndroidInternalR.string.ime_action_previous)
+                else -> resourcesContext.getString(AndroidInternalR.string.ime_action_default)
+            }
+        } catch (_: Throwable) {
+            super.getTextForImeAction(imeOptions)?.toString()
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return keyboardManager.onHardwareKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+    }
+}

@@ -1,0 +1,544 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.smartbar
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isUnspecified
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
+import dev.patrickgold.florisboard.dictate.ui.DictatePromptRow
+import dev.patrickgold.florisboard.dictate.ui.DictatePromptStrip
+import dev.patrickgold.florisboard.dictate.ui.DictateSmartbarUi
+import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.keyData
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.ToggleOverflowPanelAction
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
+import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.nlpManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.compose.horizontalTween
+import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.compose.verticalTween
+import org.florisboard.lib.snygg.ui.SnyggBox
+import org.florisboard.lib.snygg.ui.SnyggColumn
+import org.florisboard.lib.snygg.ui.SnyggIcon
+import org.florisboard.lib.snygg.ui.SnyggIconButton
+import org.florisboard.lib.snygg.ui.SnyggRow
+import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
+
+const val AnimationDuration = 200
+
+val VerticalEnterTransition = EnterTransition.verticalTween(AnimationDuration)
+val VerticalExitTransition = ExitTransition.verticalTween(AnimationDuration)
+
+private val HorizontalEnterTransition = EnterTransition.horizontalTween(AnimationDuration)
+private val HorizontalExitTransition = ExitTransition.horizontalTween(AnimationDuration)
+
+private val NoEnterTransition = EnterTransition.horizontalTween(0)
+private val NoExitTransition = ExitTransition.horizontalTween(0)
+
+private val AnimationTween = tween<Float>(AnimationDuration)
+private val NoAnimationTween = tween<Float>(0)
+
+/**
+ * @param showPromptRow false while one of the keyboard's own fields is open (issue #424): the field takes
+ *  the prompt row's place above the Smartbar.
+ */
+@Composable
+fun Smartbar(showPromptRow: Boolean = true) {
+    val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
+    val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
+    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
+
+    // Always-on rewording prompt row (ROW layout mode): pinned above the Smartbar so the prompts are
+    // permanently visible. The live-prompt chip is always present, so the row shows even with no saved
+    // prompts. The PANEL mode instead surfaces the prompts via a separate panel + contextual strip.
+    val dictatePromptsLayout by prefs.dictate.promptsLayout.collectAsState()
+    val dictateRewordingEnabled by prefs.dictate.rewordingEnabled.collectAsState()
+    val dictatePrompts by DictateController.prompts.collectAsState()
+    val showDictatePromptRow = showPromptRow && dictateRewordingEnabled && dictatePromptsLayout == DictatePromptsLayout.ROW
+    LaunchedEffect(showDictatePromptRow) {
+        if (showDictatePromptRow) DictateController.refreshPrompts(context)
+    }
+
+    AnimatedVisibility(
+        visible = smartbarEnabled,
+        enter = VerticalEnterTransition,
+        exit = VerticalExitTransition,
+    ) {
+        Column {
+            if (showDictatePromptRow) {
+                DictatePromptRow(dictatePrompts)
+            }
+            when (extendedActionsPlacement) {
+                ExtendedActionsPlacement.ABOVE_CANDIDATES -> {
+                    SnyggColumn(FlorisImeUi.Smartbar.elementName) {
+                        SmartbarSecondaryRow()
+                        SmartbarMainRow()
+                    }
+                }
+
+                ExtendedActionsPlacement.BELOW_CANDIDATES -> {
+                    SnyggColumn(FlorisImeUi.Smartbar.elementName) {
+                        SmartbarMainRow()
+                        SmartbarSecondaryRow()
+                    }
+                }
+
+                ExtendedActionsPlacement.OVERLAY_APP_UI -> {
+                    SnyggBox(FlorisImeUi.Smartbar.elementName,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(FlorisImeSizing.smartbarHeight),
+                        allowClip = false,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(FlorisImeSizing.smartbarHeight * 2)
+                                .absoluteOffset(y = -FlorisImeSizing.smartbarHeight),
+                            contentAlignment = Alignment.BottomStart,
+                        ) {
+                            SmartbarSecondaryRow()
+                        }
+                        SmartbarMainRow()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartbarMainRow(modifier: Modifier = Modifier) {
+    val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
+    val keyboardManager by context.keyboardManager()
+    val nlpManager by context.nlpManager()
+    val scope = rememberCoroutineScope()
+
+    val inlineSuggestions by NlpInlineAutofill.suggestions.collectAsState()
+    LaunchedEffect(inlineSuggestions) {
+        nlpManager.autoExpandCollapseSmartbarActions(null, inlineSuggestions)
+    }
+    val shouldShowInlineSuggestionsUi = AndroidVersion.ATLEAST_API30_R && inlineSuggestions.isNotEmpty()
+
+    val smartbarLayout by prefs.smartbar.layout.collectAsState()
+    val flipToggles by prefs.smartbar.flipToggles.collectAsState()
+    val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
+    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
+
+    val shouldAnimate by prefs.smartbar.sharedActionsExpandWithAnimation.collectAsState()
+
+    // Drives the in-Smartbar dictation indicator (recording timer / transcribing spinner).
+    val dictateState by DictateController.state.collectAsState()
+    val isDictating = dictateState !is DictateController.UiState.Idle
+
+    // Contextual prompt chip strip: shown in place of the candidates while text is selected and
+    // rewording is enabled (roadmap 4.3). The selection flag is derived as a distinct boolean so the
+    // Smartbar does not recompose on every keystroke, only when the selection mode actually flips.
+    val dictatePrompts by DictateController.prompts.collectAsState()
+    val dictateRewordingEnabled by prefs.dictate.rewordingEnabled.collectAsState()
+    val editorInstance by context.editorInstance()
+    val hasDictateSelection by remember(editorInstance) {
+        editorInstance.activeContentFlow
+            .map { it.selection.isSelectionMode && it.selectedText.isNotBlank() }
+            .distinctUntilChanged()
+    }.collectAsState(initial = false)
+    // Reload prompts whenever a selection starts, so the strip reflects edits made in settings.
+    LaunchedEffect(hasDictateSelection) {
+        if (hasDictateSelection) DictateController.refreshPrompts(context)
+    }
+    // The contextual on-selection strip belongs to the PANEL layout; in ROW mode the always-on prompt
+    // row above the Smartbar already shows every prompt, so the strip would be redundant.
+    val dictatePromptsLayout by prefs.dictate.promptsLayout.collectAsState()
+    val showDictatePromptStrip = dictateRewordingEnabled &&
+        dictatePromptsLayout == DictatePromptsLayout.PANEL &&
+        hasDictateSelection &&
+        dictatePrompts.isNotEmpty()
+
+    @Composable
+    fun SharedActionsToggle() {
+        val showActionsLabel = stringRes(R.string.smartbar__a11y_show_actions)
+        val showSuggestionsLabel = stringRes(R.string.smartbar__a11y_show_suggestions)
+        SnyggIconButton(
+            elementName = FlorisImeUi.SmartbarSharedActionsToggle.elementName,
+            onClick = {
+                if (/* was */ sharedActionsExpanded) {
+                    keyboardManager.activeState.isActionsOverflowVisible = false
+                }
+                scope.launch {
+                    prefs.smartbar.sharedActionsExpanded.set(!sharedActionsExpanded)
+                }
+            },
+            // Named after what a tap does, like the Dictate mic (#159): an arrow says nothing to a
+            // screen reader, which read this as a bare "button".
+            modifier = Modifier
+                .sizeIn(maxHeight = FlorisImeSizing.smartbarHeight)
+                .aspectRatio(1f)
+                .semantics {
+                    contentDescription = if (sharedActionsExpanded) showSuggestionsLabel else showActionsLabel
+                },
+        ) {
+            val transition = updateTransition(sharedActionsExpanded, label = "sharedActionsExpandedToggleBtn")
+            val rotation by transition.animateFloat(
+                transitionSpec = {
+                    if (shouldAnimate) AnimationTween else NoAnimationTween
+                },
+                label = "rotation",
+            ) {
+                if (it) 180f else 0f
+            }
+            val arrowIcon = if (flipToggles) {
+                Icons.AutoMirrored.Default.KeyboardArrowLeft
+            } else {
+                Icons.AutoMirrored.Default.KeyboardArrowRight
+            }
+            val incognitoIcon = ImageVector.vectorResource(id = R.drawable.ic_incognito)
+            val incognitoDisplayMode = prefs.keyboard.incognitoDisplayMode.collectAsState()
+            val isIncognitoMode = keyboardManager.activeState.isIncognitoMode
+            val icon = if (isIncognitoMode) {
+                when (incognitoDisplayMode.value) {
+                    IncognitoDisplayMode.REPLACE_SHARED_ACTIONS_TOGGLE -> incognitoIcon
+                    IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD -> arrowIcon
+                }
+            } else {
+                arrowIcon
+            }
+            SnyggIcon(
+                modifier = Modifier.rotate(if (incognitoDisplayMode.value == IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD) rotation else 0f),
+                imageVector = icon,
+            )
+        }
+    }
+
+    @Composable
+    fun RowScope.CenterContent() {
+        // Nothing special for the selection counter here on purpose (issue #335): starting a selection
+        // collapses the actions row for real, in NlpManager.autoExpandCollapseSmartbarActions, so the
+        // chevron turns with it and tapping it brings the buttons back. Overriding the state here instead
+        // would show the count while the arrow still claimed the row was open, and that tap would do
+        // nothing anyone could see.
+        val expanded = sharedActionsExpanded && smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        ) {
+            val enterTransition = if (shouldAnimate) HorizontalEnterTransition else NoEnterTransition
+            val exitTransition = if (shouldAnimate) HorizontalExitTransition else NoExitTransition
+            this@CenterContent.AnimatedVisibility(
+                visible = !expanded && !isDictating && !showDictatePromptStrip,
+                enter = enterTransition,
+                exit = exitTransition,
+            ) {
+                if (shouldShowInlineSuggestionsUi) {
+                    InlineSuggestionsUi(inlineSuggestions)
+                } else {
+                    CandidatesRow()
+                }
+            }
+            this@CenterContent.AnimatedVisibility(
+                visible = expanded && !isDictating,
+                enter = enterTransition,
+                exit = exitTransition,
+            ) {
+                QuickActionsRow(
+                    FlorisImeUi.SmartbarSharedActionsRow.elementName,
+                    modifier = modifier.fillMaxSize(),
+                )
+            }
+            this@CenterContent.AnimatedVisibility(
+                visible = !expanded && !isDictating && showDictatePromptStrip,
+                enter = enterTransition,
+                exit = exitTransition,
+            ) {
+                DictatePromptStrip(dictatePrompts, modifier = Modifier.fillMaxSize())
+            }
+            this@CenterContent.AnimatedVisibility(
+                visible = isDictating,
+                enter = enterTransition,
+                exit = exitTransition,
+            ) {
+                DictateSmartbarUi(dictateState)
+            }
+        }
+    }
+
+    @Composable
+    fun ExtendedActionsToggle() {
+        val showMoreActionsLabel = stringRes(R.string.smartbar__a11y_show_more_actions)
+        val hideMoreActionsLabel = stringRes(R.string.smartbar__a11y_hide_more_actions)
+        SnyggIconButton(
+            FlorisImeUi.SmartbarExtendedActionsToggle.elementName,
+            onClick = {
+                if (/* was */ extendedActionsExpanded) {
+                    keyboardManager.activeState.isActionsOverflowVisible = false
+                }
+                scope.launch {
+                    prefs.smartbar.extendedActionsExpanded.set(!extendedActionsExpanded)
+                }
+            },
+            modifier = Modifier
+                .sizeIn(maxHeight = FlorisImeSizing.smartbarHeight)
+                .aspectRatio(1f)
+                .semantics {
+                    contentDescription = if (extendedActionsExpanded) hideMoreActionsLabel else showMoreActionsLabel
+                },
+        ) {
+            val transition = updateTransition(extendedActionsExpanded, label = "smartbarSecondaryRowToggleBtn")
+            val alpha by transition.animateFloat(label = "alpha") { if (it) 1f else 0f }
+            val rotation by transition.animateFloat(label = "rotation") { if (it) 180f else 0f }
+            // Expanded icon
+            SnyggIcon(
+                FlorisImeUi.SmartbarExtendedActionsToggle.elementName,
+                modifier = Modifier
+                    .alpha(alpha)
+                    .rotate(rotation),
+                imageVector = Icons.Default.UnfoldLess,
+            )
+            // Not expanded icon
+            SnyggIcon(
+                FlorisImeUi.SmartbarExtendedActionsToggle.elementName,
+                modifier = Modifier
+                    .alpha(1f - alpha)
+                    .rotate(rotation - 180f),
+                imageVector = Icons.Default.UnfoldMore,
+            )
+        }
+    }
+
+    @Composable
+    fun StickyAction() {
+        val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
+        val secondActions by prefs.smartbar.actionSecondActions.collectAsState()
+        val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
+
+        val action = when {
+            actionArrangement.stickyAction != null -> {
+                actionArrangement.stickyAction
+            }
+
+            smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED && sharedActionsExpanded -> {
+                ToggleOverflowPanelAction
+            }
+
+            else -> null
+        }
+
+        if (action != null) {
+            QuickActionButton(
+                modifier = Modifier.padding(horizontal = 4.dp),
+                action = action,
+                evaluator = evaluator,
+                // The sticky slot is not necessarily the mic — anything can be dragged into it, and
+                // it is the one button that is always visible, so it earns a second action too.
+                secondAction = secondActions.childOf(action.keyData().code),
+            )
+        } else {
+            Spacer(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .aspectRatio(1f),
+            )
+        }
+    }
+
+    /**
+     * A running dictation in the two layouts that have no centre part: its bar (bin, timer, level) with the
+     * mic that stops it on the left, where "Actions only" shows the mic anyway.
+     *
+     * The bar used to live only in [CenterContent], which just the two mixed layouts have. So with "Actions
+     * only" the actions row simply stayed during a dictation, and a failed recording had no bin to drop it
+     * in (reported by e-mail); "Suggestions only" kept its suggestions the same way. The mic is looked up
+     * wherever the user put it, because the bar has no stop of its own; "Suggestions only" shows it here
+     * too, the one time it is needed.
+     */
+    @Composable
+    fun RowScope.DictationRow() {
+        val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
+        val secondActions by prefs.smartbar.actionSecondActions.collectAsState()
+        val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
+        val mic = (listOfNotNull(actionArrangement.stickyAction) + actionArrangement.dynamicActions)
+            .firstOrNull { it.keyData().code == KeyCode.IME_UI_MODE_DICTATE }
+        if (mic != null) {
+            QuickActionButton(
+                modifier = Modifier.padding(horizontal = 4.dp),
+                action = mic,
+                evaluator = evaluator,
+                secondAction = secondActions.childOf(mic.keyData().code),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        ) {
+            DictateSmartbarUi(dictateState)
+        }
+    }
+
+    SideEffect {
+        if (!shouldAnimate) {
+            scope.launch {
+                prefs.smartbar.sharedActionsExpandWithAnimation.set(true)
+            }
+        }
+    }
+
+    SnyggRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(FlorisImeSizing.smartbarHeight),
+    ) {
+        when (smartbarLayout) {
+            SmartbarLayout.SUGGESTIONS_ONLY -> {
+                if (isDictating) {
+                    DictationRow()
+                } else if (showDictatePromptStrip) {
+                    DictatePromptStrip(dictatePrompts, modifier = Modifier.fillMaxSize())
+                } else if (shouldShowInlineSuggestionsUi) {
+                    InlineSuggestionsUi(inlineSuggestions)
+                } else {
+                    CandidatesRow()
+                }
+            }
+
+            SmartbarLayout.ACTIONS_ONLY -> {
+                if (isDictating) {
+                    DictationRow()
+                } else if (shouldShowInlineSuggestionsUi) {
+                    InlineSuggestionsUi(inlineSuggestions)
+                } else {
+                    QuickActionsRow(FlorisImeUi.SmartbarSharedActionsRow.elementName)
+                }
+            }
+
+            SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED -> {
+                if (!flipToggles) {
+                    SharedActionsToggle()
+                    CenterContent()
+                    StickyAction()
+                } else {
+                    StickyAction()
+                    CenterContent()
+                    SharedActionsToggle()
+                }
+            }
+
+            SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED -> {
+                if (!flipToggles) {
+                    ExtendedActionsToggle()
+                    CenterContent()
+                    StickyAction()
+                } else {
+                    StickyAction()
+                    CenterContent()
+                    ExtendedActionsToggle()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartbarSecondaryRow(modifier: Modifier = Modifier) {
+    val prefs by FlorisPreferenceStore
+    val smartbarLayout by prefs.smartbar.layout.collectAsState()
+    val secondaryRowStyle = rememberSnyggThemeQuery(FlorisImeUi.SmartbarExtendedActionsRow.elementName)
+    val windowStyle = rememberSnyggThemeQuery(FlorisImeUi.Window.elementName)
+    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
+    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
+    val background = secondaryRowStyle.background().let { color ->
+        if (extendedActionsPlacement == ExtendedActionsPlacement.OVERLAY_APP_UI) {
+            if (color.isUnspecified || color.alpha == 0f) {
+                windowStyle.background(default = Color.Black)
+            } else {
+                color
+            }
+        } else {
+            color
+        }
+    }
+
+    AnimatedVisibility(
+        visible = smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED && extendedActionsExpanded,
+        enter = VerticalEnterTransition,
+        exit = VerticalExitTransition,
+    ) {
+        QuickActionsRow(
+            FlorisImeUi.SmartbarExtendedActionsRow.elementName,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(FlorisImeSizing.smartbarHeight)
+                .background(background),
+        )
+    }
+}

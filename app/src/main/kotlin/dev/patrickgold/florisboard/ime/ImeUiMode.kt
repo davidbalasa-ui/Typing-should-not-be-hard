@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime
+
+enum class ImeUiMode(val value: Int) {
+    TEXT(0),
+    MEDIA(1),
+    CLIPBOARD(2),
+    DICTATE(3),
+    HISTORY(4),
+    GIF(5),
+    STICKER(6),
+
+    /**
+     * The text editing panel (issue #386): cursor pad, select toggle and the clipboard actions on one
+     * surface. The values are packed into [dev.patrickgold.florisboard.ime.keyboard.KeyboardState], so
+     * adding a mode past the region's width silently truncates it — see the note there.
+     */
+    EDITING(7),
+
+    /**
+     * The scan panel (issue #390): the photo just taken, with every recognised line as a tappable
+     * region over it. Nothing about it is persisted — the session lives in
+     * [dev.patrickgold.florisboard.dictate.scan.ScanController] and dies with the keyboard window.
+     */
+    SCAN(8);
+
+    companion object {
+        fun fromInt(int: Int) = entries.firstOrNull { it.value == int } ?: TEXT
+    }
+
+    fun toInt(): Int = value
+}

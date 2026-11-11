@@ -1,0 +1,1238 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.editor
+
+import android.content.ClipDescription
+import android.net.Uri
+import android.content.ContentUris
+import android.content.Context
+import android.view.KeyEvent
+import androidx.core.content.FileProvider
+import androidx.core.view.inputmethod.InputConnectionCompat
+import androidx.core.view.inputmethod.InputContentInfoCompat
+import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.clipboardManager
+import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
+import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.input.InputShiftState
+import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
+import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.text.composing.Appender
+import dev.patrickgold.florisboard.ime.text.composing.Composer
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.lib.util.ClipboardTrim
+import dev.patrickgold.florisboard.lib.util.UrlSanitizer
+import dev.patrickgold.florisboard.nlpManager
+import dev.patrickgold.florisboard.subtypeManager
+import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.runBlocking
+import org.florisboard.lib.android.showShortToastSync
+
+/**
+ * Whether an app's `TYPE_TEXT_FLAG_NO_SUGGESTIONS` may be disregarded for a field of this [variation]
+ * (issue #296).
+ *
+ * The setting is only half the answer. A password field is the case the flag was written for, and the one
+ * place where honouring it is not a matter of taste: a composing region there hands the typed word to the
+ * dictionary, the autocorrect and, in the wrong app, the screen. So the exception is not spelled as a
+ * preference the user can get wrong — it is spelled here, and it is not negotiable.
+ */
+internal fun mayIgnoreNoSuggestionsFlag(
+    ignoreAppSuggestionBlock: Boolean,
+    variation: InputAttributes.Variation,
+): Boolean = ignoreAppSuggestionBlock && when (variation) {
+    InputAttributes.Variation.PASSWORD,
+    InputAttributes.Variation.VISIBLE_PASSWORD,
+    InputAttributes.Variation.WEB_PASSWORD,
+    -> false
+    else -> true
+}
+
+/**
+ * Which range an accepted suggestion replaces (issue #298): the composing region when there is one,
+ * otherwise the word the cursor sits in.
+ *
+ * The two used to be the same question, because a candidate could only ever appear while a composing
+ * region was set. Emoji suggestions broke that tie: they answer a typed `:smile` without needing the
+ * region — and a candidate that answers a word has to *replace* it. Committing behind it would leave
+ * the query standing and produce `:smile😄`.
+ *
+ * Invalid stays invalid: after a phantom space there is neither a composing region nor a current word,
+ * and there the candidate is genuinely new text that belongs after the cursor.
+ *
+ * Both of those end at the cursor, because they are found by looking back from it. With the cursor inside
+ * a word that is only half of it: `behavio|r` composes `behavio`, and accepting "behaviour" left the `r`
+ * standing, as `behaviour r` (reported by e-mail with a screen recording, 2026-11). So when the range ends
+ * at a plain cursor, the rest of the word behind it ([wordTailLength] of [textAfterSelection]) is replaced
+ * too, the way Gboard does it.
+ */
+internal fun completionReplacementRange(
+    composing: EditorRange,
+    currentWord: EditorRange,
+    selection: EditorRange = EditorRange.Unspecified,
+    textAfterSelection: String = "",
+): EditorRange {
+    val range = when {
+        composing.isValid -> composing
+        currentWord.isValid -> currentWord
+        else -> return EditorRange.Unspecified
+    }
+    if (selection.isNotValid || selection.isSelectionMode || range.end != selection.end) return range
+    val tail = wordTailLength(textAfterSelection)
+    return if (tail > 0) EditorRange(range.start, range.end + tail) else range
+}
+
+/**
+ * How many characters at the start of [textAfterCursor] still belong to the word the cursor is in.
+ *
+ * Letters, digits and the combining marks that some scripts write their vowels with (a Devanagari matra
+ * after the cursor is half of a letter, not the start of something new). An apostrophe counts when a
+ * letter follows it, so `do|n't` is one word, while a closing quote before a space is not part of it. A
+ * hyphen ends the word, as it does everywhere else in the keyboard (see `WordRun`).
+ */
+internal fun wordTailLength(textAfterCursor: String): Int {
+    var i = 0
+    while (i < textAfterCursor.length) {
+        val cp = textAfterCursor.codePointAt(i)
+        val inWord = Character.isLetterOrDigit(cp) || when (Character.getType(cp)) {
+            Character.NON_SPACING_MARK.toInt(),
+            Character.COMBINING_SPACING_MARK.toInt(),
+            Character.ENCLOSING_MARK.toInt(),
+            -> true
+            else -> false
+        } || ((cp == '\''.code || cp == '’'.code) &&
+            i + 1 < textAfterCursor.length && Character.isLetter(textAfterCursor.codePointAt(i + 1)))
+        if (!inWord) break
+        i += Character.charCount(cp)
+    }
+    return i
+}
+
+/**
+ * Whether the space between [textBefore] and the punctuation mark [char] should be swallowed, turning
+ * `hello , world` into `hello, world` (issue #329).
+ *
+ * This is the other half of auto-space: that one puts a space *after* a mark, this one removes one the
+ * user typed *before* it. Which marks qualify comes from the active punctuation rule's
+ * [dev.patrickgold.florisboard.ime.nlp.PunctuationRule.symbolsTighteningSpace], passed in as
+ * [tighteningSymbols] — its own list, because "a space belongs after this mark" is emphatically not the
+ * same statement as "none belongs before it": `AT & T` wants both, and French wants both around `?`.
+ *
+ * Only a lone space is taken, and only with a real character in front of it. That rules out three cases
+ * in one go without a second mechanism: indentation after a line break, a leading space at the start of
+ * a field, and a deliberate run of spaces — three spaces before a comma are somebody's intent, not a
+ * slip of the thumb.
+ */
+internal fun shouldTightenSpaceBefore(
+    char: String,
+    textBefore: String,
+    tighteningSymbols: String,
+): Boolean {
+    if (char.isEmpty() || !tighteningSymbols.contains(char.first())) return false
+    if (textBefore.length < 2 || textBefore.last() != ' ') return false
+    return !textBefore[textBefore.length - 2].isWhitespace()
+}
+
+/**
+ * The marks that may swallow the space in front of them just now: the rule's whole
+ * [dev.patrickgold.florisboard.ime.nlp.PunctuationRule.symbolsTighteningSpace] when the user switched
+ * tightening on (issue #329), and without the switch only straight after a silent auto-correction
+ * (issue #428), where the backspace that would otherwise fix a stray space takes the correction back.
+ *
+ * That second case gets a narrower set, because nobody asked for it: only the marks that close a clause,
+ * which sit tight against the word *and* take a space after them — the rule's own
+ * [symbolsPrecedingAutoSpace]. That keeps `.`, `,`, `?` and `!` and leaves out `:` and `;`, which also
+ * open `:)` and `;)`; an emoticon glued to the word it follows is the removal nobody could have seen
+ * coming. Both lists come from the language, so French, whose rule tightens only `.` and `,`, keeps its
+ * space before `?`.
+ */
+internal fun spaceTighteningSymbols(
+    symbolsTighteningSpace: String,
+    symbolsPrecedingAutoSpace: String,
+    switchedOn: Boolean,
+    spaceConfirmedCorrection: Boolean,
+): String = when {
+    switchedOn -> symbolsTighteningSpace
+    spaceConfirmedCorrection -> symbolsTighteningSpace.filter { it in symbolsPrecedingAutoSpace }
+    else -> ""
+}
+
+/**
+ * Whether the phantom space that follows an accepted candidate should be written into the editor at
+ * once instead of being remembered and inserted in front of the next word (issue #393).
+ *
+ * The phantom space has always been a *decision* — "this word is finished" — that only turned into a
+ * character once the next one arrived. That decision is invisible: pick `hello` off the strip and the
+ * cursor sits against the `o`, while every mainstream keyboard already shows it one space further on.
+ * Writing the space now makes the decision visible. It stays provisional either way, because
+ * [materializedSpaceSurvives] takes it back for anything that does not want a space in front of it —
+ * so the text that ends up in the field is the same text as before, only shown a keystroke earlier.
+ *
+ * [textAfterCandidate] is why this is not simply "always": completing a word in the middle of a
+ * sentence puts the cursor in front of a space that is already there, and a second one would be a
+ * genuine double space nobody typed.
+ */
+internal fun shouldMaterializePhantomSpace(
+    candidate: String,
+    textAfterCandidate: String,
+    supportsAutoSpace: Boolean,
+    symbolsPrecedingPhantomSpace: String,
+): Boolean {
+    if (!supportsAutoSpace || candidate.isEmpty()) return false
+    val last = candidate.last()
+    if (!last.isLetterOrDigit() && !symbolsPrecedingPhantomSpace.contains(last)) return false
+    return textAfterCandidate.isEmpty() || !textAfterCandidate.first().isWhitespace()
+}
+
+/**
+ * Whether a space written ahead by [shouldMaterializePhantomSpace] survives [next] being committed
+ * behind it, or has to be taken back first (issue #393).
+ *
+ * The same question the phantom space always asked, turned around: that one decided whether to
+ * *insert* the space, this one whether to *keep* it. So the answer has to come off the same list, or
+ * `hello` followed by a comma would read `hello ,` on the new path and `hello,` on the old one.
+ *
+ * An empty commit changes nothing and therefore takes nothing away — deleting a selection is a commit
+ * of `""`, and it has no opinion about the space in front of it.
+ */
+internal fun materializedSpaceSurvives(next: String, symbolsFollowingPhantomSpace: String): Boolean {
+    if (next.isEmpty()) return true
+    return next.first().isLetterOrDigit() || symbolsFollowingPhantomSpace.contains(next.first())
+}
+
+class EditorInstance(context: Context) : AbstractEditorInstance(context) {
+    companion object {
+        private const val SPACE = " "
+    }
+
+    private val prefs by FlorisPreferenceStore
+    private val appContext by context.appContext()
+    private val clipboardManager by context.clipboardManager()
+    private val keyboardManager by context.keyboardManager()
+    private val subtypeManager by context.subtypeManager()
+    private val nlpManager by context.nlpManager()
+
+    private val activeState get() = keyboardManager.activeState
+    val autoSpace = AutoSpaceState()
+    val phantomSpace = PhantomSpaceState()
+    val massSelection = MassSelectionState()
+
+    private fun currentInputConnection() = FlorisImeService.currentInputConnection()
+
+    override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
+        if (!prefs.correction.rememberCapsLockState.get()) {
+            activeState.inputShiftState = InputShiftState.UNSHIFTED
+        }
+        activeState.isActionsOverflowVisible = false
+        activeState.isActionsEditorVisible = false
+        activeState.isTranscriptionProviderSelectionVisible = false
+        super.handleStartInputView(editorInfo, isRestart)
+        val keyboardMode = when (editorInfo.inputAttributes.type) {
+            InputAttributes.Type.NUMBER -> {
+                // A PIN or a card code is a password too (#383). NORMAL here made the dictation history
+                // log it, the one thing in the NUMBER class that reads keyVariation.
+                activeState.keyVariation = when (editorInfo.inputAttributes.variation) {
+                    InputAttributes.Variation.PASSWORD -> KeyVariation.PASSWORD
+                    else -> KeyVariation.NORMAL
+                }
+                KeyboardMode.NUMERIC
+            }
+            InputAttributes.Type.PHONE -> {
+                activeState.keyVariation = KeyVariation.NORMAL
+                KeyboardMode.PHONE
+            }
+            InputAttributes.Type.TEXT -> {
+                activeState.keyVariation = when (editorInfo.inputAttributes.variation) {
+                    InputAttributes.Variation.EMAIL_ADDRESS,
+                    InputAttributes.Variation.WEB_EMAIL_ADDRESS,
+                    -> {
+                        KeyVariation.EMAIL_ADDRESS
+                    }
+                    InputAttributes.Variation.PASSWORD,
+                    InputAttributes.Variation.VISIBLE_PASSWORD,
+                    InputAttributes.Variation.WEB_PASSWORD,
+                    -> {
+                        KeyVariation.PASSWORD
+                    }
+                    InputAttributes.Variation.URI -> {
+                        KeyVariation.URI
+                    }
+                    else -> {
+                        KeyVariation.NORMAL
+                    }
+                }
+                KeyboardMode.CHARACTERS
+            }
+            else -> {
+                activeState.keyVariation = KeyVariation.NORMAL
+                KeyboardMode.CHARACTERS
+            }
+        }
+        activeState.keyboardMode = keyboardMode
+        // A property of the field, not a setting (issue #298): whether words may be looked at here at
+        // all. Whether the user *wants* word suggestions is [determineComposingEnabled]'s to decide.
+        // Computing both in this one line is why emoji suggestions died together with the word ones —
+        // they only ever needed a word, not a composing region — and why shape-based input stopped
+        // being typable without them.
+        activeState.isComposingEnabled = when (keyboardMode) {
+            KeyboardMode.NUMERIC,
+            KeyboardMode.PHONE,
+            KeyboardMode.PHONE2,
+            -> false
+            // The two flags FlorisBoard left commented out here are answered elsewhere now:
+            // NO_SUGGESTIONS in shouldDetermineComposingRegion (issue #296), and AUTO_COMPLETE nowhere,
+            // because nothing in the keyboard reads it as a block.
+            else -> activeState.keyVariation != KeyVariation.PASSWORD
+        }
+        activeState.isIncognitoMode = when (prefs.suggestion.incognitoMode.get()) {
+            IncognitoMode.FORCE_OFF -> false
+            IncognitoMode.FORCE_ON -> true
+            IncognitoMode.DYNAMIC_ON_OFF -> {
+                editorInfo.imeOptions.flagNoPersonalizedLearning || prefs.suggestion.forceIncognitoModeFromDynamic.get()
+            }
+        }
+    }
+
+    override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
+        autoSpace.setInactiveFromUpdate()
+        phantomSpace.setInactiveFromUpdate()
+        if (massSelection.isActive) {
+            super.handleMassSelectionUpdate(newSelection, composing)
+        } else {
+            super.handleSelectionUpdate(oldSelection, newSelection, composing)
+        }
+    }
+
+    override fun determineComposingEnabled(): Boolean {
+        // The field allows it, and the user (or a provider that overrides them) wants word suggestions.
+        // Not [NlpManager.isSuggestionOn]: that is an OR across three unrelated features, and asking it
+        // here is what left shape-based input without a composing region — the very thing it types with —
+        // whenever "Display suggestions" was off (issue #298).
+        return activeState.isComposingEnabled && nlpManager.wordSuggestionsWanted()
+    }
+
+    override fun determinePhantomSpacePending(): Boolean = phantomSpace.isActive
+
+    override fun determineComposer(composerName: ExtensionComponentName): Composer {
+        return keyboardManager.resources.composers.value[composerName] ?: Appender
+    }
+
+    override fun shouldDetermineComposingRegion(editorInfo: FlorisEditorInfo): Boolean {
+        return super.shouldDetermineComposingRegion(editorInfo) &&
+            // The field, not the setting (issue #298). This gates the *current word*, which since #298 is
+            // read even when no composing region is set — so the exclusion of password and number fields
+            // has to be made here, or the emoji provider would start reading passwords word by word.
+            activeState.isComposingEnabled &&
+            (phantomSpace.isInactive || phantomSpace.showComposingRegion)
+    }
+
+    override fun ignoresNoSuggestionsFlag(editorInfo: FlorisEditorInfo): Boolean {
+        return mayIgnoreNoSuggestionsFlag(
+            ignoreAppSuggestionBlock = prefs.suggestion.ignoreAppSuggestionBlock.get(),
+            variation = editorInfo.inputAttributes.variation,
+        )
+    }
+
+    /**
+     * Sets the selection of the input editor to the specified [start] and [end] values. This method does nothing if
+     * the input connection is not valid or if the input editor is raw.
+     *
+     * @param start The start of the selection (inclusive). May be any value ranging from -1 to positive infinity.
+     * @param end The end of the selection (exclusive). May be any value ranging from -1 to positive infinity.
+     *
+     * @return True on success or if the selection is already at specified position, false otherwise.
+     */
+    fun setSelection(start: Int, end: Int): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val selection = EditorRange.normalized(start, end)
+        return super.setSelection(selection)
+    }
+
+    private fun shouldInsertAutoSpaceBefore(text: String): Boolean {
+        if (!prefs.correction.autoSpacePunctuation.get() || text.isEmpty()) return false
+        if (activeInfo.isRawInputEditor) return false
+        if (activeState.keyVariation != KeyVariation.NORMAL) return false
+
+        val punctuationRule = nlpManager.getActivePunctuationRule()
+        val textBefore = activeContent.getTextBeforeCursor(1)
+        return textBefore.isNotEmpty() && !textBefore.last().isWhitespace() &&
+            punctuationRule.symbolsFollowingAutoSpace.contains(text.first())
+    }
+
+    /**
+     * @param spaceGoes whether the space in front of the cursor is about to be swallowed by [text] —
+     *  see [shouldTightenSpaceBeforePunctuation].
+     */
+    private fun shouldInsertAutoSpaceAfter(text: String, spaceGoes: Boolean): Boolean {
+        if (!prefs.correction.autoSpacePunctuation.get() || text.isEmpty()) return false
+        if (activeInfo.isRawInputEditor) return false
+        if (activeState.keyVariation != KeyVariation.NORMAL) return false
+
+        val punctuationRule = nlpManager.getActivePunctuationRule()
+        val content = activeContent
+        // A space this keyboard put there itself is not part of what the user wrote, so the question
+        // "does a mark belong tight against the last word?" has to be asked past it — whether it was an
+        // auto-space or the space written ahead of the next word (issue #393). Without this, `hello` off
+        // the strip followed by a full stop lost the auto-space *after* the stop, because the materialized
+        // space in front of it made the text read as already finished.
+        //
+        // The same goes for a space the mark is about to swallow (issue #428): the mark lands tight
+        // against the word either way, so it has to be followed by the same space as if it had been
+        // typed there directly — `the?` then reads `the? `, not a bare `the?`.
+        val textBefore = content.getTextBeforeCursor(3).let { textBefore ->
+            if ((autoSpace.isActive || phantomSpace.isMaterialized || spaceGoes) &&
+                textBefore.isNotEmpty() && textBefore.last() == ' '
+            ) {
+                textBefore.dropLast(1)
+            } else {
+                textBefore
+            }
+        }
+        return textBefore.isNotEmpty() && !textBefore.last().isWhitespace() &&
+            content.currentWordText.all { !it.isDigit() } &&
+            punctuationRule.symbolsPrecedingAutoSpace.contains(text.first())
+    }
+
+    /**
+     * Whether a space the *user* typed before [text] should be swallowed (issue #329).
+     *
+     * The mechanism is not new — [AbstractEditorInstance.commitChar] has always been able to drop the
+     * preceding space, over the composing region and without a delete, so nothing flickers. All that
+     * was missing is a reason to ask for it that isn't "we put that space there ourselves".
+     *
+     * [spaceConfirmedCorrection] is the one case that does not wait for the switch (issue #428): the
+     * space the user confirmed a silent auto-correction with. Everywhere else a stray space before a mark
+     * costs one backspace to fix, but right after a correction that backspace is spoken for — it takes
+     * the correction back (issue #295), and teaches the keyboard the typo as a word while it is at it.
+     * Leaving `the ?` standing there would leave the user no cheap way out at all.
+     */
+    private fun shouldTightenSpaceBeforePunctuation(text: String, spaceConfirmedCorrection: Boolean): Boolean {
+        val switchedOn = prefs.correction.tightenPunctuationSpacing.get()
+        if ((!switchedOn && !spaceConfirmedCorrection) || text.isEmpty()) return false
+        if (activeInfo.isRawInputEditor) return false
+        if (activeState.keyVariation != KeyVariation.NORMAL) return false
+        val punctuationRule = nlpManager.getActivePunctuationRule()
+        return shouldTightenSpaceBefore(
+            char = text,
+            // Two characters is all the rule needs: the space itself and whatever stands in front of it.
+            textBefore = activeContent.getTextBeforeCursor(2),
+            tighteningSymbols = spaceTighteningSymbols(
+                symbolsTighteningSpace = punctuationRule.symbolsTighteningSpace,
+                symbolsPrecedingAutoSpace = punctuationRule.symbolsPrecedingAutoSpace,
+                switchedOn = switchedOn,
+                spaceConfirmedCorrection = spaceConfirmedCorrection,
+            ),
+        )
+    }
+
+    override fun commitChar(char: String): Boolean = commitChar(char, spaceConfirmedCorrection = false)
+
+    /**
+     * [commitChar], told whether the space in front of the cursor is the one a silent auto-correction
+     * was confirmed with (issue #428) — only the keyboard manager knows, since only it saw the correction.
+     */
+    fun commitChar(char: String, spaceConfirmedCorrection: Boolean): Boolean {
+        val isInsertAutoSpaceBeforeChar = shouldInsertAutoSpaceBefore(char)
+        val isPhantomSpaceActive = phantomSpace.determine(char)
+        // Loses to anything that wants a space in that exact spot, so the two never fight over one
+        // position — removing a space and inserting one in the same commit is a no-op with extra steps.
+        // Decided before the auto-space after the mark, which has to know whether this space goes.
+        val isTightenSpace = !isPhantomSpaceActive && !isInsertAutoSpaceBeforeChar &&
+            shouldTightenSpaceBeforePunctuation(char, spaceConfirmedCorrection)
+        val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char, spaceGoes = isTightenSpace)
+        val isDeletePreviousSpace = isInsertAutoSpaceAfterChar && autoSpace.isActive
+        if (isInsertAutoSpaceAfterChar) {
+            autoSpace.setActive()
+        } else {
+            autoSpace.setInactive()
+        }
+        // The space written ahead of this character (issue #393) is taken back for whatever the phantom
+        // space would never have been inserted for — a comma, a bracket, a full stop. Read before the
+        // state is cleared, applied through the same `deletePreviousSpace` that the auto-space and the
+        // tightening rule use, so nothing flickers and no two of them can delete twice.
+        val isDropMaterializedSpace = phantomSpace.shouldDropMaterialized(char)
+        phantomSpace.setInactive()
+        return super.commitChar(
+            char = char,
+            deletePreviousSpace = isDeletePreviousSpace || isTightenSpace || isDropMaterializedSpace,
+            insertSpaceBeforeChar = isInsertAutoSpaceBeforeChar || isPhantomSpaceActive,
+            insertSpaceAfterChar = isInsertAutoSpaceAfterChar,
+        )
+    }
+
+    /**
+     * Commits the given [text] to this editor instance and adjusts both the cursor position and
+     * composing region, if any.
+     *
+     * This method overwrites any selected text and replaces it with given [text]. If there is no
+     * text selected (selection is in cursor mode), then this method will insert the [text] after
+     * the cursor, then set the cursor position to the first character after the inserted text.
+     *
+     * @param text The text to commit.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    override fun commitText(text: String): Boolean {
+        // The space is already on the screen (issue #393), so a space key press is the user agreeing
+        // with it, not asking for a second one — the same bargain the phantom space always made, only
+        // now it is the *first* press that is absorbed rather than the promise that is redeemed. Left
+        // to the general path below it would delete the space and write an identical one back, which
+        // costs the editor a round trip to change nothing.
+        if (text == SPACE && phantomSpace.hasStandingMaterializedSpace()) {
+            autoSpace.setInactive()
+            phantomSpace.setInactive()
+            return true
+        }
+        val isPhantomSpaceActive = phantomSpace.determine(text)
+        val isDropMaterializedSpace = phantomSpace.shouldDropMaterialized(text)
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return when {
+            isPhantomSpaceActive -> super.commitText("$SPACE$text")
+            // No `deletePreviousSpace` on this path, so the removal and the commit are batched into one
+            // edit by hand — an emoji or a symbol behind an accepted candidate must not flash a space.
+            isDropMaterializedSpace -> replaceTextBeforeCursor(1, text)
+            else -> super.commitText(text)
+        }
+    }
+
+    /**
+     * Commits [text] exactly as-is, bypassing the phantom/auto-space logic of [commitText]. Used by the
+     * real-time dictation preview (issue #128), which tracks the field content itself and must keep the
+     * committed text byte-identical to what it streamed (an injected space would desync the diff).
+     */
+    fun commitTextRaw(text: String): Boolean = super.commitText(text)
+
+    /**
+     * Atomically replaces the [deleteBefore] characters right before the cursor with [text] in a single
+     * batch edit. Written straight to the InputConnection; the editor resyncs on the following selection
+     * update.
+     *
+     * Two callers, for the same reason — the swap has to land in one step:
+     *  - real-time dictation finalize (issue #128), so the live preview turns into the finished result
+     *    instead of flashing character-by-character;
+     *  - a typed snippet trigger (issue #283), so the shortcut turns into its text without the composing
+     *    region and the auto-space logic ever seeing a half-written word.
+     */
+    fun replaceTextBeforeCursor(deleteBefore: Int, text: String): Boolean {
+        val ic = currentInputConnection() ?: return false
+        ic.beginBatchEdit()
+        ic.finishComposingText()
+        if (deleteBefore > 0) ic.deleteSurroundingText(deleteBefore, 0)
+        if (text.isNotEmpty()) ic.commitText(text, 1)
+        ic.endBatchEdit()
+        updateLastCommitPosition()
+        return true
+    }
+
+    /**
+     * Up to [n] characters in front of the cursor (in front of the selection, when there is one), asked of
+     * the editor itself — or null when it cannot be asked.
+     *
+     * [activeContent] is no answer for a caller that has just written through [replaceTextBeforeCursor]:
+     * that write leaves the content to catch up on the next selection update, and until then it still
+     * reads as before. The editor answers in order, after every edit sent ahead of the question. It is
+     * also not limited to the 256 characters the content keeps.
+     */
+    fun textBeforeCursorFromEditor(n: Int): String? {
+        if (n < 1 || activeInfo.isRawInputEditor) return null
+        return currentInputConnection()?.getTextBeforeCursor(n, 0)?.toString()
+    }
+
+    /**
+     * Completes the given [candidate] over the word it answers — see [completionReplacementRange]. Does
+     * nothing if the current input editor is not rich or if the input connection is invalid.
+     *
+     * Current phantom space state is respected and a space char will be inserted accordingly.
+     * Phantom space will be activated if the text is committed.
+     *
+     * @param candidate The candidate to complete in this editor.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    /**
+     * The text [commitCompletion] is about to replace, or empty when it would only insert.
+     *
+     * Exists so the caller can remember what was there before a correction overwrites it (issue #295)
+     * without repeating the rule for *which* text that is — a second copy of that rule would restore
+     * the wrong word on exactly the cases the first one was written for.
+     */
+    fun textCompletionWouldReplace(): String {
+        // Asked only before an auto-correction, which never takes the part of a word behind the cursor.
+        val content = activeContent
+        val range = completionRange(content, wholeWord = false)
+        return if (range.isValid) completionRangeText(content, range) else ""
+    }
+
+    /**
+     * [completionReplacementRange] asked about [content]: the same rule for both callers, by construction.
+     * [wholeWord] adds the part of the word behind the cursor; only a candidate the user picked does that.
+     */
+    private fun completionRange(content: EditorContent, wholeWord: Boolean): EditorRange =
+        completionReplacementRange(
+            composing = content.composing,
+            currentWord = content.currentWord,
+            selection = if (wholeWord) content.selection else EditorRange.Unspecified,
+            textAfterSelection = content.textAfterSelection,
+        )
+
+    /** What [range] reads in [content]: the word up to the cursor, plus the part of it behind the cursor. */
+    private fun completionRangeText(content: EditorContent, range: EditorRange): String {
+        val beforeCursor = if (content.composing.isValid) content.composingText else content.currentWordText
+        val behindCursor = (range.end - content.selection.end).coerceAtLeast(0)
+        return beforeCursor + content.textAfterSelection.take(behindCursor)
+    }
+
+    fun commitCompletion(candidate: SuggestionCandidate, wholeWord: Boolean = false): Boolean {
+        val text = candidate.text.toString()
+        if (text.isEmpty() || activeInfo.isRawInputEditor) return false
+        val content = activeContent
+        val replaceRange = completionRange(content, wholeWord)
+        // Issue #393: the space an accepted candidate promises is written here rather than in front of
+        // the next key press, so the cursor stands where the user can see the word is finished. What
+        // follows the range about to be overwritten — not what follows the cursor, which may still be
+        // inside that range — is what decides whether there is room for it.
+        val rangeTail = if (replaceRange.isValid) {
+            (replaceRange.end - content.selection.end).coerceAtLeast(0)
+        } else {
+            0
+        }
+        val materialize = shouldMaterializePhantomSpace(
+            candidate = text,
+            textAfterCandidate = content.textAfterSelection.drop(rangeTail),
+            supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
+            symbolsPrecedingPhantomSpace = nlpManager.getActivePunctuationRule().symbolsPrecedingPhantomSpace,
+        )
+        val trailingSpace = if (materialize) SPACE else ""
+        return if (replaceRange.isValid) {
+            phantomSpace.setActive(showComposingRegion = false, candidate = candidate, materialized = materialize)
+            super.finalizeComposingText(
+                text = "$text$trailingSpace",
+                range = replaceRange,
+                rangeText = completionRangeText(content, replaceRange),
+            )
+        } else {
+            val isPhantomSpaceActive = phantomSpace.determine(text)
+            phantomSpace.setActive(showComposingRegion = false, candidate = candidate, materialized = materialize)
+            return if (isPhantomSpaceActive) {
+                super.commitText("$SPACE$text$trailingSpace")
+            } else {
+                super.commitText("$text$trailingSpace")
+            }.also {
+                // handled in finalizeComposingText if there was a range to replace
+                updateLastCommitPosition()
+            }
+        }
+    }
+
+    /**
+     * Commit a word generated by a gesture.
+     *
+     * Ignores the current phantom space state and will insert a space depending on the character
+     * before selection start. Phantom space will be activated if the text is committed.
+     *
+     * @param text The text to commit in this editor.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun commitGesture(text: String): Boolean {
+        if (text.isEmpty() || activeInfo.isRawInputEditor) return false
+        val isPhantomSpaceActive = phantomSpace.determine(text, forceActive = true)
+        phantomSpace.setActive(showComposingRegion = true)
+        return if (isPhantomSpaceActive) {
+            super.commitText("$SPACE$text")
+        } else {
+            super.commitText(text)
+        }.also {
+            updateLastCommitPosition()
+        }
+    }
+
+    /**
+     * Commits the given [ClipboardItem]. If the clip data is text (incl. HTML), it delegates to [commitText].
+     * If the item has a content URI (and the EditText supports it), the item is committed as rich data.
+     * This allows for committing (e.g) images.
+     *
+     * @param item The ClipboardItem to commit
+     *
+     * @return True on success, false if something went wrong.
+     */
+    fun commitClipboardItem(item: ClipboardItem?): Boolean {
+        if (item == null) return false
+        val mimeTypes = item.mimeTypes
+        return when (item.type) {
+            ItemType.TEXT -> {
+                // One funnel for all three ways to paste — the key, the clipboard panel and the
+                // suggestion chip — which is why the link cleaner sits here and nowhere else (#329).
+                val text = item.text.toString()
+                val outgoing = if (prefs.clipboard.stripTrackingParams.get()) {
+                    UrlSanitizer.clean(text)
+                } else {
+                    text
+                }
+                commitText(outgoing).also {
+                    updateLastCommitPosition()
+                }
+            }
+            ItemType.IMAGE, ItemType.VIDEO -> {
+                item.uri ?: return false
+                val id = ContentUris.parseId(item.uri)
+                val file = ClipboardFileStorage.getFileForId(appContext, id)
+                if (!file.exists()) return false
+                val inputContentInfo = InputContentInfoCompat(
+                    item.uri,
+                    ClipDescription("clipboard media file", mimeTypes.toTypedArray()),
+                    null,
+                )
+                val ic = currentInputConnection() ?: return false
+                ic.finishComposingText()
+                val flags = InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
+                InputConnectionCompat.commitContent(ic, activeInfo.base, inputContentInfo, flags, null)
+            }
+        }.also {
+            if (prefs.clipboard.historyHideOnPaste.get()) {
+                keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+            }
+        }
+    }
+
+    /**
+     * Whether the current editor advertises support for committing rich content of [mimeType]
+     * (e.g. `image/gif`) via the Commit Content API. Raw input editors never support it.
+     */
+    fun supportsMediaCommit(mimeType: String): Boolean {
+        if (activeInfo.isRawInputEditor) return false
+        return activeInfo.contentMimeTypes.any { ClipDescription.compareMimeTypes(mimeType, it) }
+    }
+
+    /**
+     * The content types the current editor says it accepts, empty when it says nothing.
+     *
+     * Exposed so a caller can pick a format the editor named instead of only offering the file's own
+     * (see [dev.patrickgold.florisboard.dictate.media.MediaFormat.negotiate]). Treat it as a hint,
+     * not a contract — plenty of apps accept more than they declare, and some declare nothing at all.
+     */
+    fun acceptedMediaMimeTypes(): List<String> = activeInfo.contentMimeTypes.toList()
+
+    /** The package the current editor belongs to, for messages that name the app. */
+    fun activeEditorPackage(): String? = activeInfo.packageName
+
+    /**
+     * Offers an already-staged media [file] of the given [mimeType] to the current editor.
+     *
+     * Attempts the commit and reports whether it was taken — nothing else. In particular it does
+     * **not** touch the clipboard, because a caller that has more formats to try would then have
+     * announced a failure it is about to recover from: on Android 13+ every clipboard write raises a
+     * system toast, so a silent retry is not silent at all.
+     *
+     * The file is served via the app's FileProvider, so it must live under a path declared in
+     * `res/xml/file_paths.xml` (e.g. `cacheDir/gif-media/`).
+     */
+    fun tryCommitMedia(file: File, mimeType: String, description: CharSequence): Boolean {
+        val uri = mediaUriOf(file) ?: return false
+        // Try, rather than ask first. Whether the editor takes the content is something commitContent
+        // answers by itself, and it answers more truthfully than the declaration does: apps routinely
+        // accept types they never listed, and the declaration is missing entirely whenever the editor
+        // info has just been reset (which also made isRawInputEditor briefly true and blocked every
+        // insert). The clipboard paste path has always worked this way, which is precisely why an
+        // image could be pasted into apps a sticker could not be inserted into.
+        val ic = currentInputConnection() ?: return false
+        ic.finishComposingText()
+        val info = InputContentInfoCompat(uri, ClipDescription(description, arrayOf(mimeType)), null)
+        val flags = InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
+        if (InputConnectionCompat.commitContent(ic, activeInfo.base, info, flags, null)) return true
+        flogError {
+            "Editor ${activeInfo.packageName} refused $mimeType " +
+                "(declares ${activeInfo.contentMimeTypes.joinToString().ifBlank { "nothing" }})"
+        }
+        return false
+    }
+
+    /** Puts a staged media file on the clipboard, for when no editor would take it. */
+    fun copyMediaToClipboard(file: File, mimeType: String): Boolean {
+        val uri = mediaUriOf(file) ?: return false
+        return clipboardManager.copyMediaToClipboard(uri, mimeType)
+    }
+
+    private fun mediaUriOf(file: File): Uri? {
+        if (!file.exists()) return null
+        return try {
+            FileProvider.getUriForFile(appContext, "${appContext.packageName}.provider.file", file)
+        } catch (e: IllegalArgumentException) {
+            flogError { "Cannot expose media file via FileProvider: ${e.message}" }
+            null
+        }
+    }
+
+    /**
+     * Inserts a media file, falling back to the clipboard when the editor refuses it.
+     *
+     * The single-shot form, for callers with only one format to offer — the GIF panel. A caller that
+     * can convert should use [tryCommitMedia] and reach for [copyMediaToClipboard] only once it has
+     * run out of formats.
+     *
+     * @return the outcome, so the caller can inform the user (inserted vs. copied vs. failed).
+     */
+    fun commitMedia(file: File, mimeType: String, description: CharSequence): MediaCommitResult = when {
+        tryCommitMedia(file, mimeType, description) -> MediaCommitResult.COMMITTED
+        copyMediaToClipboard(file, mimeType) -> MediaCommitResult.COPIED_TO_CLIPBOARD
+        else -> MediaCommitResult.FAILED
+    }
+
+    /** Outcome of [commitMedia]. */
+    enum class MediaCommitResult {
+        /** Inserted inline into the editor via the Commit Content API. */
+        COMMITTED,
+        /** Editor didn't accept the type; copied to the clipboard for manual pasting instead. */
+        COPIED_TO_CLIPBOARD,
+        /** Nothing could be done (invalid file, no input connection, clipboard failure). */
+        FAILED,
+    }
+
+    /**
+     * Executes a backward delete on this editor's text. If a text selection is active, all
+     * characters inside this selection will be removed, else only the left-most character from
+     * the cursor's position.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun deleteBackwards(unit: OperationUnit): Boolean {
+        val content = activeContent
+        if (unit == OperationUnit.CHARACTERS) {
+            if (phantomSpace.isActive && content.currentWord.isValid && prefs.glide.immediateBackspaceDeletesWord.get()) {
+                return deleteBackwards(OperationUnit.WORDS)
+            }
+        }
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return if (content.selection.isSelectionMode) {
+            commitText("")
+        } else runBlocking {
+            deleteAroundCursor(unit, OperationScope.BEFORE_CURSOR, n = 1)
+        }
+    }
+
+    /**
+     * Executes a backward delete on this editor's text. If a text selection is active, all
+     * characters inside this selection will be removed, else only the left-most character from
+     * the cursor's position.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun deleteForwards(unit: OperationUnit): Boolean {
+        val content = activeContent
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return if (content.selection.isSelectionMode) {
+            commitText("")
+        } else runBlocking {
+            deleteAroundCursor(unit, OperationScope.AFTER_CURSOR, n = 1)
+        }
+    }
+
+    fun setSelectionSurrounding(n: Int, unit: OperationUnit, scope: OperationScope): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val content = activeContent
+        val selection = content.selection
+        val safeEditorBounds = content.safeEditorBounds
+        if (selection.isNotValid) return false
+        when (scope) {
+            OperationScope.BEFORE_CURSOR -> {
+                if (n <= 0) {
+                    return setSelection(selection.end, selection.end)
+                }
+                val textToAnalyze = content.text.substring(0, content.localSelection.end)
+                val length = runBlocking {
+                    when (unit) {
+                        OperationUnit.CHARACTERS -> breakIterators.measureLastUChars(textToAnalyze, n)
+                        OperationUnit.WORDS -> breakIterators.measureLastUWords(textToAnalyze, n)
+                    }
+                }
+                return setSelection((selection.end - length).coerceAtLeast(safeEditorBounds.start), selection.end)
+            }
+            OperationScope.AFTER_CURSOR -> {
+                if (n <= 0) {
+                    return setSelection(selection.start, selection.start)
+                }
+                val textToAnalyze = content.text.substring(content.localSelection.start)
+                val length = runBlocking {
+                    when (unit) {
+                        OperationUnit.CHARACTERS -> breakIterators.measureUChars(textToAnalyze, n)
+                        OperationUnit.WORDS -> breakIterators.measureUWords(textToAnalyze, n)
+                    }
+                }
+                return setSelection(selection.start, (selection.start + length).coerceAtMost(safeEditorBounds.end))
+            }
+        }
+    }
+
+    /**
+     * What actually goes onto the clipboard: the selected [text], with the padding the selection handles
+     * caught trimmed off if the user asked for that (issue #335). One funnel for cut and copy alike.
+     */
+    private fun outgoingClipText(text: CharSequence): String {
+        return if (prefs.clipboard.trimOnCopy.get()) ClipboardTrim.applyTo(text) else text.toString()
+    }
+
+    /**
+     * Performs a cut command on this editor instance and adjusts both the cursor position and
+     * composing region, if any.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performClipboardCut(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
+        if (text != null) {
+            clipboardManager.addNewPlaintext(outgoingClipText(text))
+        } else {
+            appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Eiter selection state is invalid or an error occurred within the input connection.")
+        }
+        // Deletes the *whole* selection, trimmed clip or not: the padding was part of what the user
+        // marked, and leaving it behind in the field would be a cut that didn't cut.
+        return deleteBackwards(OperationUnit.CHARACTERS)
+    }
+
+    /**
+     * Performs a copy command on this editor instance and adjusts both the cursor position and
+     * composing region, if any.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performClipboardCopy(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
+        if (text != null) {
+            clipboardManager.addNewPlaintext(outgoingClipText(text))
+        } else {
+            appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Eiter selection state is invalid or an error occurred within the input connection.")
+        }
+        val activeSelection = activeContent.selection
+        return setSelection(activeSelection.end, activeSelection.end)
+    }
+
+    /**
+     * Performs a paste command on this editor instance and adjusts both the cursor position and
+     * composing region, if any.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performClipboardPaste(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return commitClipboardItem(clipboardManager.primaryClip).also { result ->
+            if (!result) {
+                appContext.showShortToastSync("Failed to paste item.")
+            }
+        }
+    }
+
+    /**
+     * Performs a select all on this editor instance and adjusts both the cursor position and
+     * composing region, if any.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performClipboardSelectAll(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val ic = currentInputConnection() ?: return false
+        ic.finishComposingText()
+        return if (activeInfo.isRawInputEditor) {
+            sendDownUpKeyEvent(KeyEvent.KEYCODE_A, meta(ctrl = true))
+        } else {
+            ic.performContextMenuAction(android.R.id.selectAll)
+        }
+    }
+
+    /**
+     * Clears the current selection, collapsing the cursor to the end of what was selected. The inverse of
+     * [performClipboardSelectAll], used to make the select-all action a toggle (issue #152). No-op when
+     * nothing is selected.
+     */
+    fun performClipboardDeselect(): Boolean {
+        val selection = activeContent.selection
+        if (selection.isNotValid || !selection.isSelectionMode) return false
+        val ic = currentInputConnection() ?: return false
+        ic.finishComposingText()
+        val pos = selection.end
+        return ic.setSelection(pos, pos)
+    }
+
+    /**
+     * Performs an enter key press on the current input editor.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performEnter(): Boolean {
+        dropPendingMaterializedSpace()
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return if (activeInfo.isRawInputEditor) {
+            sendDownUpKeyEvent(KeyEvent.KEYCODE_ENTER)
+        } else {
+            commitText("\n")
+        }
+    }
+
+    /**
+     * Sends Enter as a key press, whatever the field — the variant offered on a long press of Enter.
+     *
+     * [performEnter] types a line break into every field that is not raw input, and a terminal tells the
+     * two apart: the key press reaches it as a carriage return and runs the line, while the typed "\n"
+     * arrives as a line feed (Ctrl+J), which many command-line programs take for "new line, don't send
+     * yet" — "like Shift+Enter on my desktop", as a user put it (e-mail, 2026-10-20). Termux escapes this
+     * by asking for raw input (TYPE_NULL), and where it does not, by turning "\n" into "\r" itself
+     * (termux-app TerminalView, read 2026-10-20); terminals that do neither had no way to submit a line
+     * from this keyboard.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performEnterKeyPress(): Boolean {
+        dropPendingMaterializedSpace()
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        // A word still being composed is the app's text before the key arrives, as with a typed Enter.
+        currentInputConnection()?.finishComposingText()
+        return sendDownUpKeyEvent(KeyEvent.KEYCODE_ENTER)
+    }
+
+    fun tryPerformEnterCommitRaw(): Boolean {
+        return if (subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh") && activeContent.composing.length > 0) {
+            finalizeComposingText(activeContent.composingText)
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Performs a given [action] on the current input editor.
+     *
+     * @param action The action to be performed on this editor instance.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performEnterAction(action: ImeOptions.Action): Boolean {
+        dropPendingMaterializedSpace()
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val ic = currentInputConnection() ?: return false
+        return ic.performEditorAction(action.toInt())
+    }
+
+    /**
+     * Undoes the last action.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performUndo(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return sendDownUpKeyEvent(KeyEvent.KEYCODE_Z, meta(ctrl = true))
+    }
+
+    /**
+     * Redoes the last Undo action.
+     *
+     * @return True on success, false if an error occurred or the input connection is invalid.
+     */
+    fun performRedo(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        return sendDownUpKeyEvent(KeyEvent.KEYCODE_Z, meta(ctrl = true, shift = true))
+    }
+
+    override fun reset() {
+        super.reset()
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        massSelection.reset()
+    }
+
+    private fun PhantomSpaceState.determine(text: String, forceActive: Boolean = false): Boolean {
+         val content = activeContent
+         val selection = content.selection
+         if (!(isActive || forceActive) || selection.isNotValid || selection.start <= 0 || text.isEmpty()) return false
+         val textBefore = content.getTextBeforeCursor(1)
+         val punctuationRule = nlpManager.getActivePunctuationRule()
+         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace) return false;
+         return textBefore.isNotEmpty() &&
+             (punctuationRule.symbolsPrecedingPhantomSpace.contains(textBefore[textBefore.length - 1]) ||
+                 textBefore[textBefore.length - 1].isLetterOrDigit()) &&
+             (punctuationRule.symbolsFollowingPhantomSpace.contains(text[0]) || text[0].isLetterOrDigit())
+    }
+
+    /**
+     * Whether the space written ahead of the next word is still standing where it was put, and still
+     * ours to take back (issue #393).
+     *
+     * Asks the editor rather than trusting the flag on its own. A materialized space is a real
+     * character: the app may have rewritten the field, an autocomplete may have run, the user may have
+     * moved the cursor between the commit and the next key — and deleting a character we did not write
+     * is the one mistake this feature must never make.
+     */
+    private fun PhantomSpaceState.hasStandingMaterializedSpace(): Boolean {
+        if (!isMaterialized) return false
+        val content = activeContent
+        val selection = content.selection
+        if (selection.isNotValid || selection.isSelectionMode || selection.start <= 0) return false
+        return content.getTextBeforeCursor(1) == SPACE
+    }
+
+    /** Whether committing [text] has to take the materialized space back first — see [materializedSpaceSurvives]. */
+    private fun PhantomSpaceState.shouldDropMaterialized(text: String): Boolean {
+        if (!hasStandingMaterializedSpace()) return false
+        return !materializedSpaceSurvives(text, nlpManager.getActivePunctuationRule().symbolsFollowingPhantomSpace)
+    }
+
+    /**
+     * Takes back the space written ahead of a word that never came (issue #393).
+     *
+     * For the boundaries that end the line rather than continue it: Enter, and the editor action that
+     * sends. The space was written on the promise of a next word, and a message must not go out with a
+     * trailing one where it never had one before.
+     */
+    private fun dropPendingMaterializedSpace() {
+        if (!phantomSpace.hasStandingMaterializedSpace()) return
+        replaceTextBeforeCursor(1, "")
+    }
+
+    class AutoSpaceState {
+        companion object {
+            private const val F_IS_ACTIVE = 0x1
+            private const val F_STAY_ACTIVE_NEXT_UPDATE = 0x4
+        }
+
+        private val state = AtomicInteger(0)
+
+        val isActive: Boolean
+            get() = state.get() and F_IS_ACTIVE != 0
+
+        val isInactive: Boolean
+            get() = !isActive
+
+        fun setActive(stayActiveNextUpdate: Boolean = true) {
+            state.set(F_IS_ACTIVE or (if (stayActiveNextUpdate) F_STAY_ACTIVE_NEXT_UPDATE else 0))
+        }
+
+        fun setInactive() {
+            state.set(0)
+        }
+
+        fun setInactiveFromUpdate() {
+            state.updateAndGet { state ->
+                if ((state and F_STAY_ACTIVE_NEXT_UPDATE) != 0) (state and F_STAY_ACTIVE_NEXT_UPDATE.inv()) else 0
+            }
+        }
+    }
+
+    class PhantomSpaceState {
+        companion object {
+            private const val F_IS_ACTIVE = 0x1
+            private const val F_SHOW_COMPOSING_REGION = 0x2
+            private const val F_STAY_ACTIVE_NEXT_UPDATE = 0x4
+            private const val F_IS_MATERIALIZED = 0x8
+        }
+
+        private val state = AtomicInteger(0)
+        var candidateForRevert: SuggestionCandidate? = null
+            private set
+
+        val isActive: Boolean
+            get() = state.get() and F_IS_ACTIVE != 0
+
+        val isInactive: Boolean
+            get() = !isActive
+
+        val showComposingRegion: Boolean
+            get() = state.get() and F_SHOW_COMPOSING_REGION != 0
+
+        /**
+         * Whether the promised space has already been written into the editor (issue #393). It is a real
+         * character from that moment on — what stays pending is only the right to take it back again.
+         */
+        val isMaterialized: Boolean
+            get() = state.get() and F_IS_MATERIALIZED != 0
+
+        fun setActive(
+            showComposingRegion: Boolean,
+            stayActiveNextUpdate: Boolean = true,
+            candidate: SuggestionCandidate? = null,
+            materialized: Boolean = false,
+        ) {
+            state.set(
+                F_IS_ACTIVE
+                    or (if (showComposingRegion) F_SHOW_COMPOSING_REGION else 0)
+                    or (if (stayActiveNextUpdate) F_STAY_ACTIVE_NEXT_UPDATE else 0)
+                    or (if (materialized) F_IS_MATERIALIZED else 0)
+            )
+            candidateForRevert = candidate
+        }
+
+        fun setInactive() {
+            state.set(0)
+            candidateForRevert = null
+        }
+
+        fun setInactiveFromUpdate() {
+            val prevStateValue = state.getAndUpdate { state ->
+                if ((state and F_STAY_ACTIVE_NEXT_UPDATE) != 0) (state and F_STAY_ACTIVE_NEXT_UPDATE.inv()) else 0
+            }
+            if ((prevStateValue and F_STAY_ACTIVE_NEXT_UPDATE) == 0) {
+                candidateForRevert = null
+            }
+        }
+    }
+
+    inner class MassSelectionState {
+        private val state = AtomicInteger(0)
+
+        val isActive: Boolean
+            get() = state.get() > 0
+
+        val isInactive: Boolean
+            get() = !isActive
+
+        fun begin() {
+            state.incrementAndGet()
+        }
+
+        fun end() {
+            if (state.decrementAndGet() == 0) {
+                // We need to emulate a selection update to update the content if mass selection has ended
+                handleSelectionUpdate(EditorRange.Unspecified, activeContent.selection, EditorRange.Unspecified)
+            }
+        }
+
+        fun reset() {
+            state.set(0)
+        }
+    }
+}
