@@ -346,6 +346,11 @@ fun RestoreScreen() = FlorisScreen {
                     }
                 }
             }
+            // TypeBetter: My fixes and Never change. Only ever added, never replacing what is there.
+            val typeBetterFile = dictionaryDir.subFile(Backup.TYPEBETTER_JSON_NAME)
+            if (typeBetterFile.exists()) {
+                runCatching { com.typebetter.keyboard.PersonalWords.importText(typeBetterFile.readText()) }
+            }
             val learnedFile = dictionaryDir.subFile(Backup.LEARNED_WORDS_JSON_NAME)
             val pairsFile = dictionaryDir.subFile(Backup.LEARNED_BIGRAMS_JSON_NAME)
             if (learnedFile.exists() || pairsFile.exists()) {

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Checkbox
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -96,6 +98,7 @@ fun MyWordsScreen() = FlorisScreen {
     var editingBlock by remember { mutableStateOf<NeverChange?>(null) }
     var editingWord by remember { mutableStateOf<String?>(null) }
     var learning by remember { mutableStateOf(false) }
+    var restoringWeekly by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -140,6 +143,11 @@ fun MyWordsScreen() = FlorisScreen {
                     menuExpanded = false
                     exportLauncher.launch("typebetter-words.json")
                 },
+            )
+            DropdownMenuItem(
+                leadingIcon = { Icon(Icons.Default.History, contentDescription = null) },
+                text = { Text(stringRes(R.string.typebetter__weekly_title)) },
+                onClick = { menuExpanded = false; restoringWeekly = true },
             )
             DropdownMenuItem(
                 leadingIcon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
@@ -277,6 +285,27 @@ fun MyWordsScreen() = FlorisScreen {
                     }
                 } else {
                     null
+                },
+            )
+        }
+
+        if (restoringWeekly) {
+            WeeklyDialog(
+                onDismiss = { restoringWeekly = false },
+                onPick = { copy ->
+                    restoringWeekly = false
+                    scope.launch {
+                        val summary = withContext(Dispatchers.IO) { PersonalWords.restoreWeekly(copy) }
+                        if (summary == null) {
+                            context.showLongToast(R.string.typebetter__import_failed)
+                        } else {
+                            context.showLongToast(
+                                R.string.typebetter__import_done,
+                                "words" to summary.words,
+                                "fixes" to summary.fixes + summary.blocks,
+                            )
+                        }
+                    }
                 },
             )
         }
@@ -462,7 +491,8 @@ private fun LearnDialog(
     onDismiss: () -> Unit,
     onAdd: (List<String>) -> Unit,
 ) {
-    var text by remember { mutableStateOf(readClipboard(context)) }
+    // The clipboard is read only when asked (it may hold a password), and nothing is ticked until chosen.
+    var text by remember { mutableStateOf("") }
     var candidates by remember { mutableStateOf<List<WordHarvester.Candidate>?>(null) }
     val chosen = remember { mutableStateListOf<String>() }
     val scope = rememberCoroutineScope()
@@ -483,7 +513,6 @@ private fun LearnDialog(
                 })
             }
             chosen.clear()
-            chosen.addAll(found.map { it.word })
             candidates = found
         }
     }
@@ -514,6 +543,10 @@ private fun LearnDialog(
         Column {
             if (list == null) {
                 HintText(stringRes(R.string.typebetter__learn_paste_hint))
+                TextButton(onClick = { text = readClipboard(context) }) {
+                    Icon(Icons.Default.ContentPaste, contentDescription = null)
+                    Text(stringRes(R.string.typebetter__learn_paste), modifier = Modifier.padding(start = 8.dp))
+                }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -526,6 +559,13 @@ private fun LearnDialog(
                 Text(stringRes(R.string.typebetter__learn_none))
             } else {
                 HintText(stringRes(R.string.typebetter__learn_pick_hint))
+                val allTicked = chosen.size == list.size
+                TextButton(onClick = {
+                    chosen.clear()
+                    if (!allTicked) chosen.addAll(list.map { it.word })
+                }) {
+                    Text(stringRes(if (allTicked) R.string.typebetter__learn_untick_all else R.string.typebetter__learn_tick_all))
+                }
                 list.forEach { candidate ->
                     val checked = candidate.word in chosen
                     Row(
@@ -543,6 +583,42 @@ private fun LearnDialog(
                             modifier = Modifier.padding(start = 4.dp),
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/** The weekly copies, newest first; picking one adds back what it holds (nothing is removed). */
+@Composable
+private fun WeeklyDialog(
+    onDismiss: () -> Unit,
+    onPick: (PersonalWords.WeeklyCopy) -> Unit,
+) {
+    var copies by remember { mutableStateOf<List<PersonalWords.WeeklyCopy>?>(null) }
+    LaunchedEffect(Unit) { copies = withContext(Dispatchers.IO) { PersonalWords.weeklyCopies() } }
+    val formatter = remember { java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM) }
+
+    JetPrefAlertDialog(
+        scrollModifier = florisDialogScroll(),
+        title = stringRes(R.string.typebetter__weekly_title),
+        dismissLabel = stringRes(R.string.action__cancel),
+        onDismiss = onDismiss,
+    ) {
+        Column {
+            HintText(stringRes(R.string.typebetter__weekly_hint))
+            val list = copies
+            when {
+                list == null -> Unit
+                list.isEmpty() -> Text(stringRes(R.string.typebetter__weekly_none), modifier = Modifier.padding(top = 8.dp))
+                else -> list.forEach { copy ->
+                    Text(
+                        text = stringRes(R.string.typebetter__weekly_item, "date" to formatter.format(java.util.Date(copy.savedAt))),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onPick(copy) }
+                            .padding(vertical = 12.dp),
+                    )
                 }
             }
         }

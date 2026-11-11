@@ -56,6 +56,20 @@ class PersonalCodecTest {
         assertNull(result.rules.fixFor("silos"), "the user's block wins over the imported fix")
         assertTrue(result.newWords.isEmpty())
     }
+
+    @Test
+    fun `a saved rules file or weekly copy restores its fixes`() {
+        val restored = assertNotNull(PersonalCodec.decodeBackup(PersonalCodec.encodeRules(rules)))
+        assertEquals(rules.fixes, restored.fixes)
+        assertEquals(rules.neverChange, restored.neverChange)
+        assertTrue(restored.words.isEmpty())
+    }
+
+    @Test
+    fun `unrelated JSON is still refused`() {
+        assertNull(PersonalCodec.decodeBackup("""{"name": "something else"}"""))
+        assertNull(PersonalCodec.decodeBackup("not json"))
+    }
 }
 
 class PromptVocabularyTest {

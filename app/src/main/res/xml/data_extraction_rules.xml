@@ -18,12 +18,14 @@
     <cloud-backup disableIfNoEncryptionCapabilities="true">
         <include domain="root" path="jetpref_datastore" />
         <include domain="file" path="ime" />
+        <include domain="file" path="typebetter" />
         <include domain="database" path="floris_user_dictionary" />
         <include domain="database" path="prompts.db" />
     </cloud-backup>
     <device-transfer>
         <include domain="root" path="jetpref_datastore" />
         <include domain="file" path="ime" />
+        <include domain="file" path="typebetter" />
         <include domain="database" path="floris_user_dictionary" />
         <include domain="database" path="prompts.db" />
     </device-transfer>

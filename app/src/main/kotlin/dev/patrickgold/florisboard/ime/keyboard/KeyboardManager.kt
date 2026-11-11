@@ -1134,7 +1134,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val restored = correction.replaced.trim()
         // TypeBetter: offer "+ word" at once, and after the second undo of the same correction
         // "Don't fix", which saves it as Never change.
-        if (restored.isNotEmpty()) {
+        // Nothing is recorded in incognito mode or a password field, same as the "+ word" offer.
+        if (restored.isNotEmpty() && !activeState.isIncognitoMode && activeState.keyVariation != KeyVariation.PASSWORD) {
             PersonalWords.onCorrectionUndone(restored, correction.inserted.trim())
         }
         if (restored.isNotEmpty()) {

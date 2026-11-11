@@ -6,6 +6,10 @@
     <include
         domain="file"
         path="ime"/>
+    <!-- TypeBetter: My fixes, Never change and their weekly copies. -->
+    <include
+        domain="file"
+        path="typebetter"/>
     <include
         domain="database"
         path="floris_user_dictionary"/>

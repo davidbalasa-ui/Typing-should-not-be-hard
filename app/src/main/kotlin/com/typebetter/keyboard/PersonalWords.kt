@@ -19,6 +19,7 @@ import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,8 +52,12 @@ object PersonalWords {
     private const val RULES_FILE = "personal-rules.json"
     private const val BACKUP_DIR = "backups"
     private const val WEEKLY_BACKUPS_KEPT = 8
+    private const val WEEKLY_PREFIX = "typebetter-week-"
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // A failure in background work (a dictionary that will not open, a full disk) is logged, never a crash.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, e -> flogError { "TypeBetter: $e" } },
+    )
     private val writeLock = Mutex()
 
     @Volatile
@@ -134,23 +139,46 @@ object PersonalWords {
                 temp.delete()
             }
         }.onFailure { flogError { "TypeBetter: could not save the rules: $it" } }
+        weeklyBackup(context)
     }
 
+    /**
+     * One full copy a week (My words, My fixes and Never change, in the export format), the last eight
+     * kept. Settings → My words & fixes → Restore a weekly copy brings one back.
+     */
     private fun weeklyBackup(context: Context) {
         runCatching {
-            val source = File(dir(context), RULES_FILE)
-            if (!source.exists()) return
+            if (!ready) return
             val folder = File(dir(context), BACKUP_DIR).apply { mkdirs() }
             val today = LocalDate.now()
             val week = "%d-W%02d".format(today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
-            val target = File(folder, "personal-rules-$week.json")
-            if (!target.exists()) source.copyTo(target)
-            folder.listFiles { f -> f.name.startsWith("personal-rules-") }
-                ?.sortedByDescending { it.name }
-                ?.drop(WEEKLY_BACKUPS_KEPT)
-                ?.forEach { it.delete() }
+            val target = File(folder, "$WEEKLY_PREFIX$week.json")
+            if (target.exists()) return
+            val backup = PersonalBackup.of(_rules.value, myWords(), System.currentTimeMillis())
+            if (backup.words.isEmpty() && backup.fixes.isEmpty() && backup.neverChange.isEmpty()) return
+            target.writeText(PersonalCodec.encodeBackup(backup))
+            weeklyFiles(context).drop(WEEKLY_BACKUPS_KEPT).forEach { it.delete() }
         }.onFailure { flogError { "TypeBetter: weekly copy failed: $it" } }
     }
+
+    private fun weeklyFiles(context: Context): List<File> =
+        File(dir(context), BACKUP_DIR).listFiles { f -> f.name.startsWith(WEEKLY_PREFIX) && f.name.endsWith(".json") }
+            ?.sortedByDescending { it.name }
+            .orEmpty()
+
+    /** A weekly copy, for the restore list. [week] reads like "2026-W46". */
+    data class WeeklyCopy(val week: String, val savedAt: Long, internal val file: File)
+
+    fun weeklyCopies(): List<WeeklyCopy> {
+        val context = appContext ?: return emptyList()
+        return weeklyFiles(context).map {
+            WeeklyCopy(it.name.removePrefix(WEEKLY_PREFIX).removeSuffix(".json"), it.lastModified(), it)
+        }
+    }
+
+    /** Adds back what a weekly copy holds. Like every import it only adds; nothing is removed. */
+    fun restoreWeekly(copy: WeeklyCopy): ImportSummary? =
+        runCatching { copy.file.readText() }.getOrNull()?.let { importText(it) }
 
     private fun update(change: (PersonalRules) -> PersonalRules) {
         synchronized(loadLock) {
@@ -376,10 +404,14 @@ object PersonalWords {
 
     data class ImportSummary(val words: Int, val fixes: Int, val blocks: Int)
 
+    /** Everything, in the export format: what Export writes and the app's own Backup includes. */
+    fun exportText(): String =
+        PersonalCodec.encodeBackup(PersonalBackup.of(_rules.value, myWords(), System.currentTimeMillis()))
+
     fun exportTo(context: Context, uri: Uri): Boolean = runCatching {
-        val backup = PersonalBackup.of(_rules.value, myWords(), System.currentTimeMillis())
+        val text = exportText()
         context.contentResolver.openOutputStream(uri, "wt")?.use { out ->
-            out.write(PersonalCodec.encodeBackup(backup).toByteArray(Charsets.UTF_8))
+            out.write(text.toByteArray(Charsets.UTF_8))
         } ?: error("no output stream")
         true
     }.getOrElse {
@@ -392,6 +424,11 @@ object PersonalWords {
         val text = runCatching {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
         }.getOrNull() ?: return null
+        return importText(text)
+    }
+
+    /** Adds what [text] (an export, a weekly copy or a saved rules file) holds. Null when it is none of those. */
+    fun importText(text: String): ImportSummary? {
         val backup = PersonalCodec.decodeBackup(text) ?: return null
         return runCatching {
             var result: com.typebetter.personal.ImportResult? = null

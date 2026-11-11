@@ -30,13 +30,24 @@ object PersonalCodec {
 
     fun encodeBackup(backup: PersonalBackup): String = json.encodeToString(PersonalBackup.serializer(), backup)
 
-    /** Returns null when [text] is not a TypeBetter backup. */
-    fun decodeBackup(text: String): PersonalBackup? = try {
-        json.decodeFromString(PersonalBackup.serializer(), text).takeIf { it.format == PersonalBackup.FORMAT }
-    } catch (_: SerializationException) {
-        null
-    } catch (_: IllegalArgumentException) {
-        null
+    /**
+     * Reads an exported backup, or a saved rules file (the keyboard's own `personal-rules.json` or an old
+     * weekly copy), which carries the fixes and Never change entries but no words.
+     * Returns null when [text] is neither.
+     */
+    fun decodeBackup(text: String): PersonalBackup? {
+        // The format field has a default, so a file must actually say it is a backup.
+        val backup = if (!text.contains(PersonalBackup.FORMAT)) null else try {
+            json.decodeFromString(PersonalBackup.serializer(), text).takeIf { it.format == PersonalBackup.FORMAT }
+        } catch (_: SerializationException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+        if (backup != null) return backup
+        if (!text.contains("\"fixes\"") && !text.contains("\"neverChange\"")) return null
+        val rules = decodeRules(text) ?: return null
+        return PersonalBackup.of(rules, emptyList(), 0L)
     }
 }
 

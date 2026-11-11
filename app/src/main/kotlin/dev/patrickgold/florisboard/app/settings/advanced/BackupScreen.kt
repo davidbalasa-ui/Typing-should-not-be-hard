@@ -119,6 +119,8 @@ object Backup {
     // WAL files and locks. Until this existed a device change silently threw the whole vocabulary away,
     // which is the one thing the reporter of #318 asked for by name.
     const val PERSONAL_DICTIONARY_JSON_NAME = "personal_dictionary.json"
+    /** TypeBetter's My words, My fixes and Never change, in its own export format. */
+    const val TYPEBETTER_JSON_NAME = "typebetter_personal.json"
     const val LEARNED_WORDS_JSON_NAME = "learned_words.json"
     const val LEARNED_BIGRAMS_JSON_NAME = "learned_bigrams.json"
     const val DICTIONARY_DIR = "dictionary"
@@ -319,6 +321,8 @@ fun BackupScreen() = FlorisScreen {
                 dir.subFile(Backup.PERSONAL_DICTIONARY_JSON_NAME).writeJson(personal)
                 dir.subFile(Backup.LEARNED_WORDS_JSON_NAME).writeJson(learned)
                 dir.subFile(Backup.LEARNED_BIGRAMS_JSON_NAME).writeJson(pairs)
+                // TypeBetter: My fixes and Never change ride with the personal dictionary.
+                runCatching { dir.subFile(Backup.TYPEBETTER_JSON_NAME).writeText(com.typebetter.keyboard.PersonalWords.exportText()) }
             }
         }
         val workspaceFilesDir = workspace.inputDir.subDir("files")

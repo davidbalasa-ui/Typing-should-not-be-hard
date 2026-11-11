@@ -44,14 +44,21 @@
 
     <string name="typebetter__learn_title">Learn from text</string>
     <string name="typebetter__learn_summary">Paste a conversation and pick the new words to keep</string>
-    <string name="typebetter__learn_paste_hint">Copied text is filled in for you. Links, addresses and code are skipped.</string>
+    <string name="typebetter__learn_paste_hint">Paste or type the text. Links, addresses and code are skipped.</string>
+    <string name="typebetter__learn_paste">Paste copied text</string>
+    <string name="typebetter__learn_tick_all">Tick all</string>
+    <string name="typebetter__learn_untick_all">Untick all</string>
     <string name="typebetter__learn_field">Text</string>
     <string name="typebetter__learn_find">Find new words</string>
     <string name="typebetter__learn_add">Add {count}</string>
     <string name="typebetter__learn_none">Every word in this text is already known.</string>
-    <string name="typebetter__learn_pick_hint">Untick anything that is a typo.</string>
+    <string name="typebetter__learn_pick_hint">Tick the words to keep.</string>
     <string name="typebetter__learn_done">Added {count} words to My words</string>
 
+    <string name="typebetter__weekly_title">Restore a weekly copy</string>
+    <string name="typebetter__weekly_hint">A copy of all three lists is kept every week (the last 8). Restoring adds back what is missing and removes nothing.</string>
+    <string name="typebetter__weekly_none">No weekly copy yet. The first is made once you have words or fixes.</string>
+    <string name="typebetter__weekly_item">Week of {date}</string>
     <string name="typebetter__export">Back up to a file</string>
     <string name="typebetter__import">Restore from a file</string>
     <string name="typebetter__export_done">Saved</string>
