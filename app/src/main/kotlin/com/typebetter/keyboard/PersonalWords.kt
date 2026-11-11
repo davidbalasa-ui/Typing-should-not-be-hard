@@ -72,14 +72,29 @@ object PersonalWords {
     // ---------------------------------------------------------------------------------------------
     // Start-up
 
+    /** Guards [ready] and [pending]: changes made before the saved rules are loaded wait for them. */
+    private val loadLock = Any()
+
+    @Volatile
+    private var ready = false
+    private val pending = mutableListOf<(PersonalRules) -> PersonalRules>()
+
     fun init(context: Context) {
         val app = context.applicationContext ?: context
         appContext = app
         scope.launch {
             val loaded = loadRules(app)
-            _rules.value = loaded
-            applyStarterPack(force = false)
+            synchronized(loadLock) {
+                // Anything changed while the file was loading is replayed on top of it, not lost.
+                var rules = loaded
+                pending.forEach { change -> rules = runCatching { change(rules) }.getOrDefault(rules) }
+                pending.clear()
+                _rules.value = rules
+                ready = true
+            }
+            persist()
             weeklyBackup(app)
+            applyStarterPack(force = false)
             bump()
         }
     }
@@ -91,16 +106,23 @@ object PersonalWords {
         val backup = File(dir(context), "$RULES_FILE.bak")
         for (candidate in listOf(file, backup)) {
             if (!candidate.exists()) continue
-            val text = runCatching { candidate.readText() }.getOrNull() ?: continue
-            PersonalCodec.decodeRules(text)?.let { return it }
-            flogError { "TypeBetter: ${candidate.name} is unreadable, trying the next copy" }
+            val text = runCatching { candidate.readText() }.getOrNull()
+            text?.let { PersonalCodec.decodeRules(it) }?.let { return it }
+            // Kept aside rather than overwritten, so a bad read never costs the saved lists.
+            flogError { "TypeBetter: ${candidate.name} is unreadable, keeping it aside and trying the next copy" }
+            runCatching { candidate.copyTo(File(candidate.parentFile, "${candidate.name}.unreadable-${System.currentTimeMillis()}")) }
         }
         return PersonalRules()
     }
 
-    /** Writes the rules atomically: new file beside the old, old kept as `.bak`, then a rename. */
-    private suspend fun persist(rules: PersonalRules) = writeLock.withLock {
+    /**
+     * Writes the current rules atomically: new file beside the old, old kept as `.bak`, then a rename.
+     * Always the latest state, read inside the lock, so writes landing out of order cannot save an older one.
+     */
+    private suspend fun persist() = writeLock.withLock {
         val context = appContext ?: return@withLock
+        if (!ready) return@withLock
+        val rules = _rules.value
         runCatching {
             val folder = dir(context)
             val file = File(folder, RULES_FILE)
@@ -131,10 +153,17 @@ object PersonalWords {
     }
 
     private fun update(change: (PersonalRules) -> PersonalRules) {
-        var updated: PersonalRules? = null
-        _rules.update { current -> change(current).also { updated = it } }
-        updated?.let { rules -> scope.launch { persist(rules) } }
-        bump()
+        synchronized(loadLock) {
+            if (!ready) pending += change
+        }
+        var before: PersonalRules? = null
+        var after: PersonalRules? = null
+        _rules.update { current -> change(current).also { before = current; after = it } }
+        scope.launch { persist() }
+        // Undo counters do not change what the keyboard suggests; only the lists do.
+        val b = before
+        val a = after
+        if (b == null || a == null || b.fixes != a.fixes || b.neverChange != a.neverChange) bump()
     }
 
     private fun bump() {
@@ -268,19 +297,29 @@ object PersonalWords {
 
     /** Backspace just undid an automatic correction from [typed] to [corrected]. */
     fun onCorrectionUndone(typed: String, corrected: String) {
-        var offers: List<StripOffer> = emptyList()
-        update { rules ->
-            val (updated, shown) = StripOffers.afterUndo(rules, typed, corrected, isMyWord(typed))
-            offers = shown
-            updated
+        scope.launch {
+            val mine = isMyWord(typed)
+            var offers: List<StripOffer> = emptyList()
+            update { rules ->
+                val (updated, shown) = StripOffers.afterUndo(rules, typed, corrected, mine)
+                offers = shown
+                updated
+            }
+            _offers.value = offers
         }
-        _offers.value = offers
     }
 
-    /** A word was finished without a correction. [isKnown] says whether the keyboard's dictionary has it. */
-    fun onWordFinished(word: String, isKnown: Boolean) {
-        val offer = StripOffers.afterWord(word, isKnown, isMyWord(word))
-        _offers.value = listOfNotNull(offer)
+    /**
+     * A word was finished without a correction. [isKnown] asks the keyboard's dictionary; it is called
+     * off the main thread, like the personal dictionary lookup.
+     */
+    fun onWordFinished(word: String, isKnown: (String) -> Boolean) {
+        scope.launch {
+            if (!StripOffers.looksAddable(word.trim())) return@launch
+            val known = runCatching { isKnown(word) }.getOrDefault(true)
+            val offer = StripOffers.afterWord(word, known, isMyWord(word))
+            _offers.value = listOfNotNull(offer)
+        }
     }
 
     fun clearOffers() {
@@ -314,6 +353,11 @@ object PersonalWords {
     }
 
     private fun applyStarterPack(force: Boolean) {
+        // With the personal dictionary unavailable the words could not be added; try again next start
+        // instead of marking the pack as applied without them.
+        val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return
+        manager.loadUserDictionariesIfNecessary()
+        if (manager.florisUserDictionaryDao() == null) return
         val (withPack, words) = StarterPack.apply(_rules.value, force)
         if (withPack === _rules.value && words.isEmpty()) return
         val added = addWords(words)
@@ -349,9 +393,16 @@ object PersonalWords {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
         }.getOrNull() ?: return null
         val backup = PersonalCodec.decodeBackup(text) ?: return null
-        val merged = PersonalImport.merge(_rules.value, myWords(), backup)
-        update { current -> PersonalImport.merge(current, emptyList(), backup).rules }
-        val added = addWords(merged.newWords)
-        return ImportSummary(added.size, merged.addedFixes, merged.addedBlocks)
+        return runCatching {
+            var result: com.typebetter.personal.ImportResult? = null
+            val words = myWords()
+            update { current -> PersonalImport.merge(current, words, backup).also { result = it }.rules }
+            val merged = result ?: return@runCatching null
+            val added = addWords(merged.newWords)
+            ImportSummary(added.size, merged.addedFixes, merged.addedBlocks)
+        }.getOrElse {
+            flogError { "TypeBetter: import failed: $it" }
+            null
+        }
     }
 }

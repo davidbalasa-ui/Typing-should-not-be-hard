@@ -771,12 +771,16 @@ class NlpManager(context: Context) {
                 else -> emptyList()
             }
             // TypeBetter: a one-tap offer ("+ Kasmyra") leads the strip until the next word is started.
-            val withOffers = TypeBetterSuggestions.withOffers(
-                candidates = candidates,
-                isComposing = editorInstance.activeContent.composingText.isNotEmpty(),
-                isPassword = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD,
-                context = appContext,
-            )
+            val withOffers = if (isSuggestionOn()) {
+                TypeBetterSuggestions.withOffers(
+                    candidates = candidates,
+                    composingText = editorInstance.activeContent.composingText.toString(),
+                    isPassword = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD,
+                    context = appContext,
+                )
+            } else {
+                candidates
+            }
             activeCandidates = withOffers
             autoExpandCollapseSmartbarActions(withOffers, NlpInlineAutofill.suggestions.value)
         }

@@ -14,6 +14,13 @@ sealed interface StripOffer {
     data class StopChanging(val typed: String, val corrected: String) : StripOffer
 }
 
+/** The word the offer is about: the one to add, or the one that keeps being corrected. */
+val StripOffer.word: String
+    get() = when (this) {
+        is StripOffer.AddWord -> word
+        is StripOffer.StopChanging -> typed
+    }
+
 object StripOffers {
     /**
      * Backspace just put [typed] back where autocorrect had written [corrected].

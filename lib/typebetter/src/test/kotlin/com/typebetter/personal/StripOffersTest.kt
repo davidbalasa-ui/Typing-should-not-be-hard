@@ -44,3 +44,22 @@ class StripOffersTest {
         }
     }
 }
+
+class StripOffersAskOnceTest {
+    @Test
+    fun `the stop question is shown once even when it is not answered`() {
+        var rules = PersonalRules()
+        val asked = (1..4).map {
+            val (next, offers) = StripOffers.afterUndo(rules, "its", "it's", isMyWord = false)
+            rules = next
+            offers.any { it is StripOffer.StopChanging }
+        }
+        assertEquals(listOf(false, true, false, false), asked)
+    }
+
+    @Test
+    fun `an offer names its word`() {
+        assertEquals("Kasmyra", StripOffer.AddWord("Kasmyra").word)
+        assertEquals("its", StripOffer.StopChanging("its", "it's").word)
+    }
+}

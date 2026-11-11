@@ -786,11 +786,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private fun offerUnknownWordToTypeBetter(word: String) {
         if (activeState.isIncognitoMode || activeState.keyVariation == KeyVariation.PASSWORD) return
         val subtype = subtypeManager.activeSubtype
-        val known = runCatching {
-            nlpManager.getFrequencyForWord(subtype, word) > 0.0 ||
-                nlpManager.getFrequencyForWord(subtype, word.lowercase()) > 0.0
-        }.getOrDefault(true)
-        PersonalWords.onWordFinished(word, isKnown = known)
+        // The dictionary lookup runs off the main thread, inside PersonalWords.
+        PersonalWords.onWordFinished(word) { w ->
+            nlpManager.getFrequencyForWord(subtype, w) > 0.0 ||
+                nlpManager.getFrequencyForWord(subtype, w.lowercase()) > 0.0
+        }
     }
 
     /**

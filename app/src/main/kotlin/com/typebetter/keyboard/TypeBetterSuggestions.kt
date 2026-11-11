@@ -2,6 +2,7 @@ package com.typebetter.keyboard
 
 import android.content.Context
 import com.typebetter.personal.StripOffer
+import com.typebetter.personal.word
 import com.typebetter.personal.keyOf
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
@@ -67,17 +68,20 @@ object TypeBetterSuggestions {
 
     /**
      * Puts the pending one-tap offers in front of [candidates]. Offers end as soon as the next word is
-     * started, and are never shown in a password field.
+     * started, and are never shown in a password field. While the offered word itself is still the
+     * composing text (the moment between finishing it and the space landing), the offer stays.
      */
     fun withOffers(
         candidates: List<SuggestionCandidate>,
-        isComposing: Boolean,
+        composingText: String,
         isPassword: Boolean,
         context: Context,
     ): List<SuggestionCandidate> {
         val offers = PersonalWords.offers.value
         if (offers.isEmpty()) return candidates
-        if (isComposing || isPassword) {
+        val composing = composingText.trim()
+        val stillOnWord = composing.isEmpty() || offers.all { keyOf(it.word) == keyOf(composing) }
+        if (!stillOnWord || isPassword) {
             PersonalWords.clearOffers()
             return candidates
         }

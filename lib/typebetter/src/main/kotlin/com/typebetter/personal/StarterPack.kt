@@ -29,11 +29,11 @@ object StarterPack {
         "Eldoria", "Hegsheim", "Bondiberg", "Vancelonia", "Sumaba", "Minauros", "Malbolge", "Stygia",
         "Maladomini",
         // Factions, items and campaign terms
-        "Arcadians", "Arcadian", "Mutualists", "MiddleMen", "Vesper", "Weave", "Sepulchre", "Gutterglider",
+        "Arcadians", "Arcadian", "Mutualists", "MiddleMen", "Vesper", "Sepulchre", "Gutterglider",
         "Inkomancy", "Residuum", "Stunnock", "KeyFlame", "statblock", "homebrew", "compendium", "subclass",
         "handouts", "NPC", "NPCs", "PC", "DM", "CR", "AC", "HP", "WPM",
         // Projects and tech
-        "Claude", "Anthropic", "TypeBetter", "Dictate", "LeanType", "Obtainium", "Whisper", "Cursor", "MCP",
+        "Claude", "Anthropic", "TypeBetter", "Dictate", "LeanType", "Obtainium", "MCP",
         "Vercel", "Supabase", "ChatGPT", "OpenAI", "Auth0", "OAuth", "JWKS", "JWT", "Next.js", "Deno",
         "Playwright", "GitHub", "Spotify", "DDD", "PR", "APK", "repo", "zod", "tsx", "agentId", "runId",
         // Dungeons, Dragons and Defense
@@ -78,8 +78,8 @@ object StarterPack {
         suggest("lorali", "Lorelei"),
         suggest("fredrick", "Frederick"),
         // US spelling, as the game writes it
-        auto("defence", "Defense"),
-        auto("armour", "Armor"),
+        auto("defence", "defense"),
+        auto("armour", "armor"),
         // Tech words as phones and dictation mangle them
         auto("versel", "Vercel"),
         auto("vercelle", "Vercel"),

@@ -117,10 +117,13 @@ class TypingRulesTest {
     }
 
     @Test
-    fun `My words are suggested from the second letter, shortest first`() {
-        val out = rules(words = listOf("Kasmyra", "Kas", "Zephaniah")).run("ka", Cand("kale"))
-        assertEquals(listOf("Kas", "Kasmyra", "kale"), out.texts())
+    fun `My words are suggested from the third letter, shortest first`() {
+        val words = listOf("Kasmyra", "Kasmir", "Zephaniah")
+        val out = rules(words = words).run("kas", Cand("kasha"))
+        assertEquals(listOf("Kasmir", "Kasmyra", "kasha"), out.texts())
         assertNull(out.autoWord())
+        // Two letters are too few: names would crowd out everyday words.
+        assertEquals(listOf("kale"), rules(words = words).run("ka", Cand("kale")).texts())
     }
 
     @Test

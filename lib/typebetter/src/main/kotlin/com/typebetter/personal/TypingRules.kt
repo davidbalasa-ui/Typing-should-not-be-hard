@@ -126,7 +126,7 @@ class TypingRules(
     }
 
     companion object {
-        const val MIN_PREFIX = 2
+        const val MIN_PREFIX = 3
         const val MAX_COMPLETIONS = 2
     }
 }

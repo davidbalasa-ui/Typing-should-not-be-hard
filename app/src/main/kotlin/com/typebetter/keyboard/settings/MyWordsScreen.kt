@@ -322,7 +322,8 @@ private fun FixDialog(
                         typed = typed.trim(),
                         meant = meant.trim(),
                         mode = if (auto) FixMode.AUTO else FixMode.SUGGEST,
-                        source = if (fix.typed.isBlank()) Source.USER else fix.source,
+                        // Edited by hand, so it is the user's own now (switching the starter pack off keeps it).
+                        source = Source.USER,
                     ),
                 )
             }
@@ -385,7 +386,8 @@ private fun NeverChangeDialog(
                     entry.copy(
                         typed = typed.trim(),
                         blocked = blocked.trim(),
-                        source = if (entry.typed.isBlank()) Source.USER else entry.source,
+                        // Edited by hand, so it is the user's own now (switching the starter pack off keeps it).
+                        source = Source.USER,
                     ),
                 )
             }

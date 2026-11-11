@@ -2,7 +2,7 @@
 #
 # - Every push and pull request: run the unit tests and build a release APK.
 # - Push to main: publish the APK as a GitHub release (Obtainium installs and updates from these).
-# - Push to a claude/* work branch: publish it as a pre-release, so work in progress can be tried on
+# - Push to a claude/* work branch: publish it as a pre-release once the release key exists, so work in progress can be tried on
 #   the phone before it is merged.
 #
 # The cloud container used for development cannot download Android SDK packages, so this workflow is
@@ -22,7 +22,8 @@ on:
 
 concurrency:
   group: typebetter-${{ github.ref }}
-  cancel-in-progress: true
+  # main is never cancelled half way, so a release (or the first key commit) always finishes.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -127,9 +128,12 @@ jobs:
             exit 0
           fi
           if [ ! -f "$key" ]; then
-            if [ "$EVENT" != "push" ]; then
-              echo "::error::No key file yet. Push to a branch once so the key can be created and committed."
-              exit 1
+            # One key for every build, made once on main: a key made on a work branch would differ from
+            # main's, and phones only accept updates signed with the key they installed.
+            if [ "$EVENT" != "push" ] || [ "$REF" != "main" ]; then
+              echo "::warning::No release key yet; it is made by the first build of main. This APK uses a throwaway key."
+              echo "signed=false" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
             mkdir -p signing
             keytool -genkeypair -keystore "$key" -storetype PKCS12 -alias typebetter \
@@ -155,20 +159,22 @@ jobs:
         run: |
           # Upstream Dictate's versionCode is 142; ours counts on from 142000 so every build is an update.
           TB_VERSION_CODE=$((142000 + GITHUB_RUN_NUMBER))
-          TB_VERSION_SUFFIX="-typebetter.$GITHUB_RUN_NUMBER"
+          BASE_VERSION=$(grep '^projectVersionName=' gradle.properties | cut -d= -f2 | cut -d- -f1)
+          TB_VERSION_NAME="$BASE_VERSION-typebetter.$GITHUB_RUN_NUMBER"
           if [ "$SIGNED" = "true" ]; then
             ./gradlew --no-daemon :app:assembleRelease \
-              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionNameSuffix="$TB_VERSION_SUFFIX"
+              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
           else
             # Without the secret, the benchmark type is the release build signed with a debug key.
             ./gradlew --no-daemon :app:assembleBenchmark \
-              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionNameSuffix="$TB_VERSION_SUFFIX"
+              -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
           fi
       - name: Name the APK
         run: |
           rm -f keystore.properties
           mkdir -p out
-          apk=$(find app/build/outputs/apk -name '*.apk' | head -n 1)
+          apk=$(find app/build/outputs/apk -name '*.apk' \( -path '*release*' -o -path '*benchmark*' \) | head -n 1)
+          [ -n "$apk" ] || { echo "::error::No APK was built"; exit 1; }
           cp "$apk" "out/TypeBetter-${{ github.run_number }}.apk"
           ls -l out
       - uses: actions/upload-artifact@v4

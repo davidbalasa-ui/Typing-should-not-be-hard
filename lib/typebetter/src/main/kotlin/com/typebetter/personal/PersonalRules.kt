@@ -108,8 +108,12 @@ data class PersonalRules(
         if (typed.isBlank() || corrected.isBlank() || keyOf(typed) == keyOf(corrected)) return this to false
         val key = pairKey(typed, corrected)
         val count = (revertCounts[key] ?: 0) + 1
-        val updated = copy(revertCounts = (revertCounts + (key to count)).trimmedCounts())
         val ask = count >= ASK_AFTER_REVERTS && key !in askedPairs && !isBlocked(typed, corrected)
+        // Asked once: the question counts as asked as soon as it is shown, answered or not.
+        val updated = copy(
+            revertCounts = (revertCounts + (key to count)).trimmedCounts(),
+            askedPairs = if (ask) askedPairs + key else askedPairs,
+        )
         return updated to ask
     }
 
