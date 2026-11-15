@@ -131,9 +131,9 @@ own files, including TypeBetter's lists (section 2.9).
 
 - On Android 12 and later, the App takes part in the backup to your Google
   account **only when that backup is end-to-end encrypted** with your screen
-  lock, which means Google cannot read it. On Android 9 to 11, TypeBetter's lists
-  are included only when the backup is end-to-end encrypted too; Android 8 and
-  older cannot promise that.
+  lock, which means Google cannot read it. On Android 11 and older, Android
+  decides whether its backup is encrypted, and the App cannot require it; that
+  backup includes TypeBetter's lists too.
 - Your **dictation history, its audio and the clipboard are never part of it.**
 - This backup is Android's, not ours, and we never receive it. You can switch it
   off in Android's settings. The App's own "Back up & Restore" lets you choose to

@@ -125,6 +125,8 @@ data class ImportResult(
     val newWords: List<String>,
     val addedFixes: Int,
     val addedBlocks: Int,
+    /** Starter fixes taken out because the backup's owner had deleted them (new phone only, see [PersonalImport]). */
+    val removedStarterFixes: List<Fix> = emptyList(),
 )
 
 object PersonalImport {
@@ -135,14 +137,17 @@ object PersonalImport {
             .filter { it.isNotEmpty() && knownWords.add(keyOf(it)) }
 
         var rules = current
-        // The backup knows which starter fixes its owner kept. Starter fixes on this phone that the backup
-        // does not have were deleted there (the pack is re-added automatically on a new phone), so they go.
-        // Only pack entries are touched; nothing the user made is ever removed by an import.
-        // Only when the backup was made with this pack version or newer: an older backup cannot know about
-        // entries a newer pack added.
-        if (backup.starterPackVersion != null && backup.starterPackVersion >= StarterPack.VERSION) {
+        // Restoring onto a new phone: the pack was added automatically at first start, so starter fixes the
+        // backup's owner had deleted came back. The backup knows which ones they kept, so the others go.
+        // Only on a phone with nothing of the user's own yet (every fix from the pack, no Never change), and
+        // only for a backup made with this pack version or newer, which knows every entry the pack has. On
+        // a phone in use, an import only ever adds.
+        var removed = emptyList<Fix>()
+        val freshPhone = rules.neverChange.isEmpty() && rules.fixes.all { it.source == Source.STARTER }
+        if (freshPhone && backup.starterPackVersion != null && backup.starterPackVersion >= StarterPack.VERSION) {
             val keptStarter = backup.fixes.filter { it.source == Source.STARTER }.map { it.key }.toSet()
-            rules = rules.copy(fixes = rules.fixes.filterNot { it.source == Source.STARTER && it.key !in keptStarter })
+            removed = rules.fixes.filter { it.source == Source.STARTER && it.key !in keptStarter }
+            rules = rules.copy(fixes = rules.fixes - removed.toSet())
         }
         var fixes = 0
         for (fix in backup.fixes) {
@@ -169,6 +174,6 @@ object PersonalImport {
                 starterPackVersion = maxOf(rules.starterPackVersion, backup.starterPackVersion ?: 0),
             )
         }
-        return ImportResult(rules, newWords, fixes, blocks)
+        return ImportResult(rules, newWords, fixes, blocks, removed)
     }
 }

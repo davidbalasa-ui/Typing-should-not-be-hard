@@ -6,12 +6,10 @@
     <include
         domain="file"
         path="ime"/>
-    <!-- TypeBetter: My fixes, Never change and their weekly copies. Only into an end-to-end encrypted
-         backup (Android 9 and later read requireFlags; Android 12+ uses data_extraction_rules.xml). -->
+    <!-- TypeBetter: My fixes, Never change and their weekly copies. -->
     <include
         domain="file"
-        path="typebetter"
-        requireFlags="clientSideEncryption"/>
+        path="typebetter"/>
     <include
         domain="database"
         path="floris_user_dictionary"/>

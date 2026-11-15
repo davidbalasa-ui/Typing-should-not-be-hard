@@ -74,8 +74,10 @@
     <string name="typebetter__export_failed">Could not save the file</string>
     <string name="typebetter__import_done">Added {words} words and {fixes} fixes. Nothing was removed.</string>
     <string name="typebetter__import_failed">That file is not a TypeBetter backup</string>
-    <string name="typebetter__import_failed_now">Could not restore right now. Make sure the personal dictionary is on (Settings, Dictionary) and try again.</string>
+    <string name="typebetter__import_failed_now">Could not restore right now. Try again in a moment.</string>
     <string name="typebetter__import_confirm">Add them</string>
+    <string name="typebetter__import_done_words_missing">Added {words} words and {fixes} fixes. {missing} words could not be added: switch on the personal dictionary (Settings, Dictionary) and restore again.</string>
+    <string name="typebetter__import_starter_removed">This phone has only the starter pack so far, and the backup comes from a phone where these starter fixes were deleted, so they are taken out again:</string>
     <string name="typebetter__import_preview">This file adds {words} words, {fixes} fixes and {blocks} Never change entries.</string>
     <string name="typebetter__import_auto_hint">These fixes will change what you type and dictate automatically:</string>
     <string name="typebetter__import_more">…and {count} more.</string>

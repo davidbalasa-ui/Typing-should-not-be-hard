@@ -193,17 +193,21 @@ object PersonalWords {
      * kept; each holds the last state of its week. Settings → My words & fixes → Restore a weekly copy brings one back.
      *
      * Called with [writeLock] held, after every change to the rules and to My words. Written to a temporary
-     * file and renamed, so a crash mid-write leaves the previous copy whole. Skipped, keeping the previous
-     * copy, while My words cannot be read: a copy without the words would replace a good one.
+     * file and renamed, so a crash mid-write leaves the previous copy whole. While My words cannot be read
+     * (dictionary off or failing), the copy keeps the words it already holds and only the fixes are
+     * updated: a copy without the words must never replace a good one.
      */
     private fun weeklyBackup(context: Context) {
         runCatching {
             if (!ready || !settingsLoaded || saveBlocked) return
-            val words = myWordsOrNull() ?: return
             val folder = File(dir(context), BACKUP_DIR).apply { mkdirs() }
             val today = LocalDate.now()
             val week = "%d-W%02d".format(today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
             val target = File(folder, "$WEEKLY_PREFIX$week.json")
+            val words = myWordsOrNull()
+                ?: lastSavedWords(target)
+                ?: weeklyFiles(context).firstNotNullOfOrNull { lastSavedWords(it) }
+                ?: return
             // Rewritten on every save during the week, so the copy holds the week's latest state.
             val backup = PersonalBackup.of(_rules.value, words, System.currentTimeMillis())
             if (backup.words.isEmpty() && backup.fixes.isEmpty() && backup.neverChange.isEmpty()) return
@@ -216,6 +220,10 @@ object PersonalWords {
             weeklyFiles(context).drop(WEEKLY_BACKUPS_KEPT).forEach { it.delete() }
         }.onFailure { flogError { "TypeBetter: weekly copy failed: $it" } }
     }
+
+    /** The words a weekly copy holds, or null when it cannot be read. */
+    private fun lastSavedWords(file: File): List<String>? =
+        if (!file.exists()) null else runCatching { PersonalCodec.decodeBackup(file.readText())?.words }.getOrNull()
 
     /** Refreshes the weekly copy after My words changed (the rules' own saves refresh it too). */
     private fun refreshWeeklyCopy() {
@@ -511,7 +519,8 @@ object PersonalWords {
     // ---------------------------------------------------------------------------------------------
     // Export and import
 
-    data class ImportSummary(val words: Int, val fixes: Int, val blocks: Int)
+    /** What an import did. [wordsNotAdded]: words it holds that could not be added (dictionary off or failing). */
+    data class ImportSummary(val words: Int, val fixes: Int, val blocks: Int, val wordsNotAdded: Int = 0)
 
     /** Everything, in the export format: what Export writes and the app's own Backup includes. */
     fun exportText(): String =
@@ -538,6 +547,8 @@ object PersonalWords {
         val fixes: Int,
         val blocks: Int,
         val autoFixes: List<Fix>,
+        /** Starter fixes the backup's owner had deleted, taken out again (only on a phone not yet in use). */
+        val removedStarter: List<Fix>,
     )
 
     /**
@@ -569,6 +580,7 @@ object PersonalWords {
                 fixes = result.addedFixes,
                 blocks = result.addedBlocks,
                 autoFixes = newFixes.filter { it.mode == com.typebetter.personal.FixMode.AUTO },
+                removedStarter = result.removedStarterFixes,
             )
         }.getOrNull()
     }
@@ -586,11 +598,14 @@ object PersonalWords {
         return runCatching {
             var result: com.typebetter.personal.ImportResult? = null
             invalidateWords()
-            val words = myWordsOrNull() ?: error("My words cannot be read right now")
+            // Fixes and Never change are restored even while My words cannot be read; the words that could
+            // not be added are counted, so the user is told instead of them vanishing.
+            val words = myWordsOrNull() ?: cachedWords
             update { current -> PersonalImport.merge(current, words, backup).also { result = it }.rules }
             val merged = result ?: return@runCatching null
             val added = addWords(merged.newWords)
-            ImportSummary(added.size, merged.addedFixes, merged.addedBlocks)
+            val wanted = merged.newWords.count { isValidWord(it) }
+            ImportSummary(added.size, merged.addedFixes, merged.addedBlocks, wordsNotAdded = (wanted - added.size).coerceAtLeast(0))
         }.getOrElse {
             flogError { "TypeBetter: import failed: $it" }
             null

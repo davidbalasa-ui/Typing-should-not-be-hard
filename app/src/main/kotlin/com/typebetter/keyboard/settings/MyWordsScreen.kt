@@ -317,11 +317,7 @@ fun MyWordsScreen() = FlorisScreen {
                         if (summary == null) {
                             context.showLongToast(R.string.typebetter__import_failed)
                         } else {
-                            context.showLongToast(
-                                R.string.typebetter__import_done,
-                                "words" to summary.words,
-                                "fixes" to summary.fixes + summary.blocks,
-                            )
+                            context.showImportDone(summary)
                         }
                     }
                 },
@@ -357,11 +353,7 @@ fun MyWordsScreen() = FlorisScreen {
                         if (summary == null) {
                             context.showLongToast(R.string.typebetter__import_failed_now)
                         } else {
-                            context.showLongToast(
-                                R.string.typebetter__import_done,
-                                "words" to summary.words,
-                                "fixes" to summary.fixes + summary.blocks,
-                            )
+                            context.showImportDone(summary)
                         }
                     }
                 },
@@ -681,7 +673,7 @@ private fun ImportDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val nothingNew = preview.words == 0 && preview.fixes == 0 && preview.blocks == 0
+    val nothingNew = preview.words == 0 && preview.fixes == 0 && preview.blocks == 0 && preview.removedStarter.isEmpty()
     JetPrefAlertDialog(
         scrollModifier = florisDialogScroll(),
         title = stringRes(R.string.typebetter__import),
@@ -709,6 +701,12 @@ private fun ImportDialog(
                     }
                     if (preview.autoFixes.size > MAX_PREVIEW_FIXES) {
                         HintText(stringRes(R.string.typebetter__import_more, "count" to preview.autoFixes.size - MAX_PREVIEW_FIXES))
+                    }
+                }
+                if (preview.removedStarter.isNotEmpty()) {
+                    HintText(stringRes(R.string.typebetter__import_starter_removed))
+                    preview.removedStarter.take(MAX_PREVIEW_FIXES).forEach { fix ->
+                        Text("${fix.typed}  →  ${fix.meant}", modifier = Modifier.padding(top = 4.dp))
                     }
                 }
                 HintText(stringRes(R.string.typebetter__import_adds_only))
@@ -763,6 +761,24 @@ private fun HintText(text: String) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** The result of a restore; words that could not be added are named, with what to do about it. */
+private suspend fun Context.showImportDone(summary: PersonalWords.ImportSummary) {
+    if (summary.wordsNotAdded > 0) {
+        showLongToast(
+            R.string.typebetter__import_done_words_missing,
+            "words" to summary.words,
+            "fixes" to summary.fixes + summary.blocks,
+            "missing" to summary.wordsNotAdded,
+        )
+    } else {
+        showLongToast(
+            R.string.typebetter__import_done,
+            "words" to summary.words,
+            "fixes" to summary.fixes + summary.blocks,
+        )
+    }
 }
 
 private fun readClipboard(context: Context): String = runCatching {

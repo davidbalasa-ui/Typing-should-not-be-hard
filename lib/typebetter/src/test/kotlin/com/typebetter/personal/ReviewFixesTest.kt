@@ -155,6 +155,25 @@ class ReviewFixesTest {
     }
 
     @Test
+    fun `on a phone already in use an import never removes starter fixes`() {
+        val (pack, _) = StarterPack.apply(PersonalRules())
+        val oldPhone = pack.withoutFix("xylose")
+        val file = PersonalBackup.of(oldPhone, emptyList(), now = 1)
+        val inUse = pack.withFix(Fix("teh", "the")) // something of the user's own
+        val result = PersonalImport.merge(inUse, emptyList(), file)
+        assertNotNull(result.rules.fixFor("xylose"))
+        assertTrue(result.removedStarterFixes.isEmpty())
+    }
+
+    @Test
+    fun `the starter fixes a restore takes out are reported`() {
+        val (pack, _) = StarterPack.apply(PersonalRules())
+        val file = PersonalBackup.of(pack.withoutFix("xylose"), emptyList(), now = 1)
+        val result = PersonalImport.merge(pack, emptyList(), file)
+        assertEquals(listOf("xylose"), result.removedStarterFixes.map { it.typed })
+    }
+
+    @Test
     fun `an old backup without starter state removes nothing`() {
         val (newPhone, _) = StarterPack.apply(PersonalRules())
         val old = PersonalBackup(fixes = listOf(Fix("teh", "the")))
