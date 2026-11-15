@@ -51,6 +51,11 @@ class TypingRules(
         stock: List<C>,
         textOf: (C) -> String,
         autoCommitOf: (C) -> Boolean,
+        /**
+         * The keyboard's own "Auto-correct" setting. Off means Space never swaps a word: My fixes and My
+         * words are still offered first on the strip, but only a tap applies them.
+         */
+        autoCorrect: Boolean = true,
         /** True for an ordinary dictionary word (given in lower case). Only used to stay cautious. */
         isCommonWord: (String) -> Boolean = { false },
     ): List<Entry<C>> {
@@ -70,7 +75,7 @@ class TypingRules(
             stockMayAutoCommit = false
             val meant = CaseStyle.apply(word, fix.meant)
             if (meant != word) {
-                val auto = fix.mode == FixMode.AUTO && !rules.isBlocked(word, meant)
+                val auto = autoCorrect && fix.mode == FixMode.AUTO && !rules.isBlocked(word, meant)
                 front += Entry(meant, auto, Origin.FIX, stockFor(meant))
             }
         } else if (myWord != null) {
@@ -79,7 +84,7 @@ class TypingRules(
             if (target != word) {
                 // Only a deliberate spelling is enforced: "rory" → "Rory", but "weave" stays "weave" even
                 // though the list has the faction name "Weave".
-                val auto = target.any { it.isUpperCase() } && !isCommonWord(keyOf(word)) && !rules.isBlocked(word, target)
+                val auto = autoCorrect && target.any { it.isUpperCase() } && !isCommonWord(keyOf(word)) && !rules.isBlocked(word, target)
                 front += Entry(target, auto, Origin.MY_WORD, stockFor(target))
             }
         }
@@ -109,7 +114,7 @@ class TypingRules(
         }
     }
 
-    /** My words that start with [prefix] (at least two letters), shortest first, in the typed case. */
+    /** My words that start with [prefix] (at least [MIN_PREFIX] characters), shortest first, in the typed case. */
     fun completionsFor(prefix: String, limit: Int = MAX_COMPLETIONS): List<String> {
         val key = keyOf(prefix)
         if (key.length < MIN_PREFIX || sortedKeys.isEmpty()) return emptyList()

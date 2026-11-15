@@ -785,11 +785,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun offerUnknownWordToTypeBetter(word: String) {
         if (activeState.isIncognitoMode || activeState.keyVariation == KeyVariation.PASSWORD) return
-        val subtype = subtypeManager.activeSubtype
+        // Every enabled language counts, so a word from a second language is not offered as new.
+        val subtypes = (listOf(subtypeManager.activeSubtype) + subtypeManager.subtypes).distinct()
         // The dictionary lookup runs off the main thread, inside PersonalWords.
         PersonalWords.onWordFinished(word) { w ->
-            nlpManager.getFrequencyForWord(subtype, w) > 0.0 ||
-                nlpManager.getFrequencyForWord(subtype, w.lowercase()) > 0.0
+            subtypes.any { subtype ->
+                nlpManager.getFrequencyForWord(subtype, w) > 0.0 ||
+                    nlpManager.getFrequencyForWord(subtype, w.lowercase()) > 0.0
+            }
         }
     }
 
@@ -1136,7 +1139,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // "Don't fix", which saves it as Never change.
         // Nothing is recorded in incognito mode or a password field, same as the "+ word" offer.
         if (restored.isNotEmpty() && !activeState.isIncognitoMode && activeState.keyVariation != KeyVariation.PASSWORD) {
-            PersonalWords.onCorrectionUndone(restored, correction.inserted.trim())
+            // With word learning off, the undo is not counted or saved (the keyboard remembers nothing typed).
+            PersonalWords.onCorrectionUndone(restored, correction.inserted.trim(), remember = prefs.wordLearningIsOn)
         }
         if (restored.isNotEmpty()) {
             nlpManager.learnFinishedWord(

@@ -249,6 +249,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         activeState.isActionsOverflowVisible = false
         activeState.isActionsEditorVisible = false
         activeState.isTranscriptionProviderSelectionVisible = false
+        // TypeBetter: a "+ word" offer belongs to the field it was typed in; a new field starts clean.
+        if (!isRestart) com.typebetter.keyboard.PersonalWords.clearOffers()
         super.handleStartInputView(editorInfo, isRestart)
         val keyboardMode = when (editorInfo.inputAttributes.type) {
             InputAttributes.Type.NUMBER -> {

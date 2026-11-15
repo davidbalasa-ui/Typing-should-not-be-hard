@@ -13,11 +13,22 @@ object WordHarvester {
         val count: Int,
     )
 
-    private val URL = Regex("""\b(?:https?://|www\.)\S+|\S+@\S+\.\S+""", RegexOption.IGNORE_CASE)
     private val CODE = Regex("""`[^`]*`""")
 
-    // A word: letters, with digits, apostrophes or inner hyphens allowed (Auth0, Krezakar'thuul, Ba'al).
-    private val WORD = Regex("""[\p{L}][\p{L}\p{M}\p{N}]*(?:['’\-][\p{L}\p{M}\p{N}]+)*""")
+    // A whole word: letters, with digits, apostrophes or inner hyphens allowed (Auth0, Krezakar'thuul,
+    // Ba'al). It must start and end at a word boundary, so pieces of identifiers are not offered:
+    // nothing from "4chan", "0xDEADBEEF" or "snake_case".
+    private val WORD = Regex("""(?<![\p{L}\p{M}\p{N}_])[\p{L}][\p{L}\p{M}\p{N}]*(?:['’\-][\p{L}\p{M}\p{N}]+)*(?![\p{L}\p{M}\p{N}_])""")
+    private val REPEATED = Regex("(.)\\1\\1\\1")
+
+    /**
+     * A link, address or path, dropped before looking for words. Checked per whitespace-separated piece
+     * of text with plain string tests, so a long unbroken paste (a data blob) costs linear time.
+     */
+    private fun isLinkLike(token: String): Boolean {
+        val lower = token.lowercase()
+        return "://" in lower || lower.startsWith("www.") || ('@' in token && '.' in token.substringAfter('@'))
+    }
 
     /**
      * @param isKnown true for a word the keyboard already knows (its dictionary, or the user's own list),
@@ -26,7 +37,13 @@ object WordHarvester {
      */
     fun harvest(text: String, isKnown: (String) -> Boolean, limit: Int = 200): List<Candidate> {
         if (text.isBlank()) return emptyList()
-        val cleaned = CODE.replace(URL.replace(text, " "), " ")
+        val cleaned = CODE.replace(text, " ")
+            .split(WHITESPACE_RUN)
+            .filterNot { isLinkLike(it) }
+            // A very long piece is never one word; splitting its joints keeps the word pattern's work (and
+            // its recursion depth on a long a-b-c… chain) small.
+            .map { if (it.length > MAX_TOKEN_LENGTH) it.replace(JOINTS, " ") else it }
+            .joinToString(" ")
         val forms = LinkedHashMap<String, MutableMap<String, Int>>()
         for (match in WORD.findAll(cleaned)) {
             // "Xylos's" counts as Xylos.
@@ -41,6 +58,10 @@ object WordHarvester {
         return forms.values
             .map { spellings -> Candidate(bestSpelling(spellings), spellings.values.sum()) }
             .filterNot { isKnown(it.word) || isKnown(it.word.lowercase()) }
+            // "self-hosted" is two known words, not a new one.
+            .filterNot { candidate ->
+                '-' in candidate.word && candidate.word.split('-').all { isKnown(it) || isKnown(it.lowercase()) }
+            }
             .sortedWith(compareByDescending<Candidate> { it.count }.thenBy { it.word.lowercase() })
             .take(limit)
     }
@@ -51,7 +72,7 @@ object WordHarvester {
         // Two-letter words only as acronyms (DM, PC, AC); lower-case ones are noise or typos of real words.
         if (word.length < 3 && !word.all { it.isUpperCase() }) return false
         // A long run of one character is not a word ("aaaaah").
-        if (Regex("(.)\\1\\1\\1").containsMatchIn(word.lowercase())) return false
+        if (REPEATED.containsMatchIn(word.lowercase())) return false
         return word.length <= MAX_WORD_LENGTH
     }
 
@@ -69,4 +90,7 @@ object WordHarvester {
     }
 
     private const val MAX_WORD_LENGTH = 40
+    private val WHITESPACE_RUN = Regex("\\s+")
+    private const val MAX_TOKEN_LENGTH = 64
+    private val JOINTS = Regex("[-'’]")
 }

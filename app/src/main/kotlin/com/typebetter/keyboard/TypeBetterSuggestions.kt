@@ -22,19 +22,28 @@ object TypeBetterSuggestions {
     suspend fun shape(
         typed: String,
         stock: List<SuggestionCandidate>,
+        /** The keyboard's "Auto-correct" setting; off means no TypeBetter rule swaps a word on Space. */
+        autoCorrect: Boolean,
         isDictionaryWord: suspend (String) -> Boolean,
     ): List<SuggestionCandidate> {
         if (typed.isBlank()) return stock
         return try {
             val key = keyOf(typed)
             // Asked once, here, because the rules run synchronously and only ever ask about the typed word.
-            val typedIsCommon = runCatching { isDictionaryWord(key) }.getOrDefault(true)
+            val typedIsCommon = try {
+                isDictionaryWord(key)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                true
+            }
             val entries = PersonalWords.typingRules().apply(
                 typed = typed,
                 stock = stock,
                 textOf = { it.text.toString() },
                 autoCommitOf = { it.isEligibleForAutoCommit },
                 isCommonWord = { it == key && typedIsCommon },
+                autoCorrect = autoCorrect,
             )
             entries.map { entry ->
                 val original = entry.stock
@@ -60,6 +69,9 @@ object TypeBetterSuggestions {
                     )
                 }
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // A newer keystroke replaced this request; stop instead of finishing stale work.
+            throw e
         } catch (e: Exception) {
             flogError { "TypeBetter: rules failed for a suggestion, keeping the keyboard's own: $e" }
             stock
@@ -68,20 +80,21 @@ object TypeBetterSuggestions {
 
     /**
      * Puts the pending one-tap offers in front of [candidates]. Offers end as soon as the next word is
-     * started, and are never shown in a password field. While the offered word itself is still the
-     * composing text (the moment between finishing it and the space landing), the offer stays.
+     * started or another field is opened, and are never shown in a password or incognito field. While the
+     * offered word itself is still the composing text (the moment between finishing it and the space
+     * landing), the offer stays.
      */
     fun withOffers(
         candidates: List<SuggestionCandidate>,
         composingText: String,
-        isPassword: Boolean,
+        isPrivateField: Boolean,
         context: Context,
     ): List<SuggestionCandidate> {
         val offers = PersonalWords.offers.value
         if (offers.isEmpty()) return candidates
         val composing = composingText.trim()
         val stillOnWord = composing.isEmpty() || offers.all { keyOf(it.word) == keyOf(composing) }
-        if (!stillOnWord || isPassword) {
+        if (!stillOnWord || isPrivateField) {
             PersonalWords.clearOffers()
             return candidates
         }

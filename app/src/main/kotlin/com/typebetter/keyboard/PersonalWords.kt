@@ -18,6 +18,7 @@ import com.typebetter.personal.keyOf
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
+import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +27,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -53,6 +55,12 @@ object PersonalWords {
     private const val BACKUP_DIR = "backups"
     private const val WEEKLY_BACKUPS_KEPT = 8
     private const val WEEKLY_PREFIX = "typebetter-week-"
+    private const val UNREADABLE = ".unreadable-"
+    private const val UNREADABLE_KEPT = 3
+    private const val MAX_WORD_LENGTH = 48
+
+    /** Far larger than any real backup (a few hundred kilobytes for thousands of entries). */
+    private const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
     // A failure in background work (a dictionary that will not open, a full disk) is logged, never a crash.
     private val scope = CoroutineScope(
@@ -84,6 +92,20 @@ object PersonalWords {
     private var ready = false
     private val pending = mutableListOf<(PersonalRules) -> PersonalRules>()
 
+    /**
+     * False until the keyboard's settings have loaded. Before that, whether the personal dictionary is
+     * switched on is not known yet, so nothing reads or writes it (no starter words, no weekly copy).
+     */
+    @Volatile
+    private var settingsLoaded = false
+
+    /**
+     * True when the saved rules exist but could not be read (storage locked or failing), and could not be
+     * kept aside either. Saving is then refused for this run, so an empty list never overwrites them.
+     */
+    @Volatile
+    private var saveBlocked = false
+
     fun init(context: Context) {
         val app = context.applicationContext ?: context
         appContext = app
@@ -97,8 +119,10 @@ object PersonalWords {
                 _rules.value = rules
                 ready = true
             }
+            // The settings load in the background at start-up; the dictionary switches live there.
+            (app as? FlorisApplication)?.preferenceStoreLoaded?.first { it }
+            settingsLoaded = true
             persist()
-            weeklyBackup(app)
             applyStarterPack(force = false)
             bump()
         }
@@ -109,15 +133,33 @@ object PersonalWords {
     private fun loadRules(context: Context): PersonalRules {
         val file = File(dir(context), RULES_FILE)
         val backup = File(dir(context), "$RULES_FILE.bak")
+        var unsafe = false
         for (candidate in listOf(file, backup)) {
             if (!candidate.exists()) continue
             val text = runCatching { candidate.readText() }.getOrNull()
             text?.let { PersonalCodec.decodeRules(it) }?.let { return it }
             // Kept aside rather than overwritten, so a bad read never costs the saved lists.
             flogError { "TypeBetter: ${candidate.name} is unreadable, keeping it aside and trying the next copy" }
-            runCatching { candidate.copyTo(File(candidate.parentFile, "${candidate.name}.unreadable-${System.currentTimeMillis()}")) }
+            val keptAside = runCatching {
+                candidate.copyTo(File(candidate.parentFile, "${candidate.name}$UNREADABLE${System.currentTimeMillis()}"))
+            }.isSuccess
+            // A file that could not even be read (rather than read and found damaged) may be fine once the
+            // storage recovers; if it could not be kept aside either, it must not be overwritten.
+            if (text == null && !keptAside) unsafe = true
         }
+        saveBlocked = unsafe
+        pruneUnreadableCopies(context)
         return PersonalRules()
+    }
+
+    /** Keeps only the newest few damaged copies, so repeated failures cannot fill the storage. */
+    private fun pruneUnreadableCopies(context: Context) {
+        runCatching {
+            dir(context).listFiles { f -> UNREADABLE in f.name }
+                ?.sortedByDescending { it.name.substringAfterLast(UNREADABLE).toLongOrNull() ?: 0L }
+                ?.drop(UNREADABLE_KEPT)
+                ?.forEach { it.delete() }
+        }
     }
 
     /**
@@ -127,6 +169,10 @@ object PersonalWords {
     private suspend fun persist() = writeLock.withLock {
         val context = appContext ?: return@withLock
         if (!ready) return@withLock
+        if (saveBlocked) {
+            flogError { "TypeBetter: the saved rules could not be read this run; not saving over them" }
+            return@withLock
+        }
         val rules = _rules.value
         runCatching {
             val folder = dir(context)
@@ -145,20 +191,36 @@ object PersonalWords {
     /**
      * One full copy a week (My words, My fixes and Never change, in the export format), the last eight
      * kept; each holds the last state of its week. Settings → My words & fixes → Restore a weekly copy brings one back.
+     *
+     * Called with [writeLock] held, after every change to the rules and to My words. Written to a temporary
+     * file and renamed, so a crash mid-write leaves the previous copy whole. Skipped, keeping the previous
+     * copy, while My words cannot be read: a copy without the words would replace a good one.
      */
     private fun weeklyBackup(context: Context) {
         runCatching {
-            if (!ready) return
+            if (!ready || !settingsLoaded || saveBlocked) return
+            val words = myWordsOrNull() ?: return
             val folder = File(dir(context), BACKUP_DIR).apply { mkdirs() }
             val today = LocalDate.now()
             val week = "%d-W%02d".format(today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
             val target = File(folder, "$WEEKLY_PREFIX$week.json")
             // Rewritten on every save during the week, so the copy holds the week's latest state.
-            val backup = PersonalBackup.of(_rules.value, myWords(), System.currentTimeMillis())
+            val backup = PersonalBackup.of(_rules.value, words, System.currentTimeMillis())
             if (backup.words.isEmpty() && backup.fixes.isEmpty() && backup.neverChange.isEmpty()) return
-            target.writeText(PersonalCodec.encodeBackup(backup))
+            val temp = File(folder, "${target.name}.tmp")
+            temp.writeText(PersonalCodec.encodeBackup(backup))
+            if (!temp.renameTo(target)) {
+                temp.copyTo(target, overwrite = true)
+                temp.delete()
+            }
             weeklyFiles(context).drop(WEEKLY_BACKUPS_KEPT).forEach { it.delete() }
         }.onFailure { flogError { "TypeBetter: weekly copy failed: $it" } }
+    }
+
+    /** Refreshes the weekly copy after My words changed (the rules' own saves refresh it too). */
+    private fun refreshWeeklyCopy() {
+        val context = appContext ?: return
+        scope.launch { writeLock.withLock { weeklyBackup(context) } }
     }
 
     private fun weeklyFiles(context: Context): List<File> =
@@ -181,12 +243,14 @@ object PersonalWords {
         runCatching { copy.file.readText() }.getOrNull()?.let { importText(it) }
 
     private fun update(change: (PersonalRules) -> PersonalRules) {
-        synchronized(loadLock) {
-            if (!ready) pending += change
-        }
         var before: PersonalRules? = null
         var after: PersonalRules? = null
-        _rules.update { current -> change(current).also { before = current; after = it } }
+        // One lock around both steps: otherwise loading could finish in between, replay the queued change
+        // onto the loaded rules, and this would then apply it a second time on top.
+        synchronized(loadLock) {
+            if (!ready) pending += change
+            _rules.update { current -> change(current).also { before = current; after = it } }
+        }
         scope.launch { persist() }
         // Undo counters do not change what the keyboard suggests; only the lists do.
         val b = before
@@ -207,22 +271,36 @@ object PersonalWords {
     @Volatile
     private var cachedWordsVersion = Int.MIN_VALUE
 
-    /** My words, read from the personal dictionary and cached until it changes. */
-    fun myWords(): List<String> {
-        val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return emptyList()
+    /**
+     * My words, read from the personal dictionary and cached until it changes. While the dictionary cannot
+     * be read, the last list read is returned (empty before the first read).
+     */
+    fun myWords(): List<String> = myWordsOrNull() ?: cachedWords
+
+    /** My words, or null when the personal dictionary cannot be read right now (off, not loaded, failing). */
+    private fun myWordsOrNull(): List<String>? {
+        if (!settingsLoaded) return null
+        val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return null
         manager.loadUserDictionariesIfNecessary()
         val version = manager.userVocabularyVersion
         if (version != cachedWordsVersion) {
-            cachedWords = runCatching {
+            val read = runCatching {
                 manager.florisUserDictionaryDao()?.queryAll()
                     ?.filter { it.shortcut.isNullOrBlank() }
                     ?.map { it.word.trim() }
                     ?.filter { it.isNotEmpty() }
                     ?.distinct()
-            }.getOrNull() ?: emptyList()
+            }.getOrNull() ?: return null
+            // Only a successful read is cached, so one failure is not remembered as "no words".
+            cachedWords = read
             cachedWordsVersion = version
         }
         return cachedWords
+    }
+
+    /** Forgets the cached list, so the next read sees a change just written. */
+    private fun invalidateWords() {
+        cachedWordsVersion = Int.MIN_VALUE
     }
 
     fun isMyWord(word: String): Boolean {
@@ -239,20 +317,47 @@ object PersonalWords {
         val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return emptyList()
         manager.loadUserDictionariesIfNecessary()
         val dao = manager.florisUserDictionaryDao() ?: return emptyList()
-        val known = myWords().map { keyOf(it) }.toHashSet()
+        invalidateWords()
+        val known = (myWordsOrNull() ?: return emptyList()).map { keyOf(it) }.toHashSet()
         val added = mutableListOf<String>()
         for (raw in words) {
             val word = raw.trim()
-            if (word.isEmpty() || !known.add(keyOf(word))) continue
+            // A word is one word: an entry with spaces would never match anything typed.
+            if (!isValidWord(word) || !known.add(keyOf(word))) continue
             runCatching {
                 dao.insert(UserDictionaryEntry(id = 0, word = word, freq = FREQUENCY_MAX, locale = null, shortcut = null))
             }.onSuccess { added += word }
         }
         if (added.isNotEmpty()) {
-            cachedWordsVersion = Int.MIN_VALUE
+            invalidateWords()
             bump()
+            refreshWeeklyCopy()
         }
         return added
+    }
+
+    /** What My words accepts: one word, no spaces, at most [MAX_WORD_LENGTH] characters. */
+    fun isValidWord(word: String): Boolean =
+        word.isNotBlank() && word.none { it.isWhitespace() } && word.length <= MAX_WORD_LENGTH
+
+    /**
+     * Changes [old] to [new] in My words. The new spelling is written before the old one is removed, so a
+     * failed write never loses the word. Returns false (and changes nothing) when it could not be saved.
+     */
+    fun renameWord(old: String, new: String): Boolean {
+        val word = new.trim()
+        if (!isValidWord(word)) return false
+        if (old == word) return true
+        if (keyOf(old) == keyOf(word)) {
+            // Only the capitals change: the dictionary holds one entry per word, so swap it.
+            removeWords(listOf(old))
+            if (addWord(word)) return true
+            addWord(old)
+            return false
+        }
+        if (!addWord(word)) return false
+        removeWords(listOf(old))
+        return true
     }
 
     fun addWord(word: String): Boolean = addWords(listOf(word)).isNotEmpty()
@@ -267,8 +372,9 @@ object PersonalWords {
         runCatching {
             dao.queryAll().filter { it.shortcut.isNullOrBlank() && keyOf(it.word) in keys }.forEach { dao.delete(it) }
         }
-        cachedWordsVersion = Int.MIN_VALUE
+        invalidateWords()
         bump()
+        refreshWeeklyCopy()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -323,10 +429,18 @@ object PersonalWords {
     // ---------------------------------------------------------------------------------------------
     // One-tap offers in the strip
 
-    /** Backspace just undid an automatic correction from [typed] to [corrected]. */
-    fun onCorrectionUndone(typed: String, corrected: String) {
+    /**
+     * Backspace just undid an automatic correction from [typed] to [corrected]. With [remember] off (the
+     * keyboard's word learning is off) the undo is not counted or saved; only the "+ word" offer shows.
+     */
+    fun onCorrectionUndone(typed: String, corrected: String, remember: Boolean) {
         scope.launch {
             val mine = isMyWord(typed)
+            if (!remember) {
+                _offers.value = StripOffers.afterUndo(_rules.value, typed, corrected, mine).second
+                    .filterIsInstance<StripOffer.AddWord>()
+                return@launch
+            }
             var offers: List<StripOffer> = emptyList()
             update { rules ->
                 val (updated, shown) = StripOffers.afterUndo(rules, typed, corrected, mine)
@@ -363,12 +477,6 @@ object PersonalWords {
         }
     }
 
-    /** The user dismissed the question without answering; it is not asked again for this pair. */
-    fun decline(offer: StripOffer) {
-        clearOffers()
-        if (offer is StripOffer.StopChanging) update { it.markAsked(offer.typed, offer.corrected) }
-    }
-
     // ---------------------------------------------------------------------------------------------
     // Starter pack
 
@@ -389,8 +497,9 @@ object PersonalWords {
         val (withPack, words) = StarterPack.apply(_rules.value, force)
         if (withPack === _rules.value && words.isEmpty()) return
         val added = addWords(words)
-        // Re-applied to the current rules, so a change made meanwhile is not lost.
-        update { current -> StarterPack.recordWordsAdded(StarterPack.apply(current, force = true).first, added) }
+        // Re-applied to the current rules, so a change made meanwhile is not lost. Same [force] as above:
+        // an upgrade from an older pack version must not bring back entries the user deleted.
+        update { current -> StarterPack.recordWordsAdded(StarterPack.apply(current, force).first, added) }
     }
 
     private fun removeStarterPack() {
@@ -419,20 +528,65 @@ object PersonalWords {
         false
     }
 
-    /** Returns null when the file is not a TypeBetter backup. Importing only adds. */
-    fun importFrom(context: Context, uri: Uri): ImportSummary? {
+    /**
+     * What a file would add, shown to the user before anything changes. [autoFixes] lists the automatic
+     * fixes in it, because those rewrite typing and dictation without asking.
+     */
+    data class ImportPreview(
+        internal val backup: PersonalBackup,
+        val words: Int,
+        val fixes: Int,
+        val blocks: Int,
+        val autoFixes: List<Fix>,
+    )
+
+    /**
+     * Reads a backup file and works out what importing it would add, without changing anything. Null
+     * when the file is not a TypeBetter backup or is larger than any real one ([MAX_IMPORT_BYTES]).
+     */
+    fun previewImport(context: Context, uri: Uri): ImportPreview? {
         val text = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                // Read at most one byte past the limit, so a huge file is refused without loading it.
+                val out = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(64 * 1024)
+                while (out.size() <= MAX_IMPORT_BYTES) {
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    out.write(buffer, 0, n)
+                }
+                if (out.size() > MAX_IMPORT_BYTES) null else out.toString(Charsets.UTF_8.name())
+            }
         }.getOrNull() ?: return null
-        return importText(text)
+        val backup = PersonalCodec.decodeBackup(text) ?: return null
+        return runCatching {
+            val result = PersonalImport.merge(_rules.value, myWords(), backup)
+            val before = _rules.value.fixes.map { it.key }.toSet()
+            val newFixes = result.rules.fixes.filter { it.key !in before }
+            ImportPreview(
+                backup = backup,
+                words = result.newWords.count { isValidWord(it) },
+                fixes = result.addedFixes,
+                blocks = result.addedBlocks,
+                autoFixes = newFixes.filter { it.mode == com.typebetter.personal.FixMode.AUTO },
+            )
+        }.getOrNull()
     }
+
+    /** Applies a previewed import. Importing only adds (apart from starter entries, see [PersonalImport]). */
+    fun applyImport(preview: ImportPreview): ImportSummary? = importBackup(preview.backup)
 
     /** Adds what [text] (an export, a weekly copy or a saved rules file) holds. Null when it is none of those. */
     fun importText(text: String): ImportSummary? {
         val backup = PersonalCodec.decodeBackup(text) ?: return null
+        return importBackup(backup)
+    }
+
+    private fun importBackup(backup: PersonalBackup): ImportSummary? {
         return runCatching {
             var result: com.typebetter.personal.ImportResult? = null
-            val words = myWords()
+            invalidateWords()
+            val words = myWordsOrNull() ?: error("My words cannot be read right now")
             update { current -> PersonalImport.merge(current, words, backup).also { result = it }.rules }
             val merged = result ?: return@runCatching null
             val added = addWords(merged.newWords)

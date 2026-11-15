@@ -414,7 +414,11 @@ class NlpManager(context: Context) {
                     isPrivateSession = keyboardManager.activeState.isIncognitoMode,
                 )
                 // TypeBetter: My fixes, Never change and My words decide before the keyboard's own guess.
-                TypeBetterSuggestions.shape(content.composingText.toString(), stock) { word ->
+                TypeBetterSuggestions.shape(
+                    typed = content.composingText.toString(),
+                    stock = stock,
+                    autoCorrect = prefs.suggestion.autoCorrect.get(),
+                ) { word ->
                     provider.getFrequencyForWord(subtype, word) > 0.0
                 }
             }
@@ -775,7 +779,9 @@ class NlpManager(context: Context) {
                 TypeBetterSuggestions.withOffers(
                     candidates = candidates,
                     composingText = editorInstance.activeContent.composingText.toString(),
-                    isPassword = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD,
+                    // Incognito counts as private too: no offer about earlier typing shows there.
+                    isPrivateField = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD ||
+                        keyboardManager.activeState.isIncognitoMode,
                     context = appContext,
                 )
             } else {

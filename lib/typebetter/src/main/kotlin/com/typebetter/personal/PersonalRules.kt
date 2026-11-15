@@ -78,11 +78,12 @@ data class PersonalRules(
     /** Adds or replaces the fix for [fix]'s typed word. A word can only mean one thing. */
     fun withFix(fix: Fix): PersonalRules {
         require(fix.typed.isNotBlank() && fix.meant.isNotBlank()) { "A fix needs both words" }
-        require(fix.key != keyOf(fix.meant) || fix.typed != fix.meant) { "A fix must change something" }
+        val clean = fix.trimmed()
+        require(clean.typed != clean.meant) { "A fix must change something" }
         val rest = fixes.filterNot { it.key == fix.key }
         // A fix and a block for the same pair contradict each other; the newer statement wins.
         val blocks = neverChange.filterNot { it.key == pairKey(fix.typed, fix.meant) }
-        return copy(fixes = rest + fix.trimmed(), neverChange = blocks)
+        return copy(fixes = rest + clean, neverChange = blocks)
     }
 
     fun withoutFix(typed: String): PersonalRules = copy(fixes = fixes.filterNot { it.key == keyOf(typed) })
@@ -111,7 +112,7 @@ data class PersonalRules(
         val ask = count >= ASK_AFTER_REVERTS && key !in askedPairs && !isBlocked(typed, corrected)
         // Asked once: the question counts as asked as soon as it is shown, answered or not.
         val updated = copy(
-            revertCounts = (revertCounts + (key to count)).trimmedCounts(),
+            revertCounts = (revertCounts + (key to count)).trimmedCounts(keep = key),
             askedPairs = if (ask) askedPairs + key else askedPairs,
         )
         return updated to ask
@@ -120,8 +121,20 @@ data class PersonalRules(
     /** Remembers that the user answered (or dismissed) the question for this pair. */
     fun markAsked(typed: String, corrected: String): PersonalRules = copy(askedPairs = askedPairs + pairKey(typed, corrected))
 
-    private fun Map<String, Int>.trimmedCounts(): Map<String, Int> =
-        if (size <= MAX_REVERT_ENTRIES) this else entries.sortedByDescending { it.value }.take(MAX_REVERT_ENTRIES).associate { it.toPair() }
+    /**
+     * Caps the table at [MAX_REVERT_ENTRIES]. The pair just written ([keep]) always stays, or a new pair
+     * could never reach its second undo once the table is full; the rest keep the highest counts, and among
+     * equal counts the most recent (later entries in the map).
+     */
+    private fun Map<String, Int>.trimmedCounts(keep: String): Map<String, Int> {
+        if (size <= MAX_REVERT_ENTRIES) return this
+        val others = entries.filter { it.key != keep }.withIndex()
+            .sortedWith(compareByDescending<IndexedValue<Map.Entry<String, Int>>> { it.value.value }.thenByDescending { it.index })
+            .take(MAX_REVERT_ENTRIES - 1)
+            .sortedBy { it.index }
+            .map { it.value.toPair() }
+        return (others + (keep to getValue(keep))).toMap()
+    }
 
     companion object {
         const val CURRENT_VERSION = 1
@@ -135,8 +148,11 @@ private fun NeverChange.trimmed() = copy(typed = typed.trim(), blocked = blocked
 
 private val WHITESPACE = Regex("\\s+")
 
-/** The form words are compared in: trimmed, single-spaced, lower case. */
-fun keyOf(word: String): String = word.trim().replace(WHITESPACE, " ").lowercase()
+/**
+ * The form words are compared in: trimmed, single-spaced, lower case, with the curly apostrophe phones
+ * type (’) read as the straight one ('), so "Ba’al" and "Ba'al" are the same word.
+ */
+fun keyOf(word: String): String = word.trim().replace(WHITESPACE, " ").replace('’', '\'').lowercase()
 
 /** Key for a typed → corrected pair. */
 fun pairKey(typed: String, corrected: String): String = keyOf(typed) + "→" + keyOf(corrected)

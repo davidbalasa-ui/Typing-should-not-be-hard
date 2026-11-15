@@ -10,8 +10,12 @@ package com.typebetter.personal
  * campaign names first, then project and tech words, then game terms.
  */
 object StarterPack {
-    /** Bump when the lists change, so the new entries reach phones that applied an older pack. */
-    const val VERSION = 1
+    /**
+     * Bump when the lists change. Version 2 (2026-11-15): fixes whose typed word is a real word in English
+     * or another language (regar, nephron, defence, armour) only suggest now, and phones on version 1 get
+     * that change without any deleted entry coming back.
+     */
+    const val VERSION = 2
 
     val words: List<String> = listOf(
         // Twin Haven — player characters and the names dictation gets wrong most
@@ -57,14 +61,14 @@ object StarterPack {
         auto("zylos", "Xylos"),
         auto("weave maker", "WeaveMaker"),
         auto("we've maker", "WeaveMaker"),
-        auto("nephron", "Nephryon"),
+        suggest("nephron", "Nephryon"), // a real word (part of the kidney)
         auto("nephrion", "Nephryon"),
         auto("fey wild", "Feywild"),
         auto("twin heaven", "TwinHaven"),
         suggest("arcades", "Arcadia"),
         suggest("corn", "Gorn"),
         suggest("heaven", "Haven"),
-        auto("regar", "Reygar"),
+        suggest("regar", "Reygar"), // "regar" is Spanish and Portuguese for "to water"
         // Names spelled more than one way in the notes
         auto("kasmira", "Kasmyra"),
         auto("kazmira", "Kasmyra"),
@@ -77,9 +81,9 @@ object StarterPack {
         auto("twinhaven", "TwinHaven"),
         suggest("lorali", "Lorelei"),
         suggest("fredrick", "Frederick"),
-        // US spelling, as the game writes it
-        auto("defence", "defense"),
-        auto("armour", "armor"),
+        // US spelling, as the game writes it. Offered, not forced: the UK spellings are real words.
+        suggest("defence", "defense"),
+        suggest("armour", "armor"),
         // Tech words as phones and dictation mangle them
         auto("versel", "Vercel"),
         auto("vercelle", "Vercel"),
@@ -115,12 +119,26 @@ object StarterPack {
      */
     fun apply(rules: PersonalRules, force: Boolean = false): Pair<PersonalRules, List<String>> {
         if (!force && rules.starterPackVersion >= VERSION) return rules to emptyList()
+        if (!force && rules.starterPackVersion > 0) return upgrade(rules) to emptyList()
         var updated = rules
         for (fix in fixes) {
             if (updated.fixFor(fix.typed) != null || updated.isBlocked(fix.typed, fix.meant)) continue
             updated = updated.withFix(fix)
         }
         return updated.copy(starterPackVersion = VERSION) to words
+    }
+
+    /**
+     * Brings a pack applied at an older version up to date without bringing back anything the user deleted:
+     * starter fixes still in place take the current mode (a fix the user edited is theirs and is left alone).
+     */
+    private fun upgrade(rules: PersonalRules): PersonalRules {
+        val current = fixes.associateBy { it.key }
+        val updated = rules.fixes.map { fix ->
+            val now = current[fix.key]
+            if (fix.source == Source.STARTER && now != null && now.meant == fix.meant && now.mode != fix.mode) fix.copy(mode = now.mode) else fix
+        }
+        return rules.copy(fixes = updated, starterPackVersion = VERSION)
     }
 
     fun recordWordsAdded(rules: PersonalRules, added: List<String>): PersonalRules =

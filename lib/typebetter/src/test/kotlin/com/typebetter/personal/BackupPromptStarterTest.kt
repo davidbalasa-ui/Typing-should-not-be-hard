@@ -75,7 +75,9 @@ class PersonalCodecTest {
 
 class PromptVocabularyTest {
     @Test
-    fun `custom words come first, then fix targets, then deliberate spellings`() {
+    fun `custom words come first, then deliberate spellings, then fix targets`() {
+        // Changed on purpose (review 2026-11-15): deliberate My words used to rank after every fix target,
+        // so a long fix list (the starter pack's ordinary words) pushed the names out of the window.
         val rules = PersonalRules().withFix(Fix("xylose", "Xylos"))
         val out = PromptVocabulary.build(
             customWords = listOf("Kubernetes"),
@@ -83,7 +85,7 @@ class PromptVocabularyTest {
             myWords = listOf("homebrew", "Kasmyra", "xylos"),
             tokenBudget = 100,
         )
-        assertEquals(listOf("Kubernetes", "Xylos", "Kasmyra", "homebrew"), out)
+        assertEquals(listOf("Kubernetes", "Kasmyra", "Xylos", "homebrew"), out)
     }
 
     @Test
