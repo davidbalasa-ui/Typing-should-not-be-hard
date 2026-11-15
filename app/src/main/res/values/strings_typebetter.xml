@@ -21,6 +21,7 @@
     <string name="typebetter__fix_auto_title">Fix it automatically</string>
     <string name="typebetter__fix_auto_summary">Off: it is only offered first in the suggestions. Use that when the typed word is also a real word.</string>
     <string name="typebetter__fix_invalid">Fill in both words, and make them different.</string>
+    <string name="typebetter__fix_replaces">Saving replaces your fix {fix}. A word can only have one fix.</string>
 
     <string name="typebetter__never_group">Never change ({count})</string>
     <string name="typebetter__never_empty">Corrections the keyboard may not make by itself. Taking one back twice offers to add it here.</string>
@@ -37,6 +38,11 @@
     <string name="typebetter__word_dialog_title">Word</string>
     <string name="typebetter__word_field">Word</string>
     <string name="typebetter__word_hint">Written exactly like this, capitals included.</string>
+    <string name="typebetter__word_taken">This word is already on the list. Edit that one instead.</string>
+    <string name="typebetter__word_invalid">One word, no spaces, up to 48 letters.</string>
+    <string name="typebetter__word_save_failed">Could not save the word. Your old spelling was kept.</string>
+    <string name="typebetter__delete_confirm_title">Delete?</string>
+    <string name="typebetter__delete_confirm_hint">The weekly copy can bring it back (Restore a weekly copy).</string>
 
     <string name="typebetter__starter_group">Starter pack</string>
     <string name="typebetter__starter_title">Use the starter pack</string>
@@ -51,12 +57,15 @@
     <string name="typebetter__learn_field">Text</string>
     <string name="typebetter__learn_find">Find new words</string>
     <string name="typebetter__learn_add">Add {count}</string>
+    <string name="typebetter__learn_close">Done</string>
+    <string name="typebetter__learn_finding">Looking for new words…</string>
+    <string name="typebetter__learn_need_text">Paste or type some text first.</string>
     <string name="typebetter__learn_none">Every word in this text is already known.</string>
     <string name="typebetter__learn_pick_hint">Tick the words to keep.</string>
     <string name="typebetter__learn_done">Added {count} words to My words</string>
 
     <string name="typebetter__weekly_title">Restore a weekly copy</string>
-    <string name="typebetter__weekly_hint">A copy of all three lists is kept every week (the last 8). Restoring adds back what is missing and removes nothing.</string>
+    <string name="typebetter__weekly_hint">A copy of all three lists is kept every week (the last 8), updated whenever they change. Restoring adds back what is missing and removes nothing.</string>
     <string name="typebetter__weekly_none">No weekly copy yet. The first is made once you have words or fixes.</string>
     <string name="typebetter__weekly_item">Week of {date}</string>
     <string name="typebetter__export">Back up to a file</string>
@@ -65,4 +74,13 @@
     <string name="typebetter__export_failed">Could not save the file</string>
     <string name="typebetter__import_done">Added {words} words and {fixes} fixes. Nothing was removed.</string>
     <string name="typebetter__import_failed">That file is not a TypeBetter backup</string>
+    <string name="typebetter__import_failed_now">Could not restore right now. Try again in a moment.</string>
+    <string name="typebetter__import_confirm">Add them</string>
+    <string name="typebetter__import_done_words_missing">Added {words} words and {fixes} fixes. {missing} words could not be added: switch on the personal dictionary (Settings, Dictionary) and restore again.</string>
+    <string name="typebetter__import_starter_removed">This phone has only the starter pack so far, and the backup comes from a phone where these starter fixes were deleted, so they are taken out again:</string>
+    <string name="typebetter__import_preview">This file adds {words} words, {fixes} fixes and {blocks} Never change entries.</string>
+    <string name="typebetter__import_auto_hint">These fixes will change what you type and dictate automatically:</string>
+    <string name="typebetter__import_more">…and {count} more.</string>
+    <string name="typebetter__import_adds_only">Nothing you added yourself is changed or removed.</string>
+    <string name="typebetter__import_nothing_new">Everything in this file is already in your lists.</string>
 </resources>

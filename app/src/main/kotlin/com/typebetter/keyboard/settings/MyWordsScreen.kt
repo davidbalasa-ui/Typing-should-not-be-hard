@@ -99,6 +99,9 @@ fun MyWordsScreen() = FlorisScreen {
     var editingWord by remember { mutableStateOf<String?>(null) }
     var learning by remember { mutableStateOf(false) }
     var restoringWeekly by remember { mutableStateOf(false) }
+    var importPreview by remember { mutableStateOf<PersonalWords.ImportPreview?>(null) }
+    // A delete waiting for "Delete?" to be confirmed: what it removes (shown) and how.
+    var pendingDelete by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -113,16 +116,13 @@ fun MyWordsScreen() = FlorisScreen {
         ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
+        // Nothing changes until the user has seen what the file adds (ImportDialog below).
         scope.launch {
-            val summary = withContext(Dispatchers.IO) { PersonalWords.importFrom(context, uri) }
-            if (summary == null) {
+            val preview = withContext(Dispatchers.IO) { PersonalWords.previewImport(context, uri) }
+            if (preview == null) {
                 context.showLongToast(R.string.typebetter__import_failed)
             } else {
-                context.showLongToast(
-                    R.string.typebetter__import_done,
-                    "words" to summary.words,
-                    "fixes" to summary.fixes + summary.blocks,
-                )
+                importPreview = preview
             }
         }
     }
@@ -238,12 +238,19 @@ fun MyWordsScreen() = FlorisScreen {
             FixDialog(
                 fix = fix,
                 onDismiss = { editingFix = null },
+                // Another fix for the same typed word would be replaced by this one: the dialog says so.
+                existing = { typed ->
+                    rules.fixFor(typed)?.takeIf { fix.typed.isBlank() || it.key != fix.key }
+                },
                 onSave = { updated ->
                     PersonalWords.setFix(updated, replacing = fix.typed.takeIf { it.isNotBlank() })
                     editingFix = null
                 },
                 onDelete = if (fix.typed.isNotBlank()) {
-                    { PersonalWords.removeFix(fix.typed); editingFix = null }
+                    {
+                        editingFix = null
+                        pendingDelete = "${fix.typed}  →  ${fix.meant}" to { PersonalWords.removeFix(fix.typed) }
+                    }
                 } else {
                     null
                 },
@@ -260,7 +267,12 @@ fun MyWordsScreen() = FlorisScreen {
                     editingBlock = null
                 },
                 onDelete = if (entry.typed.isNotBlank()) {
-                    { PersonalWords.removeNeverChange(entry.typed, entry.blocked); editingBlock = null }
+                    {
+                        editingBlock = null
+                        pendingDelete = "${entry.typed}  ↛  ${entry.blocked}" to {
+                            PersonalWords.removeNeverChange(entry.typed, entry.blocked)
+                        }
+                    }
                 } else {
                     null
                 },
@@ -270,18 +282,24 @@ fun MyWordsScreen() = FlorisScreen {
         editingWord?.let { word ->
             WordDialog(
                 word = word,
+                // Saving onto a word already on the list would merge the two: the dialog refuses and says why.
+                isTaken = { candidate ->
+                    keyOf(candidate) != keyOf(word) && words.any { keyOf(it) == keyOf(candidate) }
+                },
                 onDismiss = { editingWord = null },
                 onSave = { updated ->
                     editingWord = null
-                    scope.launch(Dispatchers.IO) {
-                        if (word.isNotBlank() && word != updated) PersonalWords.removeWords(listOf(word))
-                        PersonalWords.addWord(updated)
+                    scope.launch {
+                        val ok = withContext(Dispatchers.IO) {
+                            if (word.isBlank()) PersonalWords.addWord(updated) else PersonalWords.renameWord(word, updated)
+                        }
+                        if (!ok && word != updated) context.showLongToast(R.string.typebetter__word_save_failed)
                     }
                 },
                 onDelete = if (word.isNotBlank()) {
                     {
                         editingWord = null
-                        scope.launch(Dispatchers.IO) { PersonalWords.removeWords(listOf(word)) }
+                        pendingDelete = word to { scope.launch(Dispatchers.IO) { PersonalWords.removeWords(listOf(word)) }; Unit }
                     }
                 } else {
                     null
@@ -299,11 +317,43 @@ fun MyWordsScreen() = FlorisScreen {
                         if (summary == null) {
                             context.showLongToast(R.string.typebetter__import_failed)
                         } else {
-                            context.showLongToast(
-                                R.string.typebetter__import_done,
-                                "words" to summary.words,
-                                "fixes" to summary.fixes + summary.blocks,
-                            )
+                            context.showImportDone(summary)
+                        }
+                    }
+                },
+            )
+        }
+
+        pendingDelete?.let { (label, delete) ->
+            JetPrefAlertDialog(
+                title = stringRes(R.string.typebetter__delete_confirm_title),
+                confirmLabel = stringRes(R.string.action__delete),
+                dismissLabel = stringRes(R.string.action__cancel),
+                onConfirm = {
+                    pendingDelete = null
+                    delete()
+                },
+                onDismiss = { pendingDelete = null },
+            ) {
+                Column {
+                    Text(label)
+                    HintText(stringRes(R.string.typebetter__delete_confirm_hint))
+                }
+            }
+        }
+
+        importPreview?.let { preview ->
+            ImportDialog(
+                preview = preview,
+                onDismiss = { importPreview = null },
+                onConfirm = {
+                    importPreview = null
+                    scope.launch {
+                        val summary = withContext(Dispatchers.IO) { PersonalWords.applyImport(preview) }
+                        if (summary == null) {
+                            context.showLongToast(R.string.typebetter__import_failed_now)
+                        } else {
+                            context.showImportDone(summary)
                         }
                     }
                 },
@@ -329,6 +379,7 @@ fun MyWordsScreen() = FlorisScreen {
 @Composable
 private fun FixDialog(
     fix: Fix,
+    existing: (String) -> Fix?,
     onDismiss: () -> Unit,
     onSave: (Fix) -> Unit,
     onDelete: (() -> Unit)?,
@@ -387,6 +438,10 @@ private fun FixDialog(
             )
             if (!valid && (typed.isNotEmpty() || meant.isNotEmpty())) {
                 HintText(stringRes(R.string.typebetter__fix_invalid))
+            }
+            val replaced = typed.takeIf { it.isNotBlank() }?.let(existing)
+            if (replaced != null) {
+                HintText(stringRes(R.string.typebetter__fix_replaces, "fix" to "${replaced.typed}  →  ${replaced.meant}"))
             }
         }
     }
@@ -450,12 +505,15 @@ private fun NeverChangeDialog(
 @Composable
 private fun WordDialog(
     word: String,
+    isTaken: (String) -> Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
     var text by remember { mutableStateOf(word) }
-    val valid = text.isNotBlank() && text.trim().none { it.isWhitespace() }
+    val taken = text.isNotBlank() && isTaken(text.trim())
+    val wellFormed = PersonalWords.isValidWord(text.trim())
+    val valid = wellFormed && !taken
 
     JetPrefAlertDialog(
         scrollModifier = florisDialogScroll(),
@@ -476,7 +534,15 @@ private fun WordDialog(
                 label = { Text(stringRes(R.string.typebetter__word_field)) },
                 placeholder = { Text("Kasmyra") },
             )
-            HintText(stringRes(R.string.typebetter__word_hint))
+            HintText(
+                stringRes(
+                    when {
+                        taken -> R.string.typebetter__word_taken
+                        text.isNotEmpty() && !wellFormed -> R.string.typebetter__word_invalid
+                        else -> R.string.typebetter__word_hint
+                    },
+                ),
+            )
         }
     }
 }
@@ -496,24 +562,30 @@ private fun LearnDialog(
     var candidates by remember { mutableStateOf<List<WordHarvester.Candidate>?>(null) }
     val chosen = remember { mutableStateListOf<String>() }
     val scope = rememberCoroutineScope()
+    var finding by remember { mutableStateOf(false) }
+    var askedWithoutText by remember { mutableStateOf(false) }
 
     fun findWords() {
         val input = text
+        finding = true
         scope.launch {
             val found = withContext(Dispatchers.Default) {
                 val nlp by context.nlpManager()
-                val subtypes by context.subtypeManager()
-                val subtype = subtypes.activeSubtype
+                val subtypeManager by context.subtypeManager()
+                val subtypes = (listOf(subtypeManager.activeSubtype) + subtypeManager.subtypes).distinct()
                 val mine = PersonalWords.myWords().map { keyOf(it) }.toHashSet()
                 WordHarvester.harvest(input, isKnown = { word ->
                     keyOf(word) in mine || runCatching {
-                        nlp.getFrequencyForWord(subtype, word) > 0.0 ||
-                            nlp.getFrequencyForWord(subtype, word.lowercase()) > 0.0
+                        subtypes.any { subtype ->
+                            nlp.getFrequencyForWord(subtype, word) > 0.0 ||
+                                nlp.getFrequencyForWord(subtype, word.lowercase()) > 0.0
+                        }
                     }.getOrDefault(false)
                 })
             }
             chosen.clear()
             candidates = found
+            finding = false
         }
     }
 
@@ -523,15 +595,16 @@ private fun LearnDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         scrollModifier = florisDialogScroll(),
         title = stringRes(R.string.typebetter__learn_title),
-        confirmLabel = if (list == null) {
-            stringRes(R.string.typebetter__learn_find)
-        } else {
-            stringRes(R.string.typebetter__learn_add, "count" to chosen.size)
+        confirmLabel = when {
+            list == null -> stringRes(R.string.typebetter__learn_find)
+            chosen.isEmpty() -> stringRes(R.string.typebetter__learn_close)
+            else -> stringRes(R.string.typebetter__learn_add, "count" to chosen.size)
         },
         dismissLabel = stringRes(R.string.action__cancel),
         onConfirm = {
             if (list == null) {
-                if (text.isNotBlank()) findWords()
+                if (finding) return@JetPrefAlertDialog
+                if (text.isNotBlank()) findWords() else askedWithoutText = true
             } else if (chosen.isNotEmpty()) {
                 onAdd(chosen.toList())
             } else {
@@ -555,6 +628,10 @@ private fun LearnDialog(
                     maxLines = 10,
                     label = { Text(stringRes(R.string.typebetter__learn_field)) },
                 )
+                when {
+                    finding -> HintText(stringRes(R.string.typebetter__learn_finding))
+                    askedWithoutText && text.isBlank() -> HintText(stringRes(R.string.typebetter__learn_need_text))
+                }
             } else if (list.isEmpty()) {
                 Text(stringRes(R.string.typebetter__learn_none))
             } else {
@@ -588,6 +665,57 @@ private fun LearnDialog(
         }
     }
 }
+
+/** What a backup file would add, shown before anything changes; automatic fixes are listed one by one. */
+@Composable
+private fun ImportDialog(
+    preview: PersonalWords.ImportPreview,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val nothingNew = preview.words == 0 && preview.fixes == 0 && preview.blocks == 0 && preview.removedStarter.isEmpty()
+    JetPrefAlertDialog(
+        scrollModifier = florisDialogScroll(),
+        title = stringRes(R.string.typebetter__import),
+        confirmLabel = stringRes(if (nothingNew) R.string.typebetter__learn_close else R.string.typebetter__import_confirm),
+        dismissLabel = stringRes(R.string.action__cancel),
+        onConfirm = { if (nothingNew) onDismiss() else onConfirm() },
+        onDismiss = onDismiss,
+    ) {
+        Column {
+            if (nothingNew) {
+                Text(stringRes(R.string.typebetter__import_nothing_new))
+            } else {
+                Text(
+                    stringRes(
+                        R.string.typebetter__import_preview,
+                        "words" to preview.words,
+                        "fixes" to preview.fixes,
+                        "blocks" to preview.blocks,
+                    ),
+                )
+                if (preview.autoFixes.isNotEmpty()) {
+                    HintText(stringRes(R.string.typebetter__import_auto_hint))
+                    preview.autoFixes.take(MAX_PREVIEW_FIXES).forEach { fix ->
+                        Text("${fix.typed}  →  ${fix.meant}", modifier = Modifier.padding(top = 4.dp))
+                    }
+                    if (preview.autoFixes.size > MAX_PREVIEW_FIXES) {
+                        HintText(stringRes(R.string.typebetter__import_more, "count" to preview.autoFixes.size - MAX_PREVIEW_FIXES))
+                    }
+                }
+                if (preview.removedStarter.isNotEmpty()) {
+                    HintText(stringRes(R.string.typebetter__import_starter_removed))
+                    preview.removedStarter.take(MAX_PREVIEW_FIXES).forEach { fix ->
+                        Text("${fix.typed}  →  ${fix.meant}", modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+                HintText(stringRes(R.string.typebetter__import_adds_only))
+            }
+        }
+    }
+}
+
+private const val MAX_PREVIEW_FIXES = 30
 
 /** The weekly copies, newest first; picking one adds back what it holds (nothing is removed). */
 @Composable
@@ -633,6 +761,24 @@ private fun HintText(text: String) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** The result of a restore; words that could not be added are named, with what to do about it. */
+private suspend fun Context.showImportDone(summary: PersonalWords.ImportSummary) {
+    if (summary.wordsNotAdded > 0) {
+        showLongToast(
+            R.string.typebetter__import_done_words_missing,
+            "words" to summary.words,
+            "fixes" to summary.fixes + summary.blocks,
+            "missing" to summary.wordsNotAdded,
+        )
+    } else {
+        showLongToast(
+            R.string.typebetter__import_done,
+            "words" to summary.words,
+            "fixes" to summary.fixes + summary.blocks,
+        )
+    }
 }
 
 private fun readClipboard(context: Context): String = runCatching {

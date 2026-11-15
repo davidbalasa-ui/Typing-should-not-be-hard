@@ -130,7 +130,9 @@ private fun CacheManager.BackupAndRestoreWorkspace.readArchive(archive: FsFile) 
         error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
     }
     restoreWarningId = when {
-        metadata.versionCode != BuildConfig.VERSION_CODE -> {
+        // TypeBetter: every build has its own versionCode, so only a backup from a newer build than this
+        // one is worth a warning; restoring an older backup is the normal case.
+        metadata.versionCode > BuildConfig.VERSION_CODE -> {
             R.string.backup_and_restore__restore__metadata_warn_different_version
         }
         !metadata.packageName.startsWith(Restore.PACKAGE_NAME) &&

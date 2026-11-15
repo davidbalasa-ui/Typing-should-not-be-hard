@@ -8,9 +8,11 @@ package com.typebetter.personal
  * has its share), so the list is ranked:
  *
  * 1. the user's own custom dictation words, untouched and first, exactly as before;
- * 2. the words My fixes point to — the proven trouble words;
- * 3. My words with deliberate spelling (capitals, digits, unusual letters), the ones a speech model
+ * 2. My words with deliberate spelling (capitals, digits, unusual letters), the ones a speech model
  *    cannot guess;
+ * 3. the words My fixes point to that have a deliberate spelling too (Xylos, Supabase, WeaveMaker).
+ *    Plain lower-case targets ("receive", "armor", "combatant") are ordinary words the model spells
+ *    right without help; they would only use up the window;
  * 4. the remaining My words.
  *
  * Within a group, the original order is kept. Duplicates (ignoring case) are dropped. The list stops at
@@ -31,9 +33,9 @@ object PromptVocabulary {
         /** True for an ordinary dictionary word, which needs no help being spelled. */
         isCommonWord: (String) -> Boolean = { false },
     ): List<String> {
-        val fixTargets = rules.fixes.map { it.meant }
+        val fixTargets = rules.fixes.map { it.meant }.filter { isDeliberate(it) && !isCommonWord(keyOf(it)) }
         val (deliberate, plain) = myWords.partition { isDeliberate(it) }
-        val ranked = customWords + fixTargets + deliberate + plain.filterNot { isCommonWord(keyOf(it)) }
+        val ranked = customWords + deliberate + fixTargets + plain.filterNot { isCommonWord(keyOf(it)) }
 
         val seen = HashSet<String>()
         val out = mutableListOf<String>()

@@ -12,6 +12,12 @@ limited purposes described below.
 If you have any questions about this policy, contact us at
 **contact@devemperor.net**.
 
+> **TypeBetter.** This build of the App is TypeBetter (application ID
+> `com.typebetter.keyboard`), a personal fork of Dictate Keyboard. Everything in
+> this policy applies to it, plus what TypeBetter adds on top, described in
+> section 2.9. TypeBetter adds no server, account, analytics or network use of its
+> own.
+
 ---
 
 ## 0. Two ways to use this App, and only one of them involves us
@@ -121,11 +127,13 @@ your Google account, or a transfer to a new phone — it includes the App's
 settings, so that a new phone starts where the old one left off. That covers
 your API keys, the Dictate Cloud access key and recovery code, the proxy
 password, your prompts and settings, your personal dictionary and the keyboard's
-own files.
+own files, including TypeBetter's lists (section 2.9).
 
 - On Android 12 and later, the App takes part in the backup to your Google
   account **only when that backup is end-to-end encrypted** with your screen
-  lock, which means Google cannot read it.
+  lock, which means Google cannot read it. On Android 11 and older, Android
+  decides whether its backup is encrypted, and the App cannot require it; that
+  backup includes TypeBetter's lists too.
 - Your **dictation history, its audio and the clipboard are never part of it.**
 - This backup is Android's, not ours, and we never receive it. You can switch it
   off in Android's settings. The App's own "Back up & Restore" lets you choose to
@@ -158,6 +166,35 @@ when you ask for a language (section 3.4).
 
 Scan text uses Google's ML Kit library, which on its own reports usage statistics
 about the feature to Google. The App switches that reporting off.
+
+### 2.9 TypeBetter: My words, My fixes and Never change
+TypeBetter keeps three lists about the way you write, **on your phone only**:
+
+- **My words**: names and words the keyboard never corrects. They live in the
+  keyboard's personal dictionary.
+- **My fixes** and **Never change**: what a typed word should become, and
+  corrections the keyboard may not make by itself. Saved in the App's private
+  files, with how often you undid each automatic correction (only while word
+  learning is on).
+- **Weekly copies**: one copy of all three lists per week, the last eight kept, in
+  the App's private files, so a mistake can be undone.
+
+How these lists are used and where they can go:
+
+- **The "+ word" offer.** After you type a word the keyboard does not know, the
+  suggestion strip offers to add it. The word is only kept if you tap the offer.
+  Nothing is offered or kept in password fields or incognito mode.
+- **Learn from text** reads the clipboard **only when you tap "Paste copied text"**,
+  and adds only the words you tick. The text itself is not stored.
+- **Dictation.** Your words and fix targets are added to the word list the App
+  sends with a recording to the speech provider you chose (section 3.1), so that
+  it spells them right. With on-device speech recognition nothing leaves the phone.
+- **Backup.** The lists are part of Android's own backup (section 2.6), of the
+  App's "Back up & Restore" file, and of the file "Back up to a file" writes. Those
+  files go only where you put them.
+
+You can see, change and delete every entry under Settings, "My words & fixes",
+and switching the starter pack off removes everything it added.
 
 ---
 
