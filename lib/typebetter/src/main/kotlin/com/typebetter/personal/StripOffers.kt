@@ -52,12 +52,34 @@ object StripOffers {
     fun looksAddable(word: String): Boolean {
         if (word.isEmpty() || word.length > MAX_LENGTH) return false
         if (word.any { it.isWhitespace() || it == '@' || it == '/' || it == '\\' }) return false
+        // Invisible characters (zero-width joiners and spaces, direction marks) and emoji would make a
+        // look-alike of a real word, or something that is not a word at all.
+        // Joiners (ZWNJ, ZWJ) stay allowed: Persian half-spaces and Indic conjuncts need them.
+        if (word.any { it in INVISIBLE }) return false
+        var i = 0
+        while (i < word.length) {
+            val cp = word.codePointAt(i)
+            if (Character.getType(cp) == Character.OTHER_SYMBOL.toInt()) return false
+            i += Character.charCount(cp)
+        }
         val letters = word.count { it.isLetter() }
         if (letters < 2) return false
         // Two letters only as an acronym (DM, PC); short lower-case scraps are usually typos.
         if (word.length < 3 && !word.all { it.isUpperCase() }) return false
-        return word.first().isLetterOrDigit() && word.last().isLetterOrDigit()
+        // A word may end in a combining mark (an accent typed as its own character, Hindi vowel signs).
+        val last = word.last()
+        return word.first().isLetterOrDigit() &&
+            (last.isLetterOrDigit() || Character.getType(last) in COMBINING_MARKS)
     }
 
     private const val MAX_LENGTH = 40
+    /** Zero-width space, direction marks and embeddings, word joiner and invisible operators, byte-order mark. */
+    private val INVISIBLE: Set<Char> = buildSet {
+        add('\u200B'); add('\u200E'); add('\u200F'); add('\uFEFF')
+        for (c in '\u202A'..'\u202E') add(c)
+        for (c in '\u2060'..'\u2064') add(c)
+    }
+    private val COMBINING_MARKS = setOf(
+        Character.NON_SPACING_MARK.toInt(), Character.COMBINING_SPACING_MARK.toInt(), Character.ENCLOSING_MARK.toInt(),
+    )
 }

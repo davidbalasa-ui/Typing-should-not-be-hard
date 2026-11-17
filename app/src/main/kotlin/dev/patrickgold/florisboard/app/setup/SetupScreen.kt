@@ -149,6 +149,11 @@ fun SetupScreen() = FlorisScreen {
         isProviderConfigured(accounts, activeProviderId) { LocalModelManager.isInstalled(context, it) }
     }
     var providerSkipped by rememberSaveable { mutableStateOf(false) }
+    // TypeBetter: the microphone is only for dictation. Someone who only types (or said no) can skip the
+    // step; otherwise setup could not be finished and the app, which opens on setup until then, never
+    // reached My words & fixes.
+    var micSkipped by rememberSaveable { mutableStateOf(false) }
+    var micDenied by rememberSaveable { mutableStateOf(false) }
     // The floating-button step is optional and has no completion signal of its own, so (like the
     // provider step) a flag lets the user move past it to the final page once they've decided.
     var floatingButtonStepPassed by rememberSaveable { mutableStateOf(false) }
@@ -173,12 +178,17 @@ fun SetupScreen() = FlorisScreen {
     val requestMic =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             isMicGranted = isGranted
+            // After two refusals Android stops asking and the request returns "no" at once: the step then
+            // also offers the app's permission page, where it can still be allowed.
+            if (!isGranted) micDenied = true
         }
 
     content(
         isFlorisBoardEnabled,
         isFlorisBoardSelected,
-        isMicGranted,
+        isMicGranted || micSkipped,
+        micDenied,
+        { micSkipped = true },
         isProviderConfigured,
         providerSkipped,
         { providerSkipped = true },
@@ -242,6 +252,8 @@ private fun FlorisScreenScope.content(
     isFlorisBoardEnabled: Boolean,
     isFlorisBoardSelected: Boolean,
     isMicGranted: Boolean,
+    micDenied: Boolean,
+    onSkipMic: () -> Unit,
     isProviderConfigured: Boolean,
     providerSkipped: Boolean,
     onSkipProvider: () -> Unit,
@@ -314,7 +326,7 @@ private fun FlorisScreenScope.content(
                 Spacer(modifier = Modifier.height(16.dp))
             },
             steps = steps(
-                context, navController, requestNotification, requestMic,
+                context, navController, requestNotification, requestMic, micDenied, onSkipMic,
                 isProviderConfigured, onSkipProvider, onPassFloatingButton, accounts, scope,
             ),
             footer = {
@@ -351,6 +363,8 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
     navController: NavController,
     requestNotification: ManagedActivityResultLauncher<String, Boolean>,
     requestMic: ManagedActivityResultLauncher<String, Boolean>,
+    micDenied: Boolean,
+    onSkipMic: () -> Unit,
     isProviderConfigured: Boolean,
     onSkipProvider: () -> Unit,
     onPassFloatingButton: () -> Unit,
@@ -425,6 +439,23 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             StepText(stringRes(R.string.setup__grant_mic_permission__description))
             StepButton(stringRes(R.string.setup__grant_mic_permission__btn)) {
                 requestMic.launch(Manifest.permission.RECORD_AUDIO)
+            }
+            if (micDenied) {
+                StepText(stringRes(R.string.setup__grant_mic_permission__denied))
+                TextButton(onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                .setData(android.net.Uri.fromParts("package", context.packageName, null))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    }
+                }) {
+                    Text(text = stringRes(R.string.setup__grant_mic_permission__open_app_settings))
+                }
+            }
+            TextButton(onClick = onSkipMic) {
+                Text(text = stringRes(R.string.setup__grant_mic_permission__skip))
             }
         },
         if (AndroidVersion.ATLEAST_API33_T) {

@@ -988,7 +988,7 @@
     <string name="apptour52__intro_body">This release takes Dictate beyond its own keyboard: use it as your phone\'s voice input, run a spoken command from anywhere, and let it clean up long dictations for you. Here\'s what\'s new.</string>
     <string name="apptour52__voiceinput_eyebrow">System-wide voice input</string>
     <string name="apptour52__voiceinput_title">Use Dictate from any keyboard</string>
-    <string name="apptour52__voiceinput_body">Dictate now registers as a system voice input, so the mic key in other keyboards and apps can transcribe through Dictate — with your provider, your prompts and your on-device models. Enable “Dictate voice input” in your keyboard list and pick it as your voice input method. (Gboard keeps its mic tied to Google, so use a keyboard that honours the system setting.)</string>
+    <string name="apptour52__voiceinput_body">Dictate now registers as a system voice input, so the mic key in other keyboards and apps can transcribe through Dictate — with your provider, your prompts and your on-device models. Enable “TypeBetter voice input” in your keyboard list and pick it as your voice input method. (Gboard keeps its mic tied to Google, so use a keyboard that honours the system setting.)</string>
     <string name="apptour52__liveprompt_eyebrow">Freeform voice command</string>
     <string name="apptour52__liveprompt_title">Tell the AI what to do — anywhere</string>
     <string name="apptour52__liveprompt_body">Press and hold the floating button to open its menu, then tap “Live prompt” and just say what you want: “write a polite decline for tomorrow\'s meeting”, “translate the text above to Spanish”. Selected text is used as context; with nothing selected the AI writes from scratch.</string>
@@ -1248,7 +1248,7 @@
     <string name="setup__select_ime__switch_keyboard_btn">Switch Keyboard</string>
 
     <string name="setup__grant_notification_permission__title">Allow notifications</string>
-    <string name="setup__grant_notification_permission__description">As of Android 13, apps must ask before they show notifications. Dictate Keyboard shows one while the floating button records, while a speech model downloads and while your watch dictates through the phone, and it opens a crash report if the app crashes. You can change this at any time in the system settings.</string>
+    <string name="setup__grant_notification_permission__description">As of Android 13, apps must ask before they show notifications. TypeBetter shows one while the floating button records, while a speech model downloads and while your watch dictates through the phone, and it opens a crash report if the app crashes. You can change this at any time in the system settings.</string>
     <string name="setup__grant_notification_permission__btn">Grant Permission</string>
 
     <!-- Setup: connect an AI provider (Dictate onboarding for non-technical users) -->
@@ -1296,7 +1296,7 @@
     <string name="setup__finish_up__description_p1">{app_name} is ready. Switch to it with the keyboard switcher, tap the microphone, and start speaking.</string>
     <string name="setup__finish_up__description_p2">You can change languages, the AI provider and everything else anytime in the settings. If you ever run into a problem or have an idea, reach out from the about screen!</string>
     <string name="setup__finish_up__add_key_hint">Tip: you haven\'t added an AI key yet. Add one anytime in Settings → Dictate → AI providers to start dictating.</string>
-    <string name="setup__finish_up__finish_btn">Start using Dictate</string>
+    <string name="setup__finish_up__finish_btn">Start using TypeBetter</string>
     <string name="setup__floating_button__btn" comment="Onboarding button that opens the floating-button settings">Set up the floating button</string>
     <string name="setup__floating_button__title" comment="Title of the optional floating-button onboarding step">Dictate anywhere (optional)</string>
     <string name="setup__floating_button__intro" comment="Explanation on the optional floating-button onboarding step">The floating button puts a small dictation bubble over any app, so you can speak into any text field without switching keyboards.</string>
@@ -2018,7 +2018,7 @@
     <string name="dictate__voice_input_transcribing" comment="Status in the system voice-input popup while transcribing (issue #67)">Transcribing…</string>
     <string name="dictate__voice_input_stop" comment="Button in the system voice-input popup to stop recording and transcribe now (issue #67)">Done</string>
     <string name="dictate__voice_input_hint" comment="Subtle hint under the orb in the voice-input UI (issue #67)">Tap to send</string>
-    <string name="dictate__voice_ime_label" comment="Name of the Dictate voice input method shown in system keyboard settings (issue #67)">Dictate voice input</string>
+    <string name="dictate__voice_ime_label" comment="Name of the Dictate voice input method shown in system keyboard settings (issue #67)">TypeBetter voice input</string>
     <string name="dictate__error_no_api_key" comment="Error when no API key is configured">No API key set – configure it in the Dictate settings.</string>
     <string name="dictate__error_no_rewording_model" comment="Error when a rewording is asked for but the rewording provider has no model chosen and no default of its own. %1$s is the provider's name, e.g. Mistral AI or Ollama.">Choose a rewording model for %1$s</string>
     <string name="dictate__error_transcription_failed" comment="Generic transcription failure">Transcription failed.</string>
@@ -2772,8 +2772,11 @@
     <string name="dictate__setup_description" comment="Onboarding text inviting the user to set up Dictate">Set up your AI provider and API key so you can start dictating with the mic.</string>
     <string name="dictate__setup_configure_btn" comment="Onboarding button opening the Dictate settings">Configure Dictate</string>
     <string name="setup__grant_mic_permission__title" comment="Title of the microphone permission onboarding step">Microphone access</string>
-    <string name="setup__grant_mic_permission__description" comment="Onboarding: ask for microphone permission for dictation">Dictate needs microphone access to record your voice for transcription.</string>
+    <string name="setup__grant_mic_permission__description" comment="Onboarding: ask for microphone permission for dictation">TypeBetter needs microphone access to record your voice for dictation. You can skip this if you only want to type.</string>
     <string name="setup__grant_mic_permission__btn" comment="Onboarding button to grant the microphone permission">Grant microphone permission</string>
+    <string name="setup__grant_mic_permission__skip" comment="Onboarding: skip the microphone step (typing only)">Skip, I\'ll only type</string>
+    <string name="setup__grant_mic_permission__denied" comment="Onboarding: shown after the microphone permission was refused">Microphone access was refused. If Android no longer asks, allow it on the app\'s permission page, or skip this step.</string>
+    <string name="setup__grant_mic_permission__open_app_settings" comment="Onboarding: opens the system page with this app's permissions">Open app permissions</string>
 
     <!-- ============================== Changelog ============================== -->
     <string name="changelog__dialog_title" comment="Title of the what's-new dialog shown after an update">What\'s new</string>

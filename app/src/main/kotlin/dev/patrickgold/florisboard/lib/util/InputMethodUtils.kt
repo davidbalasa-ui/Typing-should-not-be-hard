@@ -45,7 +45,9 @@ object InputMethodUtils {
         return if (AndroidVersion.ATLEAST_API34_U) {
             context.systemServiceOrNull(InputMethodManager::class)
                 ?.enabledInputMethodList
-                ?.any { it.packageName == BuildConfig.APPLICATION_ID } ?: false
+                // The typing keyboard only: this package also holds the "voice input" method, and enabling
+                // that one must not count as enabling the keyboard (setup would move on with no keyboard).
+                ?.any { it.packageName == BuildConfig.APPLICATION_ID && it.serviceName == IME_SERVICE_CLASS_NAME } ?: false
         } else {
             val enabledImeList = AndroidSettings.Secure.getString(
                 context, Settings.Secure.ENABLED_INPUT_METHODS
@@ -58,7 +60,7 @@ object InputMethodUtils {
         return if (AndroidVersion.ATLEAST_API34_U) {
             context.systemServiceOrNull(InputMethodManager::class)
                 ?.currentInputMethodInfo
-                ?.packageName == BuildConfig.APPLICATION_ID
+                ?.let { it.packageName == BuildConfig.APPLICATION_ID && it.serviceName == IME_SERVICE_CLASS_NAME } ?: false
         } else {
             val selectedIme = AndroidSettings.Secure.getString(
                 context, Settings.Secure.DEFAULT_INPUT_METHOD

@@ -78,6 +78,10 @@ class TypingRules(
                 val auto = autoCorrect && fix.mode == FixMode.AUTO && !rules.isBlocked(word, meant)
                 front += Entry(meant, auto, Origin.FIX, stockFor(meant))
             }
+        } else if (myWord == null && isMyWordFragment(word)) {
+            // "Ba" of "Ba'al", "Krezakar" of "Krezakar-thuul": the apostrophe or hyphen typed next ends the
+            // word for the keyboard, which would autocorrect the half it has. It is the start of a My word.
+            stockMayAutoCommit = false
         } else if (myWord != null) {
             stockMayAutoCommit = false
             val target = CaseStyle.apply(word, myWord)
@@ -114,6 +118,22 @@ class TypingRules(
         }
     }
 
+    /**
+     * True when [word] is the part before an apostrophe or hyphen of a My word ("Ba" of "Ba'al"), and not a
+     * My word itself. The keyboard ends a word at those characters, so such a part must not be corrected
+     * or offered as a new word.
+     */
+    fun isMyWordFragment(word: String): Boolean {
+        val key = keyOf(word)
+        if (key.isEmpty() || key in wordsByKey) return false
+        // keyOf turns ’ into ', so two joiners cover every spelling.
+        return JOINERS.any { joiner ->
+            val prefix = key + joiner
+            val index = sortedKeys.binarySearch(prefix).let { if (it < 0) -it - 1 else it }
+            index < sortedKeys.size && sortedKeys[index].startsWith(prefix)
+        }
+    }
+
     /** My words that start with [prefix] (at least [MIN_PREFIX] characters), shortest first, in the typed case. */
     fun completionsFor(prefix: String, limit: Int = MAX_COMPLETIONS): List<String> {
         val key = keyOf(prefix)
@@ -133,5 +153,6 @@ class TypingRules(
     companion object {
         const val MIN_PREFIX = 3
         const val MAX_COMPLETIONS = 2
+        private val JOINERS = listOf("'", "-")
     }
 }

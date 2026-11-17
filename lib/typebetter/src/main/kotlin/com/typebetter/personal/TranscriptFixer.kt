@@ -20,18 +20,21 @@ class TranscriptFixer(rules: PersonalRules) {
         .mapNotNull { fix ->
             // A straight and a curly apostrophe are the same letter to a listener.
             val words = keyOf(fix.typed).split(' ').map { word ->
-                word.split('\'', '\u2019').joinToString("['\u2019]") { Regex.escape(it) }
+                word.split('\'', '\u2019', '\u2018', '\u02BC', '\uFF07').joinToString("['\u2019\u2018\u02BC\uFF07]") { Regex.escape(it) }
             }
             // Between the words of a phrase, any run of spaces; around it, no letter or digit.
-            val core = words.joinToString("\\s+")
-            runCatching { Regex("(?<![\\p{L}\\p{N}])$core(?![\\p{L}\\p{N}])", RegexOption.IGNORE_CASE) }
+            val core = words.joinToString("[\\s\\p{Z}]+")
+            // Combining marks count as part of a word: "cafe" must not match inside "café" typed as e + accent.
+            runCatching { Regex("(?<![\\p{L}\\p{N}\\p{M}])$core(?![\\p{L}\\p{N}\\p{M}])", RegexOption.IGNORE_CASE) }
                 .getOrNull()?.let { it to fix }
         }
 
     val isEmpty: Boolean get() = fixes.isEmpty()
 
-    fun apply(text: String): String {
-        if (text.isEmpty() || fixes.isEmpty()) return text
+    fun apply(input: String): String {
+        if (input.isEmpty() || fixes.isEmpty()) return input
+        // The patterns are built from NFC keys, so the transcript is matched in NFC too.
+        val text = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFC)
         // Work on spans so a replaced word is never rewritten by a second rule.
         val taken = BooleanArray(text.length)
         val replacements = mutableListOf<Triple<Int, Int, String>>()
