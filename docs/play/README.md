@@ -32,13 +32,14 @@ Chrome's ⋮ menu and tick **Desktop site**). Steps 1 to 5 are needed once. Step
 
 1. On the phone, download
    **https://github.com/davidbalasa-ui/Typing-should-not-be-hard/releases/latest/download/TypeBetter.aab**
-   (about 150 MB, best on Wi-Fi). This file is for the Play Console only; a phone cannot install it.
+   (well over 100 MB, best on Wi-Fi). This file is for the Play Console only; a phone cannot install it.
 2. In **Internal testing** tap **Create new release**.
 3. If asked about app signing, keep **Let Google manage and protect your app signing key** (the
    default). The TypeBetter release key then serves as the upload key; Google signs what phones get.
 4. Under **App bundles** tap **Upload** and pick `TypeBetter.aab` from Downloads.
 5. Tap **Next**, then **Save and publish** (or **Start rollout to Internal testing**). Warnings about
-   unfinished store listing or app content do not block an internal test.
+   an unfinished store listing should not block an internal test. If the Console insists on an App
+   content form first, the answers are in [data-safety.md](data-safety.md).
 
 ## 5. Install it on your phone
 
@@ -62,13 +63,17 @@ the internal test on its own and the Play Store updates the phone. It is easier 
 4. In GitHub: the repository's **Settings → Secrets and variables → Actions → New repository secret**.
    Name `PLAY_SERVICE_ACCOUNT_JSON`, value: the whole content of the `.json` file. Never paste it into a
    chat. Delete the downloaded file afterwards.
-5. The next build of `main` uploads by itself. If the very first release was never rolled out, the build
+5. The next build of `main` uploads by itself. A fresh invite can take a few hours before Google accepts
+   it; until then the build log says Play refused the edit, and the next build tries again.
+   The first release must already exist (step 4). If the very first release was never rolled out, the build
    saves a draft and says so in its log: open Internal testing, **Review release → Start rollout**, once.
 
 ## Good to know
 
 - **Play and GitHub builds do not mix.** The Play copy is signed by Google, the GitHub `TypeBetter.apk`
   by the TypeBetter key, so a phone cannot update one with the other. On the work phone, use Play only.
+- **Obtainium** (only if you use it elsewhere): each GitHub release now also holds `TypeBetter.aab`. If
+  Obtainium asks which file to use, pick `TypeBetter.apk`.
 - **What Play needs later.** A wider release (closed or production) needs the App content forms,
   including the accessibility and foreground service declarations; the answers are in
   [data-safety.md](data-safety.md). An internal test does not.

@@ -44,27 +44,34 @@ class H(BaseHTTPRequestHandler):
                                  "-signature", os.path.join(T, "sig"), os.path.join(T, "signed")],
                                 capture_output=True).returncode == 0
             claims = json.loads(b64d(c))
-            log({"step": "token", "sig_ok": ok, "claims": claims, "grant": f["grant_type"][0]})
+            log({"step": "token", "sig_ok": ok, "claims": claims, "grant": f["grant_type"][0],
+                 "type": self.headers.get("Content-Type")})
             return self.send(200 if ok else 400, {"access_token": "tok-123"} if ok else {"error": "invalid_grant"})
         if not self.authed(): return
         if p.endswith("/edits"):
             log({"step": "edit"}); return self.send(200, {"id": "e1"})
-        if "/bundles?uploadType=media" in p:
+        if p == "/upload/androidpublisher/v3/applications/com.typebetter.keyboard/edits/e1/bundles?uploadType=media":
             same = data == open(os.path.join(T, "app.aab"), "rb").read()
             log({"step": "upload", "same_bytes": same, "type": self.headers.get("Content-Type")})
             if mode() == "duplicate":
                 return self.send(403, {"error": {"message": "APK specifies a version code that has already been used."}})
             return self.send(200, {"versionCode": 142031})
-        if p.endswith(":commit"):
+        if p.endswith(":commit") or p.endswith(":commit?changesNotSentForReview=true"):
             status = json.load(open(os.path.join(T, "track.json")))["releases"][0]["status"]
-            log({"step": "commit", "status": status})
+            log({"step": "commit", "status": status, "path": p})
+            if mode() == "review" and "changesNotSentForReview" not in p:
+                return self.send(400, {"error": {"message": "Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true."}})
             if mode() == "draft" and status != "draft":
                 return self.send(400, {"error": {"message": "Only releases with status draft may be created on draft app."}})
             return self.send(200, {"id": "e1"})
         self.send(404, {})
     def do_PUT(self):
         if not self.authed(): return
-        data = self.body(); open(os.path.join(T, "track.json"), "wb").write(data)
+        data = self.body()
+        if mode() == "draft-at-track" and json.loads(data)["releases"][0]["status"] != "draft":
+            log({"step": "track-refused"})
+            return self.send(400, {"error": {"message": "Only releases with status draft may be created on draft app."}})
+        open(os.path.join(T, "track.json"), "wb").write(data)
         log({"step": "track", "path": self.path, "body": json.loads(data)}); self.send(200, json.loads(data))
     def do_DELETE(self):
         if not self.authed(): return
@@ -80,11 +87,11 @@ port=$(cat "$T/port")
 export PLAY_API_BASE="http://127.0.0.1:$port" PLAY_TOKEN_URL="http://127.0.0.1:$port/token"
 export PLAY_SERVICE_ACCOUNT_JSON
 PLAY_SERVICE_ACCOUNT_JSON=$(jq -n --rawfile k "$T/sa.pem" '{type:"service_account", client_email:"ci@p.iam.gserviceaccount.com", private_key:$k}')
-up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.typebetter.keyboard internal "Build 31" > "$T/out" 2>&1; }
+up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.typebetter.keyboard internal "Build 31" 142031 > "$T/out" 2>&1; }
 check() { jq -se "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
 
 rm -f "$T/log.jsonl"; up || { echo "FAIL: normal upload exited non-zero"; cat "$T/out"; exit 1; }
-check '.[0].sig_ok and .[0].claims.scope=="https://www.googleapis.com/auth/androidpublisher" and .[0].claims.iss=="ci@p.iam.gserviceaccount.com" and (.[0].claims.exp-.[0].claims.iat)==3600 and .[0].grant=="urn:ietf:params:oauth:grant-type:jwt-bearer"' "JWT is not a valid signed service-account assertion"
+check '.[0].type=="application/x-www-form-urlencoded" and .[0].claims.aud==env.PLAY_TOKEN_URL and .[0].sig_ok and .[0].claims.scope=="https://www.googleapis.com/auth/androidpublisher" and .[0].claims.iss=="ci@p.iam.gserviceaccount.com" and (.[0].claims.exp-.[0].claims.iat)==3600 and .[0].grant=="urn:ietf:params:oauth:grant-type:jwt-bearer"' "JWT is not a valid signed service-account assertion"
 check 'map(select(.step=="upload"))[0] | .same_bytes and .type=="application/octet-stream"' "bundle bytes changed on the way"
 check 'map(select(.step=="track"))[0] | .path=="/androidpublisher/v3/applications/com.typebetter.keyboard/edits/e1/tracks/internal" and .body.releases[0].versionCodes==["142031"] and .body.releases[0].status=="completed" and .body.releases[0].name=="Build 31"' "track not set to the uploaded version"
 check 'map(select(.step=="commit")) | length==1 and .[0].status=="completed"' "edit not committed as a completed release"
@@ -96,10 +103,20 @@ check 'map(select(.step=="commit")) | length==2 and .[1].status=="draft"' "never
 grep -q "DRAFT" "$T/out" || { echo "FAIL: no draft warning"; cat "$T/out"; exit 1; }
 echo "OK: never-rolled-out app: saved as a draft, with the one-tap instruction"
 
+echo draft-at-track > "$T/mode"; rm -f "$T/log.jsonl"
+up || { echo "FAIL: draft refusal at the track step exited non-zero"; cat "$T/out"; exit 1; }
+check 'map(select(.step=="track"))[0].body.releases[0].status=="draft" and (map(select(.step=="commit"))|length==1)' "draft refusal at the track step not handled"
+echo "OK: draft refusal at the track step: saved as a draft"
+
+echo review > "$T/mode"; rm -f "$T/log.jsonl"
+up || { echo "FAIL: 'cannot be sent for review' exited non-zero"; cat "$T/out"; exit 1; }
+check 'map(select(.step=="commit")) | length==2 and (.[1].path|endswith("changesNotSentForReview=true"))' "commit not retried with changesNotSentForReview"
+echo "OK: 'cannot be sent for review automatically': committed with changesNotSentForReview"
+
 echo duplicate > "$T/mode"; rm -f "$T/log.jsonl"
 up || { echo "FAIL: re-run of an uploaded version code exited non-zero"; cat "$T/out"; exit 1; }
-check 'map(.step) | (index("track")==null) and (index("commit")==null) and (index("delete")!=null)' "re-run touched the track or left the edit open"
-echo "OK: re-run of an uploaded version code: no change, exits cleanly"
+check 'map(select(.step=="track"))[0].body.releases[0].versionCodes==["142031"] and (map(select(.step=="commit"))|length==1)' "re-run did not release the already uploaded version code"
+echo "OK: re-run of an uploaded version code: the track is released with it again"
 
 echo normal > "$T/mode"
 if PLAY_SERVICE_ACCOUNT_JSON='not json' up; then echo "FAIL: a broken secret was accepted"; exit 1; fi

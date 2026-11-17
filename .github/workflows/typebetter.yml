@@ -307,6 +307,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.apk.outputs.signed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # One Play upload at a time, in order, never cancelled half way (an edit left open blocks the next).
+    concurrency:
+      group: typebetter-play
+      cancel-in-progress: false
     permissions:
       contents: read
     steps:
@@ -329,4 +333,5 @@ jobs:
             echo "PLAY_SERVICE_ACCOUNT_JSON is not set, so nothing goes to Google Play. TypeBetter.aab is on the GitHub release for a manual upload (docs/play/README.md)."
             exit 0
           fi
-          tools/play-upload.sh out/TypeBetter.aab com.typebetter.keyboard internal "TypeBetter build $RUN"
+          # Same version code as the Build step: 142000 + run number.
+          tools/play-upload.sh out/TypeBetter.aab com.typebetter.keyboard internal "TypeBetter build $RUN" $((142000 + RUN))

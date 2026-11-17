@@ -1,8 +1,8 @@
 # Play Console answers for TypeBetter
 
-What to pick in the Play Console's **App content** forms, with the code behind each answer. Google lets
-an **internal test** start before these are done; they become required before a closed, open or
-production release. Evidence was gathered from the code on 2026-11-17 (file:line references are to that
+What to pick in the Play Console's **App content** forms, with the code behind each answer. Google's
+help says an internal test can start before app setup is complete; if the Console still insists on a
+form, the answers are here. All of them are required before a closed, open or production release. Evidence was gathered from the code on 2026-11-17 (file:line references are to that
 commit and may drift).
 
 ## Privacy policy URL
@@ -23,9 +23,10 @@ provider key or on-device recognition; say so in the notes field.)
 **Does your app collect or share any of the required user data types?** Yes.
 
 **Is all of the user data collected by your app encrypted in transit?** Yes. Every built-in provider
-and download URL is https/wss (`lib/dictate-core/.../provider/ProviderRegistry.kt`). The only plain-http
-traffic is to an address the user types in themselves (for example a home Ollama server,
-`ProviderRegistry.kt:902`, allowed by `usesCleartextTraffic`, `app/src/main/AndroidManifest.xml:71`).
+and download URL is https/wss (`lib/dictate-core/.../provider/ProviderRegistry.kt`), except the built-in
+local Ollama preset, `http://localhost:11434` (`ProviderRegistry.kt:902`), which never leaves the phone.
+Other plain-http traffic only goes to an address the user types in themselves (allowed by
+`usesCleartextTraffic`, `app/src/main/AndroidManifest.xml:71`).
 
 **Do you provide a way for users to request that their data is deleted?** Yes: everything is stored on
 the phone and can be deleted in Settings or by uninstalling.
@@ -34,7 +35,7 @@ Data types to tick (all: **Collected**, **not Shared**, **Optional**, purpose **
 
 | Play data type | Why | Evidence |
 |---|---|---|
-| Audio → Voice or sound recordings | Dictation is sent to the speech service the user picked | `PRIVACY_POLICY.md:73-80`, `DictateController.kt:1779` |
+| Audio → Voice or sound recordings | Dictation is sent to the speech service the user picked | `PRIVACY_POLICY.md:73-80`, provider presets in `ProviderRegistry.kt` |
 | App activity → Other user-generated content | Text the user asks to reword, and word-list spelling hints sent with a recording | `PRIVACY_POLICY.md:85-89, 189-191`, `DictateController.kt:2905, 3468` |
 | App activity → In-app search history | GIF search terms go to KLIPY with the user's key | `KlipyGifProvider.kt:68, 105` |
 
