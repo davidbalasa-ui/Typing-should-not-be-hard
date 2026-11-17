@@ -18,6 +18,7 @@ import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.dictate.DictateReasoningEffort
 import dev.patrickgold.florisboard.dictate.migratedChatReasoning
 import dev.patrickgold.florisboard.dictate.provider.DictateProxyType
+import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccount
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
@@ -437,6 +438,23 @@ object DictateLegacyMigrator {
         )
         prefs.dictate.rewordingReasoningEffort.set(DictateReasoningEffort.OFF)
         prefs.dictate.rewordingReasoningEffortCustom.set("")
+    }
+
+    /**
+     * Makes the on-device engine the transcription provider of a fresh install (TypeBetter), so dictation
+     * works offline once a Whisper model is downloaded from the keyboard's mic.
+     *
+     * Only a fresh install: setup not finished and no API key stored anywhere
+     * ([DictationReadiness.isFreshInstall]). A keyboard already in use keeps exactly the provider it had.
+     * Runs once.
+     */
+    suspend fun adoptLocalDefaultOnFreshInstallIfNeeded() {
+        val prefs by FlorisPreferenceStore
+        if (prefs.dictate.transcriptionDefaultLocalMigrated.get()) return
+        if (DictationReadiness.isFreshInstall(prefs.internal.isImeSetUp.get(), prefs.dictate.providerAccounts.get())) {
+            prefs.dictate.transcriptionProviderId.set(ProviderRegistry.LOCAL.id)
+        }
+        prefs.dictate.transcriptionDefaultLocalMigrated.set(true)
     }
 
     /**

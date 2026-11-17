@@ -31,8 +31,17 @@ import kotlinx.coroutines.launch
  * current percentage instead of losing it.
  */
 object LocalModelDownloads {
-    /** Progress of one model download. [percent] is 0..100; a non-null [error] marks a failed download. */
-    data class State(val modelId: String, val percent: Int, val error: String? = null)
+    /**
+     * Progress of one model download. [percent] is 0..100; a non-null [error] marks a failed download, and
+     * [failure] says what kind of failure it was, so a screen can tell the user what to do about it
+     * (TypeBetter's dictation setup picker: "you're offline" rather than a raw exception message).
+     */
+    data class State(
+        val modelId: String,
+        val percent: Int,
+        val error: String? = null,
+        val failure: DictationReadiness.Failure? = null,
+    )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val jobs = mutableMapOf<String, Job>()
@@ -48,8 +57,15 @@ object LocalModelDownloads {
     /** Whether any download is currently running (errors don't count) — the service stops when none are. */
     fun hasActiveDownloads(): Boolean = _state.value.values.any { it.error == null }
 
-    /** Starts the download for [spec] unless it is already running. Idempotent per model id. */
-    fun start(context: Context, spec: LocalModelSpec) {
+    /**
+     * Starts the download for [spec] unless it is already running. Idempotent per model id.
+     *
+     * [onInstalled] runs once the model is on disk, in this app-lifetime scope, so it still runs when the
+     * screen that asked for the download has closed (the keyboard's setup picker uses it to make the new
+     * model the active engine). It is not called on failure or cancel, nor for a start that was ignored
+     * because the same model was already downloading.
+     */
+    fun start(context: Context, spec: LocalModelSpec, onInstalled: (suspend () -> Unit)? = null) {
         val appContext = context.applicationContext
         if (jobs[spec.id]?.isActive == true) return
         _state.update { it + (spec.id to State(spec.id, 0)) }
@@ -65,11 +81,15 @@ object LocalModelDownloads {
                 }
                 _state.update { it - spec.id }
                 _installedTick.update { it + 1 }
+                onInstalled?.let { callback -> runCatching { callback() } }
             } catch (_: CancellationException) {
                 _state.update { it - spec.id }
             } catch (t: Throwable) {
                 val pct = _state.value[spec.id]?.percent ?: 0
-                _state.update { it + (spec.id to State(spec.id, pct, error = t.message ?: "download failed")) }
+                val failure = DictationReadiness.classify(t)
+                _state.update {
+                    it + (spec.id to State(spec.id, pct, error = t.message ?: "download failed", failure = failure))
+                }
             } finally {
                 jobs.remove(spec.id)
             }
@@ -81,6 +101,14 @@ object LocalModelDownloads {
         jobs[modelId]?.cancel()
         jobs.remove(modelId)
         _state.update { it - modelId }
+    }
+
+    /**
+     * Tells observers of [installedTick] that the installed set changed for another reason than a finished
+     * download — a model deleted in settings — so the keyboard's mic greys out again at once.
+     */
+    fun notifyInstalledChanged() {
+        _installedTick.update { it + 1 }
     }
 
     /** Dismisses a failed download's error entry. */

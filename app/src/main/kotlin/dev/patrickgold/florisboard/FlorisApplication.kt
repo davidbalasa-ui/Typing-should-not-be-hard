@@ -149,6 +149,7 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateTrustUserCertsToAccountsIfNeeded()
             DictateLegacyMigrator.migrateReasoningToAccountsIfNeeded()
             DictateLegacyMigrator.moveTranscriptionOffUnsupportedAccounts()
+            DictateLegacyMigrator.adoptLocalDefaultOnFreshInstallIfNeeded()
             DictateLegacyMigrator.migrateWordLearningDefaultIfNeeded()
             DictateLegacyMigrator.migrateHindiDefaultsIfNeeded()
             DictateLegacyMigrator.migrateFrenchPunctuationRuleIfNeeded()

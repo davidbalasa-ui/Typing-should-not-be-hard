@@ -84,4 +84,31 @@
     <string name="typebetter__import_more">…and {count} more.</string>
     <string name="typebetter__import_adds_only">Nothing you added yourself is changed or removed.</string>
     <string name="typebetter__import_nothing_new">Everything in this file is already in your lists.</string>
+
+    <!-- Dictation setup picker: the greyed-out mic opens it until a voice model is downloaded. -->
+    <string name="dictate__setup_mic_a11y" comment="Screen reader name of the greyed-out mic before a voice model is downloaded">Set up dictation</string>
+    <string name="dictate__setup_title" comment="Title of the keyboard sheet that picks a voice model to download">Set up dictation</string>
+    <string name="dictate__setup_intro" comment="Intro text of the voice model picker">Pick a voice model to download once. After that, dictation works offline and your voice stays on your phone. Wi-Fi is best.</string>
+    <string name="dictate__setup_speed" comment="Bar graph label: how fast the model turns speech into text">Speed</string>
+    <string name="dictate__setup_accuracy" comment="Bar graph label: how few mistakes the model makes">Accuracy</string>
+    <string name="dictate__setup_size" comment="Bar graph label: how much storage the model takes">Size</string>
+    <string name="dictate__setup_size_mb" comment="Download size of a model. {mb} is a whole number of megabytes.">{mb} MB</string>
+    <string name="dictate__setup_recommended" comment="Badge on the recommended model">Recommended</string>
+    <string name="dictate__setup_blurb_tiny" comment="Very short description of Whisper Tiny">Fastest, smallest</string>
+    <string name="dictate__setup_blurb_base" comment="Very short description of Whisper Base">Best balance</string>
+    <string name="dictate__setup_blurb_small" comment="Very short description of Whisper Small">Most accurate</string>
+    <string name="dictate__setup_action_download" comment="Status on a model card that has not been downloaded">Tap to download</string>
+    <string name="dictate__setup_action_retry" comment="Status on a model card whose download failed">Tap to retry</string>
+    <string name="dictate__setup_action_use" comment="Status on a model card that is already downloaded but not in use">Downloaded. Tap to use</string>
+    <string name="dictate__setup_level_a11y" comment="Screen reader text for one bar graph. {label} is Speed or Accuracy, {level} and {max} are numbers.">{label}: {level} of {max}</string>
+    <string name="dictate__setup_action_cancel" comment="Status on the card of the model being downloaded; tapping cancels">Tap to cancel</string>
+    <string name="dictate__setup_downloading" comment="Progress on a model card. {percent} is 0-100.">{percent}%</string>
+    <string name="dictate__setup_busy" comment="Status on the other cards while one model downloads">Wait for the other download</string>
+    <string name="dictate__setup_background_hint" comment="Shown under the cards while a model downloads">The download keeps going if you close this. Dictation turns on by itself when it finishes.</string>
+    <string name="dictate__setup_failed_network" comment="A model download failed because there is no connection">No connection. Connect to Wi-Fi or mobile data, then tap the model to try again.</string>
+    <string name="dictate__setup_failed_storage" comment="A model download failed because the phone is full">Your phone ran out of space. Free some up, then tap the model to try again.</string>
+    <string name="dictate__setup_failed_other" comment="A model download failed for another reason">The download didn’t finish. Tap the model to try again.</string>
+    <string name="dictate__setup_no_room" comment="Shown instead of starting a download the phone has no room for. {model} is the model name, {needed} and {free} are whole megabytes.">{model} needs {needed} MB free, and your phone has {free} MB. Free some space, or pick a smaller model.</string>
+    <string name="dictate__setup_ready_toast" comment="Toast when a model finished downloading from the keyboard. {model} is the model name.">{model} is ready. Tap the mic to dictate, even offline.</string>
+    <string name="dictate__setup_use_cloud" comment="Link under the model picker for people who would rather use a cloud service with their own API key">Have an API key? Use a cloud service instead</string>
 </resources>

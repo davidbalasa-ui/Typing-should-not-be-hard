@@ -162,6 +162,21 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
         foreground = `var`("--on-primary")
         fontSize = fontSize(20.sp)
     }
+    // TypeBetter: the mic greyed out while dictation still needs a voice model (DictationReadiness). Same
+    // circle, drained of the accent, so it reads as "not ready" and not as gone; a tap opens the picker.
+    FlorisImeUi.SmartbarActionKey.elementName(
+        FlorisImeUi.Attr.Code to listOf(KeyCode.IME_UI_MODE_DICTATE),
+        selector = SnyggSelector.DISABLED,
+    ) {
+        background = `var`("--background-variant")
+        foreground = `var`("--on-background-disabled")
+    }
+    "${FlorisImeUi.SmartbarActionKey.elementName}-icon"(
+        FlorisImeUi.Attr.Code to listOf(KeyCode.IME_UI_MODE_DICTATE),
+        selector = SnyggSelector.DISABLED,
+    ) {
+        foreground = `var`("--on-background-disabled")
+    }
 
     FlorisImeUi.SmartbarActionsOverflow.elementName {
         margin = padding(4.dp)

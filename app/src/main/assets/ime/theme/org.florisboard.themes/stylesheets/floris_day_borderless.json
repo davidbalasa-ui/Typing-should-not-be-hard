@@ -159,6 +159,13 @@
     "foreground": "var(--on-primary)",
     "font-size": "20sp"
   },
+  "smartbar-action-key[code=-214]:disabled": {
+    "background": "var(--background-variant)",
+    "foreground": "var(--on-background-disabled)"
+  },
+  "smartbar-action-key-icon[code=-214]:disabled": {
+    "foreground": "var(--on-background-disabled)"
+  },
   "smartbar-action-key": {
     "background": "transparent",
     "foreground": "var(--on-background)",

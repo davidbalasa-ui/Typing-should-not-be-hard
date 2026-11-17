@@ -52,7 +52,10 @@ object LocalModelManager {
     fun delete(context: Context, modelId: String): Boolean {
         val dir = LocalTranscriptionProvider.modelDir(context, modelId)
         if (!dir.exists()) return true
-        return dir.deleteRecursively()
+        val deleted = dir.deleteRecursively()
+        // Even a partial delete can leave the model unusable, so the mic re-checks either way.
+        LocalModelDownloads.notifyInstalledChanged()
+        return deleted
     }
 
     /** On-disk size of an installed model in bytes (0 if not installed). */

@@ -91,6 +91,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.ui.DictateHoldTargets
 import dev.patrickgold.florisboard.dictate.ui.DictateHoldTouch
+import dev.patrickgold.florisboard.dictate.ui.rememberDictationNeedsSetup
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
@@ -548,6 +549,17 @@ fun QuickActionButton(
     // never releases the press it had begun, so the key stayed drawn as pressed.
     val tapEnabled by rememberUpdatedState(isEnabled)
     val holdEnabled by rememberUpdatedState(isSecondEnabled)
+    // TypeBetter: the mic is drawn greyed out until dictation can work (no voice model downloaded and no
+    // cloud key), but stays tappable: the tap opens the Whisper picker (KeyboardManager), the one way out.
+    // Observed here, so the mic lights up the moment a download finishes. Never for the editor's tiles.
+    val micNeedsSetup = if (
+        action.keyData().code == KeyCode.IME_UI_MODE_DICTATE && type != QuickActionBarType.EDITOR_TILE
+    ) {
+        rememberDictationNeedsSetup()
+    } else {
+        false
+    }
+    val micSetupTap by rememberUpdatedState(micNeedsSetup)
     val elementName = when (type) {
         QuickActionBarType.INTERACTIVE_BUTTON -> FlorisImeUi.SmartbarActionKey
         QuickActionBarType.INTERACTIVE_TILE -> FlorisImeUi.SmartbarActionTile
@@ -556,7 +568,7 @@ fun QuickActionButton(
     val attributes = mapOf(FlorisImeUi.Attr.Code to action.keyData().code)
     val selector = when {
         isPressed -> SnyggSelector.PRESSED
-        !isEnabled -> SnyggSelector.DISABLED
+        !isEnabled || micNeedsSetup -> SnyggSelector.DISABLED
         else -> null
     }
 
@@ -594,6 +606,7 @@ fun QuickActionButton(
     // changes, rather than given a state description: TalkBack reads a focused node's state out the moment
     // it changes, which here is the moment the microphone opens — straight into the recording.
     val a11yName = when {
+        micNeedsSetup && DictateController.canStartRecording() -> stringRes(R.string.dictate__setup_mic_a11y)
         isDictateKey && dictateState is DictateController.UiState.Recording ->
             stringRes(R.string.dictate__legacy_stop)
         isDictateKey && (dictateState is DictateController.UiState.Transcribing ||
@@ -603,7 +616,7 @@ fun QuickActionButton(
     // The hold, as the screen reader's long-press: the mic's own shortcuts where they apply, the same ones
     // a finger gets, and otherwise the second action this button carries. Push-to-talk has no counterpart
     // here — a recording that lasts as long as a finger stays down is not something a double-tap can hold.
-    val micHoldFile = isDictateKey && DictateController.canStartRecording()
+    val micHoldFile = isDictateKey && !micNeedsSetup && DictateController.canStartRecording()
     val micHoldLocal = isDictateKey && !micHoldFile && prefs.dictate.longPressSendLocalModel.get() &&
         DictateController.canLongPressLocal()
     val a11yHoldName = when {
@@ -762,6 +775,10 @@ fun QuickActionButton(
                             // Measured: sendDown, then waitForUpOrCancellation returning null 15 ms later
                             // with the finger still down, and no dispose in between.
                             val armed = when {
+                                // TypeBetter: a mic waiting for a voice model is a plain tap that opens
+                                // the picker — no push-to-talk, no hold-to-pick-a-file, both of which
+                                // need a working engine.
+                                dictateIdle && micSetupTap -> false
                                 // Push-to-talk (#235) takes the whole gesture: hold to record, slide left
                                 // to discard, slide up to latch. Opt-in, and it replaces the shortcuts.
                                 dictateIdle && DictateController.isPushToTalkActive(context) -> {

@@ -569,6 +569,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 activeState.isActionsOverflowVisible = false
                 activeState.isActionsEditorVisible = false
                 activeState.isTranscriptionProviderSelectionVisible = false
+                activeState.isDictationSetupVisible = false
             }
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
