@@ -95,7 +95,7 @@ object TypeBetterSuggestions {
         val composing = composingText.trim()
         val stillOnWord = composing.isEmpty() || offers.all { keyOf(it.word) == keyOf(composing) }
         if (!stillOnWord || isPrivateField) {
-            PersonalWords.clearOffers()
+            PersonalWords.dropStaleOffers(offers)
             return candidates
         }
         val offered = offers.filterIsInstance<StripOffer.AddWord>().map { it.word }.toSet()

@@ -519,6 +519,18 @@ object PersonalWords {
         }
     }
 
+    /**
+     * Hides [shown] if those are still the offers on the strip, without cancelling an answer still being
+     * worked out: the strip calls this when the user has moved past an old offer, which can happen just
+     * after the next word was finished and its own offer requested.
+     */
+    fun dropStaleOffers(shown: List<StripOffer>) {
+        synchronized(offerLock) {
+            if (_offers.value === shown) _offers.value = emptyList()
+        }
+    }
+
+    /** Ends every offer, shown or still being worked out (a new field, or an offer was tapped). */
     fun clearOffers() {
         synchronized(offerLock) {
             offerTicket++

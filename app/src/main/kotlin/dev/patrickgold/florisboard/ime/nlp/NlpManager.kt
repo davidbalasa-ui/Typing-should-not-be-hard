@@ -680,7 +680,6 @@ class NlpManager(context: Context) {
         }
     }
 
-    /** Tells the active provider its cached copy of the personal dictionary is stale. */
     /** The My words list the glide index was last rebuilt for (identity: the list is cached until it changes). */
     @Volatile
     private var lastGlidePersonalWords: List<String>? = null
@@ -702,6 +701,7 @@ class NlpManager(context: Context) {
         }
     }
 
+    /** Tells the active provider its cached copy of the personal dictionary is stale. */
     private suspend fun notePersonalVocabularyChanged(subtype: Subtype) {
         (getSuggestionProvider(subtype) as? LearningProvider)?.onPersonalVocabularyChanged()
     }
