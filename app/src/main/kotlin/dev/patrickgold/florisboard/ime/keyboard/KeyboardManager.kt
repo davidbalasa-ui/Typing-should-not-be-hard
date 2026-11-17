@@ -2124,7 +2124,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             // The translate bar (issue #424). A toggle: the button stays in the Smartbar below the bar.
             KeyCode.TRANSLATE -> toggleTranslate()
-            KeyCode.IME_UI_MODE_DICTATE -> dev.patrickgold.florisboard.dictate.DictateController.onMicClick(appContext)
+            // TypeBetter: until dictation can work (no voice model yet, and no cloud key), the mic is greyed
+            // out and a tap opens the Whisper picker instead of starting a recording that could only fail.
+            // Only from idle: a recording or transcription in progress always gets its own tap.
+            KeyCode.IME_UI_MODE_DICTATE -> if (
+                dev.patrickgold.florisboard.dictate.DictateController.canStartRecording() &&
+                dev.patrickgold.florisboard.dictate.DictateController.needsDictationSetup(appContext)
+            ) {
+                activeState.isDictationSetupVisible = true
+            } else {
+                dev.patrickgold.florisboard.dictate.DictateController.onMicClick(appContext)
+            }
             KeyCode.DICTATE_LIVE_PROMPT -> dev.patrickgold.florisboard.dictate.DictateController.startLivePrompt(appContext)
             KeyCode.DICTATE_PROMPTS -> {
                 closeInternalFields()

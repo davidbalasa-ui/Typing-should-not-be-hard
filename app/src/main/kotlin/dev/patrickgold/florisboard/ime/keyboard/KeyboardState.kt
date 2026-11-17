@@ -99,6 +99,8 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
         const val F_IS_SUBTYPE_SELECTION_VISIBLE: ULong =   0x1_0000_0000u
         // The transcription provider picker (issue #431), a sheet like the subtype one above.
         const val F_IS_PROVIDER_SELECTION_VISIBLE: ULong =  0x2_0000_0000u
+        // TypeBetter: the dictation setup picker (Whisper Tiny/Base/Small), opened from a greyed-out mic.
+        const val F_IS_DICTATION_SETUP_VISIBLE: ULong =     0x4_0000_0000u
 
         const val F_DEBUG_SHOW_DRAG_AND_DROP_HELPERS =      0x01_00_00_00_00_00_00_00uL
 
@@ -204,6 +206,10 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
     var isTranscriptionProviderSelectionVisible: Boolean
         get() = getFlag(F_IS_PROVIDER_SELECTION_VISIBLE)
         set(v) { setFlag(F_IS_PROVIDER_SELECTION_VISIBLE, v) }
+
+    var isDictationSetupVisible: Boolean
+        get() = getFlag(F_IS_DICTATION_SETUP_VISIBLE)
+        set(v) { setFlag(F_IS_DICTATION_SETUP_VISIBLE, v) }
 
     var isComposingEnabled: Boolean
         get() = getFlag(F_IS_COMPOSING_ENABLED)

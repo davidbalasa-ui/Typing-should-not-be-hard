@@ -64,6 +64,7 @@ import dev.patrickgold.florisboard.dictate.field.TranscriptHandover
 import dev.patrickgold.florisboard.dictate.provider.ChatRequest
 import dev.patrickgold.florisboard.dictate.provider.DictateApiException
 import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
+import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
 import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 import dev.patrickgold.florisboard.dictate.provider.LocalRealtimeSession
 import dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider
@@ -1589,6 +1590,7 @@ object DictateController {
         // a screen reader has to speak (#159), and the observer only hears what happens once it runs.
         ensureHapticObserver(appContext)
         if (refuseIfNoCredential(context)) return
+        if (refuseIfNoLocalModel(context)) return
         // Measured from here to the recorder running and to its first frame (#447): whatever is said
         // before that frame is not in the recording at all.
         val startRequestedAt = SystemClock.elapsedRealtime()
@@ -5308,6 +5310,39 @@ object DictateController {
      * Not a substitute for the later check, which still guards the paths that do not come through
      * here; this only moves the moment of truth to before anyone has said anything.
      */
+    /**
+     * Whether the active transcription provider cannot transcribe yet (TypeBetter): the on-device engine
+     * with no voice model on disk, or a provider that needs a key without one. The keyboard draws the mic
+     * greyed out while this holds and opens the Whisper picker on a tap. See [DictationReadiness].
+     */
+    fun needsDictationSetup(context: Context): Boolean = DictationReadiness.needsSetup(
+        activeProviderId = prefs.dictate.transcriptionProviderId.get(),
+        accounts = prefs.dictate.providerAccounts.get(),
+        isModelInstalled = { LocalModelManager.isInstalled(context.applicationContext, it) },
+    )
+
+    /**
+     * Refuses to record for the on-device engine while it has no model (TypeBetter). The keyboard's own mic
+     * opens the Whisper picker before getting here; this covers the other ways in (the floating button, the
+     * bubble, auto-start on a field), which used to record first and only then report that no model was
+     * downloaded, losing what was said.
+     */
+    private fun refuseIfNoLocalModel(context: Context): Boolean {
+        val account = transcriptionAccount()
+        val preset = presetFor(account)
+        if (preset.transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE) return false
+        if (ProviderListing.isSetUp(preset, prefs.dictate.providerAccounts.get()) {
+                LocalModelManager.isInstalled(context.applicationContext, it)
+            }
+        ) return false
+        _state.value = UiState.Error(
+            message = context.getString(R.string.dictate__local_model_not_installed_error),
+            kind = DictateApiException.Kind.UNKNOWN,
+            action = ErrorAction.OPEN_SETTINGS,
+        )
+        return true
+    }
+
     private fun refuseIfNoCredential(context: Context): Boolean {
         val account = prefs.dictate.providerAccounts.get()
             .getOrEmpty(prefs.dictate.transcriptionProviderId.get())

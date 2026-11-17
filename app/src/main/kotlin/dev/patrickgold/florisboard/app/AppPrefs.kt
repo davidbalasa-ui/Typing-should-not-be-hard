@@ -311,10 +311,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         // Active transcription provider id, matching a ProviderRegistry id that supports speech-to-text
-        // ("openai", "groq") or a "custom:<uuid>" endpoint. The actual key/model live in the keyring.
+        // ("local", "openai", "groq") or a "custom:<uuid>" endpoint. The actual key/model live in the keyring.
+        // TypeBetter: defaults to the on-device engine ("local"), so a fresh install dictates offline once a
+        // Whisper model is downloaded from the keyboard's mic (DictationReadiness); a cloud provider stays
+        // one setting away for anyone with an API key. Was "openai" upstream.
         val transcriptionProviderId = string(
             key = "dictate__transcription_provider_id",
-            default = "openai",
+            default = "local",
+        )
+        // Guard for the one-time upgrade check that keeps an OpenAI user on OpenAI now that the default
+        // above changed. See DictateLegacyMigrator.keepCloudProviderAfterLocalDefaultIfNeeded.
+        val transcriptionDefaultLocalMigrated = boolean(
+            key = "dictate__transcription_default_local_migrated",
+            default = false,
         )
 
         // The provider that takes over a dictation the active transcription provider cannot handle, as a

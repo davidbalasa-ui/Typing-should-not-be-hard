@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import dev.patrickgold.florisboard.dictate.ui.DictationSetupPanel
 import dev.patrickgold.florisboard.dictate.ui.SelectTranscriptionProviderPanel
 import dev.patrickgold.florisboard.ime.core.SelectSubtypePanel
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardState
@@ -45,6 +46,9 @@ fun BottomSheetWindow() {
             if (state.isTranscriptionProviderSelectionVisible) {
                 keyboardManager.activeState.isTranscriptionProviderSelectionVisible = false
             }
+            if (state.isDictationSetupVisible) {
+                keyboardManager.activeState.isDictationSetupVisible = false
+            }
         },
     ) {
         if (state.isActionsEditorVisible) {
@@ -56,9 +60,13 @@ fun BottomSheetWindow() {
         if (state.isTranscriptionProviderSelectionVisible) {
             SelectTranscriptionProviderPanel()
         }
+        if (state.isDictationSetupVisible) {
+            DictationSetupPanel()
+        }
     }
 }
 
 fun KeyboardState.isAnyBottomSheetVisible(): Boolean {
-    return isActionsEditorVisible || isSubtypeSelectionVisible || isTranscriptionProviderSelectionVisible
+    return isActionsEditorVisible || isSubtypeSelectionVisible || isTranscriptionProviderSelectionVisible ||
+        isDictationSetupVisible
 }

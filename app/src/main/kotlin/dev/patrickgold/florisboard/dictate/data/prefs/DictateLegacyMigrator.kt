@@ -18,6 +18,8 @@ import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.dictate.DictateReasoningEffort
 import dev.patrickgold.florisboard.dictate.migratedChatReasoning
 import dev.patrickgold.florisboard.dictate.provider.DictateProxyType
+import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
+import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccount
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
@@ -458,6 +460,27 @@ object DictateLegacyMigrator {
      * far into someone's settings for a feature they did not ask for is a different thing from restoring
      * a default. Where it is off, the Learned-words screen now says so and points at the switch.
      */
+    /**
+     * Keeps a keyboard that dictated through OpenAI on OpenAI after TypeBetter made the on-device engine
+     * the default transcription provider (AppPrefs.transcriptionProviderId).
+     *
+     * A setting nobody changed reads as the new default after an update, so without this an OpenAI user
+     * who never touched the provider would find the mic greyed out, asking for a voice model. The rule is
+     * [DictationReadiness.providerToKeepOnUpgrade]: only when on-device has no model and an OpenAI key is
+     * stored is "openai" written back. A fresh install has no key, so it stays on-device. Runs once.
+     */
+    suspend fun keepCloudProviderAfterLocalDefaultIfNeeded(context: Context) {
+        val prefs by FlorisPreferenceStore
+        if (prefs.dictate.transcriptionDefaultLocalMigrated.get()) return
+        val keep = DictationReadiness.providerToKeepOnUpgrade(
+            activeProviderId = prefs.dictate.transcriptionProviderId.get(),
+            accounts = prefs.dictate.providerAccounts.get(),
+            isModelInstalled = { LocalModelManager.isInstalled(context, it) },
+        )
+        if (keep != null) prefs.dictate.transcriptionProviderId.set(keep)
+        prefs.dictate.transcriptionDefaultLocalMigrated.set(true)
+    }
+
     suspend fun migrateWordLearningDefaultIfNeeded() {
         val prefs by FlorisPreferenceStore
         if (prefs.suggestion.learnTypedWordsDefaultMigrated.get()) return
