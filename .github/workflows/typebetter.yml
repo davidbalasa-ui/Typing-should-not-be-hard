@@ -145,12 +145,6 @@ jobs:
             echo "::error::TYPEBETTER_KEYSTORE_PASSWORD is shorter than 16 characters. The key file is public, so use a long password (four or more random words, or 20+ random characters) and run again."
             exit 1
           fi
-          # Length alone lets "passwordpassword" or "aaaaaaaaaaaaaaaa" through. Four random words, or 20
-          # random characters, always use well over ten different characters.
-          if [ "$(printf '%s' "$SECRET" | fold -w1 | sort -u | wc -l)" -lt 10 ]; then
-            echo "::error::TYPEBETTER_KEYSTORE_PASSWORD repeats too few different characters to be safe in a public repository. Use four or more random words, or 20+ random characters, and run again."
-            exit 1
-          fi
           # The password that opens the key: the secret stretched through scrypt (N=2^20, r=8: about one
           # second and 1 GiB per guess). Never written anywhere but this runner's memory and keystore.properties.
           KEYSTORE_PASSWORD=$(SECRET="$SECRET" python3 -c 'import os,hashlib;print(hashlib.scrypt(os.environ["SECRET"].encode(),salt=b"typebetter-release-key-v1",n=2**20,r=8,p=1,maxmem=2**31-1,dklen=32).hex())')
@@ -176,6 +170,13 @@ jobs:
             # One key for every build, made once on main: phones only accept updates signed with the key
             # they installed.
             mkdir -p signing
+            # Only for a new key (an existing key must keep opening with the secret it was made with):
+            # length alone lets "passwordpassword" or "aaaaaaaaaaaaaaaa" through. Four random words, or 20
+            # random characters, always use well over ten different characters.
+            if [ "$(printf '%s' "$SECRET" | fold -w1 | sort -u | wc -l)" -lt 10 ]; then
+              echo "::error::TYPEBETTER_KEYSTORE_PASSWORD repeats too few different characters to be safe in a public repository. Use four or more random words, or 20+ random characters, and run again."
+              exit 1
+            fi
             keytool -J-Dkeystore.pkcs12.keyPbeIterationCount=1000000 -J-Dkeystore.pkcs12.macIterationCount=1000000 \
               -genkeypair -keystore "$key" -storetype PKCS12 -alias typebetter \
               -keyalg RSA -keysize 4096 -validity 36500 \

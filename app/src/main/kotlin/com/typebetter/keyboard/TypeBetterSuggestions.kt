@@ -78,15 +78,15 @@ object TypeBetterSuggestions {
         }
     }
 
+    /** Word slots the classic strip shows; the offers go at its end so they stay visible there. */
+    private const val VISIBLE_SLOTS = 3
+
     /**
      * Puts the pending one-tap offers among [candidates], in the last visible slot. Offers end as soon as the next word is
      * started or another field is opened, and are never shown in a password or incognito field. While the
      * offered word itself is still the composing text (the moment between finishing it and the space
      * landing), the offer stays.
      */
-    /** Word slots the classic strip shows; the offers go at its end so they stay visible there. */
-    private const val VISIBLE_SLOTS = 3
-
     fun withOffers(
         candidates: List<SuggestionCandidate>,
         composingText: String,

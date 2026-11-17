@@ -31,8 +31,10 @@ class TranscriptFixer(rules: PersonalRules) {
 
     val isEmpty: Boolean get() = fixes.isEmpty()
 
-    fun apply(text: String): String {
-        if (text.isEmpty() || fixes.isEmpty()) return text
+    fun apply(input: String): String {
+        if (input.isEmpty() || fixes.isEmpty()) return input
+        // The patterns are built from NFC keys, so the transcript is matched in NFC too.
+        val text = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFC)
         // Work on spans so a replaced word is never rewritten by a second rule.
         val taken = BooleanArray(text.length)
         val replacements = mutableListOf<Triple<Int, Int, String>>()

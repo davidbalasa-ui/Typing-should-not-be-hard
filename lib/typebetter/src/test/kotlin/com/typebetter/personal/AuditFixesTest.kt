@@ -142,7 +142,8 @@ class InputEdgeCasesTest {
         assertEquals(keyOf("café"), keyOf("café"))
         assertTrue(StripOffers.looksAddable("café"))
         // ...and a fix for "cafe" does not fire inside "café" written with a combining accent.
-        assertEquals("café", TranscriptFixer(PersonalRules().withFix(Fix("cafe", "Cafe"))).apply("café"))
+        // (The transcript comes back in NFC: the same letters.)
+        assertEquals("caf\u00e9", TranscriptFixer(PersonalRules().withFix(Fix("cafe", "Cafe"))).apply("cafe\u0301"))
     }
 
     @Test
@@ -181,6 +182,17 @@ class InputEdgeCasesTest {
         assertFalse(StripOffers.looksAddable("Ow​lbear"))
         assertFalse(StripOffers.looksAddable("Owl😀bear"))
         assertTrue(StripOffers.looksAddable("Owlbear"))
+        // Review of PR #6: joiners are part of real words (Persian half-space), and letters outside the
+        // basic plane are letters, not emoji.
+        assertTrue(StripOffers.looksAddable("\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645"))
+        assertTrue(StripOffers.looksAddable("ab\uD840\uDC00c"))
+        assertFalse(StripOffers.looksAddable("Owl\u200Ebear"))
+    }
+
+    @Test
+    fun `a decomposed transcript still matches (review of PR #6)`() {
+        val fixer = TranscriptFixer(PersonalRules().withFix(Fix("caf\u00e9 noir", "Café Noir")))
+        assertEquals("the Café Noir", fixer.apply("the cafe\u0301 noir"))
     }
 
     @Test

@@ -694,6 +694,7 @@ class NlpManager(context: Context) {
      * language loads. Warming it here, in the background when the keyboard's language is set, moves that
      * one-time cost off the typing path. Only the word list is read: no download, no housekeeping.
      */
+    @Volatile
     private var warmJob: Job? = null
 
     private fun warmOtherLanguagesForOffers(active: Subtype) {

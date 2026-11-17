@@ -427,9 +427,11 @@ object PersonalWords {
         if (old == word) return true
         if (keyOf(old) == keyOf(word)) {
             // Only the capitals change: the dictionary holds one entry per word, so swap it.
+            val wasPackWord = _rules.value.starterWords.any { keyOf(it) == keyOf(old) }
             removeWords(listOf(old))
             if (addWord(word)) return true
-            addWord(old)
+            // Put it back as it was, including being the pack's (removeWords forgot that).
+            if (addWord(old) && wasPackWord) update { StarterPack.recordWordsAdded(it, listOf(old)) }
             return false
         }
         if (!addWord(word)) return false
