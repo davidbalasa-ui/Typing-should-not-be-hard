@@ -8,6 +8,8 @@ Open **https://github.com/davidbalasa-ui/Typing-should-not-be-hard/releases/late
 
 For automatic updates, add this repository's URL in [Obtainium](https://github.com/ImranR98/Obtainium).
 
+Phone blocks installs from outside the Play Store (for example a work-managed phone)? Install TypeBetter as a private Google Play test instead: [docs/play/README.md](docs/play/README.md).
+
 ## Priorities
 
 - Put punctuation, symbols, and shortcuts where they are easy to reach.

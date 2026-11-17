@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Uploads one app bundle to a Google Play testing track through the Play Developer API (v3).
+#
+#   PLAY_SERVICE_ACCOUNT_JSON  the service account key (JSON text, from the repository secret)
+#   tools/play-upload.sh <bundle.aab> <package name> <track> <release name>
+#
+# Plain curl + openssl + jq, so no third-party action ever holds the Play key. Steps: sign a JWT with
+# the service account's key, trade it for an access token, open an edit, upload the bundle, point the
+# track at the new version code, commit the edit.
+#
+# Two answers from Play are not failures:
+#   - the version code was already uploaded (a re-run of the same build): nothing to do;
+#   - "only releases with status draft may be created on draft app": the app has never been rolled out
+#     in the Play Console yet, so the release is saved as a draft for one tap in the Console.
+#
+# PLAY_API_BASE and PLAY_TOKEN_URL exist only so tools/test-play-upload.sh can run this against a local
+# mock server; the workflow never sets them.
+set -euo pipefail
+
+aab=${1:?bundle path}
+pkg=${2:?package name}
+track=${3:?track}
+name=${4:?release name}
+api=${PLAY_API_BASE:-https://androidpublisher.googleapis.com}
+: "${PLAY_SERVICE_ACCOUNT_JSON:?PLAY_SERVICE_ACCOUNT_JSON is not set}"
+[ -s "$aab" ] || { echo "::error::No bundle at $aab"; exit 1; }
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+umask 077
+
+b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+
+# The secret is JSON text; anything else is the most likely setup mistake, so say so plainly.
+if ! printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -e '.client_email and .private_key' > /dev/null 2>&1; then
+  echo "::error::PLAY_SERVICE_ACCOUNT_JSON is not a service account key file. Paste the whole downloaded .json file as the secret value."
+  exit 1
+fi
+email=$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .client_email)
+printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .private_key > "$work/key.pem"
+token_url=${PLAY_TOKEN_URL:-$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.token_uri // "https://oauth2.googleapis.com/token"')}
+
+now=$(date +%s)
+header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+claims=$(jq -cn --arg iss "$email" --arg aud "$token_url" --argjson iat "$now" \
+  '{iss:$iss, scope:"https://www.googleapis.com/auth/androidpublisher", aud:$aud, iat:$iat, exp:($iat+3600)}' | b64url)
+signature=$(printf '%s.%s' "$header" "$claims" | openssl dgst -sha256 -sign "$work/key.pem" | b64url)
+rm -f "$work/key.pem"
+
+# call METHOD URL [curl args...]: prints the body; returns 1 on an HTTP error, with the body in $work/err.
+call() {
+  local method=$1 url=$2; shift 2
+  local code
+  code=$(curl -sS -o "$work/body" -w '%{http_code}' -X "$method" "$url" \
+    -H "Authorization: Bearer $access" "$@") || { echo "network error" > "$work/err"; return 1; }
+  if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then cat "$work/body"; return 0; fi
+  { echo "HTTP $code"; cat "$work/body"; } > "$work/err"
+  return 1
+}
+fail() { echo "::error::$1"; sed 's/^/  /' "$work/err" >&2; exit 1; }
+
+access=$(curl -sS --fail-with-body "$token_url" \
+  --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+  --data-urlencode "assertion=$header.$claims.$signature" | jq -r '.access_token // empty') || true
+[ -n "$access" ] || { echo "::error::Google refused the service account key. Check that PLAY_SERVICE_ACCOUNT_JSON is the current key file."; exit 1; }
+echo "::add-mask::$access"
+
+base="$api/androidpublisher/v3/applications/$pkg"
+edit=$(call POST "$base/edits" -H 'Content-Type: application/json' -d '{}' | jq -r .id) \
+  || fail "Play did not open an edit for $pkg. Is the app created in the Play Console with this package name, and is the service account invited with release rights?"
+
+if ! uploaded=$(call POST "$api/upload/androidpublisher/v3/applications/$pkg/edits/$edit/bundles?uploadType=media" \
+    -H 'Content-Type: application/octet-stream' --data-binary "@$aab"); then
+  if grep -qi 'version code.*already been used' "$work/err"; then
+    echo "This version code is already on Play (a re-run of the same build). Nothing to upload."
+    call DELETE "$base/edits/$edit" > /dev/null || true
+    exit 0
+  fi
+  fail "Play refused the bundle."
+fi
+version=$(printf '%s' "$uploaded" | jq -r .versionCode)
+echo "Uploaded version code $version."
+
+release() {
+  jq -cn --arg track "$track" --arg v "$version" --arg name "$name" --arg status "$1" \
+    '{track:$track, releases:[{name:$name, versionCodes:[$v], status:$status}]}' > "$work/track.json"
+  call PUT "$base/edits/$edit/tracks/$track" -H 'Content-Type: application/json' --data-binary "@$work/track.json" > /dev/null \
+    && call POST "$base/edits/$edit:commit" > /dev/null
+}
+if release completed; then
+  echo "Released $name (version code $version) to the $track track. Testers get it from the Play Store."
+elif grep -qi 'status draft may be created on draft app' "$work/err"; then
+  # A failed commit leaves the edit open, so the same edit can be committed as a draft.
+  release draft || fail "Play refused the draft release."
+  echo "::warning::Saved $name to the $track track as a DRAFT: the app has never been rolled out in the Play Console. Open Play Console > Test and release > Internal testing and tap 'Review release', then 'Start rollout'. Later builds then release on their own."
+else
+  fail "Play refused the $track release."
+fi
