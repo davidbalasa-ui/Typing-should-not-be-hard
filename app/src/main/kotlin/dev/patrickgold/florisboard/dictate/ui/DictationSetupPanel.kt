@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,7 @@ import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState as collectPrefAsState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.onAccent
 import org.florisboard.lib.compose.stringRes
@@ -114,6 +116,7 @@ fun DictationSetupPanel(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
     val keyboardManager by context.keyboardManager()
     val inputFeedbackController = LocalInputFeedbackController.current
+    val scope = rememberCoroutineScope()
     val accent by prefs.theme.accentColor.collectPrefAsState()
 
     val downloads by LocalModelDownloads.state.collectAsState()
@@ -146,7 +149,7 @@ fun DictationSetupPanel(modifier: Modifier = Modifier) {
             activeDownload != null -> Unit // another model is downloading; the card says so
             id in installed -> {
                 noRoom = null
-                useModel(choice.spec)
+                scope.launch { useModel(choice.spec) }
             }
             else -> {
                 val free = context.filesDir.usableSpace
@@ -450,7 +453,7 @@ private fun FractionBar(fraction: Float, fill: Color, track: Color, minFraction:
  * Points the on-device engine at [spec] and makes it the active transcription provider, the setup
  * wizard's own recipe ([DictationReadiness.withLocalModel]).
  */
-private fun useModel(spec: LocalModelSpec) {
+private suspend fun useModel(spec: LocalModelSpec) {
     val prefs by FlorisPreferenceStore
     prefs.dictate.providerAccounts.set(DictationReadiness.withLocalModel(prefs.dictate.providerAccounts.get(), spec.id))
     prefs.dictate.transcriptionProviderId.set(ProviderRegistry.LOCAL.id)

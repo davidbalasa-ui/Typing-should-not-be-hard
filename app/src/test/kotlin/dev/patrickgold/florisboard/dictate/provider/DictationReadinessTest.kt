@@ -17,7 +17,6 @@ import java.net.UnknownHostException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -92,33 +91,24 @@ class DictationReadinessTest {
         assertEquals(before[openai], after[openai])
     }
 
-    // --- providerToKeepOnUpgrade --------------------------------------------------------------------
+    // --- isFreshInstall ----------------------------------------------------------------------------
 
     @Test
-    fun `an upgraded OpenAI user with a key stays on OpenAI`() {
-        val accounts = accountsOf(ProviderAccount(providerId = openai, apiKey = "sk-x"))
-        assertEquals(openai, DictationReadiness.providerToKeepOnUpgrade(local, accounts, nothingInstalled))
+    fun `a fresh install is switched to the on-device engine`() {
+        assertTrue(DictationReadiness.isFreshInstall(isImeSetUp = false, accounts = accountsOf()))
+        // An account saved without a key (a keyless server, say) is not a reason to stay off on-device.
+        assertTrue(DictationReadiness.isFreshInstall(false, accountsOf(ProviderAccount(providerId = openai))))
     }
 
     @Test
-    fun `a fresh install stays on the on-device engine`() {
-        assertNull(DictationReadiness.providerToKeepOnUpgrade(local, accountsOf(), nothingInstalled))
-        assertNull(
-            DictationReadiness.providerToKeepOnUpgrade(local, accountsOf(ProviderAccount(providerId = openai)), nothingInstalled),
-        )
+    fun `a keyboard already in use keeps its provider`() {
+        assertFalse(DictationReadiness.isFreshInstall(isImeSetUp = true, accounts = accountsOf()))
     }
 
     @Test
-    fun `someone already dictating on the device is left alone`() {
-        val accounts = accountsOf(ProviderAccount(providerId = openai, apiKey = "sk-x"))
-        assertNull(DictationReadiness.providerToKeepOnUpgrade(local, accounts, only("whisper-base")))
-    }
-
-    @Test
-    fun `a provider chosen explicitly is never changed`() {
-        val accounts = accountsOf(ProviderAccount(providerId = openai, apiKey = "sk-x"))
-        assertNull(DictationReadiness.providerToKeepOnUpgrade(ProviderRegistry.GROQ.id, accounts, nothingInstalled))
-        assertNull(DictationReadiness.providerToKeepOnUpgrade(openai, accounts, nothingInstalled))
+    fun `a stored key anywhere means someone already set up dictation`() {
+        val groq = ProviderRegistry.GROQ.id
+        assertFalse(DictationReadiness.isFreshInstall(false, accountsOf(ProviderAccount(providerId = groq, apiKey = "gsk_x"))))
     }
 
     // --- the picker's choices -----------------------------------------------------------------------

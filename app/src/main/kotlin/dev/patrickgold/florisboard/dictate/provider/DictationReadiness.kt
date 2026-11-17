@@ -61,27 +61,13 @@ object DictationReadiness {
         accounts.edit(ProviderRegistry.LOCAL.id) { it.copy(transcriptionModel = modelId) }
 
     /**
-     * The one-time upgrade rule for the new default engine (DictateLegacyMigrator).
-     *
-     * The active provider used to default to OpenAI and now defaults to the on-device engine. A keyboard
-     * already in use that never changed the setting reads as on-device after the update, which is wrong
-     * for someone whose OpenAI key was doing the dictating: their mic would go grey. So when the active
-     * provider reads as on-device, has no model, and an OpenAI key is stored, the old default is written
-     * back explicitly. Returns the provider id to store, or null to leave the setting alone.
+     * Whether this is a fresh install, for the one-time switch to the on-device engine
+     * (DictateLegacyMigrator.adoptLocalDefaultOnFreshInstallIfNeeded): setup not finished and no API key
+     * stored for any provider. A keyboard already in use keeps the provider it had, whatever it is: the
+     * stored setting cannot tell "never touched" from "chosen", so it is not second-guessed.
      */
-    fun providerToKeepOnUpgrade(
-        activeProviderId: String,
-        accounts: ProviderAccounts,
-        isModelInstalled: (String) -> Boolean,
-    ): String? {
-        if (activeProviderId != ProviderRegistry.LOCAL.id) return null
-        if (!needsSetup(activeProviderId, accounts, isModelInstalled)) return null
-        val openAi = accounts[LEGACY_DEFAULT_PROVIDER_ID] ?: return null
-        return if (openAi.hasKey) LEGACY_DEFAULT_PROVIDER_ID else null
-    }
-
-    /** The active provider's default before TypeBetter made on-device dictation the default. */
-    const val LEGACY_DEFAULT_PROVIDER_ID = "openai"
+    fun isFreshInstall(isImeSetUp: Boolean, accounts: ProviderAccounts): Boolean =
+        !isImeSetUp && accounts.accounts.values.none { it.hasKey }
 
     // --- The picker's three choices ------------------------------------------------------------------
 

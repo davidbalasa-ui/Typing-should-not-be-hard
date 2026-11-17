@@ -5301,16 +5301,6 @@ object DictateController {
     }
 
     /**
-     * Says no before the microphone opens, when the active provider has no credential to use.
-     *
-     * The check existed already, but it sat after the recording, just before the upload — so
-     * someone whose credit account had been deleted spoke a whole dictation, waited for it to
-     * upload, and only then learned it could never have worked. The audio was thrown away.
-     *
-     * Not a substitute for the later check, which still guards the paths that do not come through
-     * here; this only moves the moment of truth to before anyone has said anything.
-     */
-    /**
      * Whether the active transcription provider cannot transcribe yet (TypeBetter): the on-device engine
      * with no voice model on disk, or a provider that needs a key without one. The keyboard draws the mic
      * greyed out while this holds and opens the Whisper picker on a tap. See [DictationReadiness].
@@ -5343,6 +5333,16 @@ object DictateController {
         return true
     }
 
+    /**
+     * Says no before the microphone opens, when the active provider has no credential to use.
+     *
+     * The check existed already, but it sat after the recording, just before the upload — so
+     * someone whose credit account had been deleted spoke a whole dictation, waited for it to
+     * upload, and only then learned it could never have worked. The audio was thrown away.
+     *
+     * Not a substitute for the later check, which still guards the paths that do not come through
+     * here; this only moves the moment of truth to before anyone has said anything.
+     */
     private fun refuseIfNoCredential(context: Context): Boolean {
         val account = prefs.dictate.providerAccounts.get()
             .getOrEmpty(prefs.dictate.transcriptionProviderId.get())
