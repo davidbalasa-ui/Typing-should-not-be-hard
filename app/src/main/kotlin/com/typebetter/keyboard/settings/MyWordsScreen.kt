@@ -39,6 +39,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,10 +57,12 @@ import com.typebetter.personal.WordHarvester
 import com.typebetter.personal.isUsableFix
 import com.typebetter.personal.keyOf
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.compose.SwitchRow
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -78,6 +82,26 @@ import org.florisboard.lib.compose.stringRes
  * - My words: never corrected, suggested early (the keyboard's personal dictionary).
  * - Starter pack, Learn from text, Export and Import.
  */
+// The open dialog survives a rotation or a theme change (the activity is recreated): its entry is saved
+// as plain values, and the dialog's own fields use rememberSaveable.
+private val FixSaver = Saver<Fix?, List<Any>>(
+    save = { fix -> fix?.let { listOf(it.typed, it.meant, it.mode.name, it.source.name, it.addedAt) } ?: emptyList() },
+    restore = { v ->
+        if (v.size < 5) null else runCatching {
+            Fix(v[0] as String, v[1] as String, FixMode.valueOf(v[2] as String), Source.valueOf(v[3] as String), v[4] as Long)
+        }.getOrNull()
+    },
+)
+
+private val NeverChangeSaver = Saver<NeverChange?, List<Any>>(
+    save = { entry -> entry?.let { listOf(it.typed, it.blocked, it.source.name, it.addedAt) } ?: emptyList() },
+    restore = { v ->
+        if (v.size < 4) null else runCatching {
+            NeverChange(v[0] as String, v[1] as String, Source.valueOf(v[2] as String), v[3] as Long)
+        }.getOrNull()
+    },
+)
+
 @Composable
 fun MyWordsScreen() = FlorisScreen {
     title = stringRes(R.string.typebetter__screen_title)
@@ -86,6 +110,7 @@ fun MyWordsScreen() = FlorisScreen {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val prefs by FlorisPreferenceStore
     val rules by PersonalWords.rules.collectAsState()
     val changes by PersonalWords.changes.collectAsState()
 
@@ -98,11 +123,11 @@ fun MyWordsScreen() = FlorisScreen {
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
     }
 
-    var editingFix by remember { mutableStateOf<Fix?>(null) }
-    var editingBlock by remember { mutableStateOf<NeverChange?>(null) }
-    var editingWord by remember { mutableStateOf<String?>(null) }
-    var learning by remember { mutableStateOf(false) }
-    var restoringWeekly by remember { mutableStateOf(false) }
+    var editingFix by rememberSaveable(stateSaver = FixSaver) { mutableStateOf<Fix?>(null) }
+    var editingBlock by rememberSaveable(stateSaver = NeverChangeSaver) { mutableStateOf<NeverChange?>(null) }
+    var editingWord by rememberSaveable { mutableStateOf<String?>(null) }
+    var learning by rememberSaveable { mutableStateOf(false) }
+    var restoringWeekly by rememberSaveable { mutableStateOf(false) }
     var importPreview by remember { mutableStateOf<PersonalWords.ImportPreview?>(null) }
     // A delete waiting for "Delete?" to be confirmed: what it removes (shown) and how.
     var pendingDelete by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
@@ -233,10 +258,16 @@ fun MyWordsScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.typebetter__starter_group)) {
+            // With the personal dictionary off the pack's words can be neither added nor removed: the switch
+            // is disabled and says so, instead of doing nothing.
+            val dictionaryOn by prefs.dictionary.enableFlorisUserDictionary.collectAsState()
             SwitchRow(
                 title = stringRes(R.string.typebetter__starter_title),
-                summary = stringRes(R.string.typebetter__starter_summary),
+                summary = stringRes(
+                    if (dictionaryOn) R.string.typebetter__starter_summary else R.string.typebetter__starter_needs_dictionary,
+                ),
                 checked = StarterPack.isActive(rules),
+                enabled = dictionaryOn,
                 onCheckedChange = { PersonalWords.setStarterPack(it) },
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -392,9 +423,9 @@ private fun FixDialog(
     onSave: (Fix) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
-    var typed by remember { mutableStateOf(fix.typed) }
-    var meant by remember { mutableStateOf(fix.meant) }
-    var auto by remember { mutableStateOf(fix.mode == FixMode.AUTO) }
+    var typed by rememberSaveable { mutableStateOf(fix.typed) }
+    var meant by rememberSaveable { mutableStateOf(fix.meant) }
+    var auto by rememberSaveable { mutableStateOf(fix.mode == FixMode.AUTO) }
     // The same check the rules apply on save, so Save is never offered for a fix that would be refused.
     val valid = isUsableFix(typed, meant)
 
@@ -463,8 +494,8 @@ private fun NeverChangeDialog(
     onSave: (NeverChange) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
-    var typed by remember { mutableStateOf(entry.typed) }
-    var blocked by remember { mutableStateOf(entry.blocked) }
+    var typed by rememberSaveable { mutableStateOf(entry.typed) }
+    var blocked by rememberSaveable { mutableStateOf(entry.blocked) }
     val valid = typed.isNotBlank() && blocked.isNotBlank()
 
     JetPrefAlertDialog(
@@ -519,7 +550,7 @@ private fun WordDialog(
     onSave: (String) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
-    var text by remember { mutableStateOf(word) }
+    var text by rememberSaveable { mutableStateOf(word) }
     val taken = text.isNotBlank() && isTaken(text.trim())
     val wellFormed = PersonalWords.isValidWord(text.trim())
     val valid = wellFormed && !taken
@@ -567,12 +598,12 @@ private fun LearnDialog(
     onAdd: (List<String>) -> Unit,
 ) {
     // The clipboard is read only when asked (it may hold a password), and nothing is ticked until chosen.
-    var text by remember { mutableStateOf("") }
+    var text by rememberSaveable { mutableStateOf("") }
     var candidates by remember { mutableStateOf<List<WordHarvester.Candidate>?>(null) }
     val chosen = remember { mutableStateListOf<String>() }
     val scope = rememberCoroutineScope()
     var finding by remember { mutableStateOf(false) }
-    var askedWithoutText by remember { mutableStateOf(false) }
+    var askedWithoutText by rememberSaveable { mutableStateOf(false) }
 
     fun findWords() {
         val input = text

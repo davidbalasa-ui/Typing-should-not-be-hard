@@ -684,6 +684,9 @@ class NlpManager(context: Context) {
     @Volatile
     private var lastGlidePersonalWords: List<String>? = null
 
+    /** How long after a language becomes active the others are read for the "+ word" offer. */
+    private val WARM_OTHER_LANGUAGES_DELAY_MS = 3_000L
+
     /**
      * TypeBetter: after a finished word the "+ word" offer asks every enabled language whether it knows
      * the word. A language's word list is parsed the first time it is asked, under the same lock the
@@ -691,10 +694,18 @@ class NlpManager(context: Context) {
      * language loads. Warming it here, in the background when the keyboard's language is set, moves that
      * one-time cost off the typing path. Only the word list is read: no download, no housekeeping.
      */
+    private var warmJob: Job? = null
+
     private fun warmOtherLanguagesForOffers(active: Subtype) {
+        warmJob?.cancel()
         val others = subtypeManager.subtypes.filter { it != active }
         if (others.isEmpty()) return
-        scope.launch {
+        warmJob = scope.launch {
+            // Not at the same moment as the active language's own load (keyboard start, language switch):
+            // they share one lock, and the active language must win it. Wait a little, make sure the active
+            // one is in, and only then read the others. A quick second switch cancels this and starts over.
+            kotlinx.coroutines.delay(WARM_OTHER_LANGUAGES_DELAY_MS)
+            runCatching { getSuggestionProvider(active).getFrequencyForWord(active, "") }
             for (subtype in others) {
                 runCatching { getSuggestionProvider(subtype).getFrequencyForWord(subtype, "") }
             }

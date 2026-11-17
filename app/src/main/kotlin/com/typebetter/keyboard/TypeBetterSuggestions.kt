@@ -79,11 +79,14 @@ object TypeBetterSuggestions {
     }
 
     /**
-     * Puts the pending one-tap offers in front of [candidates]. Offers end as soon as the next word is
+     * Puts the pending one-tap offers among [candidates], in the last visible slot. Offers end as soon as the next word is
      * started or another field is opened, and are never shown in a password or incognito field. While the
      * offered word itself is still the composing text (the moment between finishing it and the space
      * landing), the offer stays.
      */
+    /** Word slots the classic strip shows; the offers go at its end so they stay visible there. */
+    private const val VISIBLE_SLOTS = 3
+
     fun withOffers(
         candidates: List<SuggestionCandidate>,
         composingText: String,
@@ -99,7 +102,10 @@ object TypeBetterSuggestions {
             return candidates
         }
         val offered = offers.filterIsInstance<StripOffer.AddWord>().map { it.word }.toSet()
-        return offers.map { PersonalOfferCandidate(it, context) } +
-            candidates.filterNot { it.text.toString() in offered }
+        val kept = candidates.filterNot { it.text.toString() in offered }
+        // The offers take the last of the three visible slots, not the first: a finger already on its way
+        // to the first suggestion when an offer arrives must still get that suggestion, not "+ word".
+        val before = (VISIBLE_SLOTS - offers.size).coerceAtLeast(0)
+        return kept.take(before) + offers.map { PersonalOfferCandidate(it, context) } + kept.drop(before)
     }
 }

@@ -31,7 +31,7 @@ data class Fix(
     val addedAt: Long = 0L,
 ) {
     val key: String get() = keyOf(typed)
-    val isPhrase: Boolean get() = typed.trim().contains(' ')
+    val isPhrase: Boolean get() = keyOf(typed).contains(' ')
 }
 
 /** One "Never change" entry: the keyboard may not turn [typed] into [blocked] by itself any more. */
@@ -142,7 +142,13 @@ data class PersonalRules(
     }
 }
 
-private fun Fix.trimmed() = copy(typed = typed.trim().replace(WHITESPACE, " "), meant = meant.trim())
+private fun Fix.trimmed() = copy(typed = tidy(typed), meant = tidy(meant))
+
+/** Trimmed, every run of spaces (no-break and other Unicode spaces included) made one plain space. */
+private fun tidy(text: String) = text.trim().replace(WHITESPACE, " ")
+
+/** Longest typed or meant text a fix may hold. A fix is a word or a short phrase, never a paragraph. */
+const val MAX_FIX_LENGTH = 100
 
 /**
  * Whether [typed] → [meant] can be saved as a fix: both filled in, and different once spaces are tidied
@@ -150,16 +156,28 @@ private fun Fix.trimmed() = copy(typed = typed.trim().replace(WHITESPACE, " "), 
  * [PersonalRules.withFix] would refuse (for example "fey  wild" → "fey wild").
  */
 fun isUsableFix(typed: String, meant: String): Boolean =
-    typed.isNotBlank() && meant.isNotBlank() && typed.trim().replace(WHITESPACE, " ") != meant.trim()
+    typed.isNotBlank() && meant.isNotBlank() && tidy(typed) != tidy(meant) &&
+        typed.length <= MAX_FIX_LENGTH && meant.length <= MAX_FIX_LENGTH &&
+        // No line breaks, tabs or other control characters: from a file, they would land in every text.
+        typed.none { it.isISOControl() } && meant.none { it.isISOControl() }
 private fun NeverChange.trimmed() = copy(typed = typed.trim(), blocked = blocked.trim())
 
-private val WHITESPACE = Regex("\\s+")
+// \s alone is ASCII-only on the JVM: a no-break space (which some keyboards and pastes produce) must count.
+private val WHITESPACE = Regex("[\\s\\p{Z}]+")
+
+/** Every apostrophe look-alike phones and pastes produce, read as the straight one. */
+private val APOSTROPHES = Regex("[\u2019\u2018\u02BC\uFF07]")
 
 /**
  * The form words are compared in: trimmed, single-spaced, lower case, with the curly apostrophe phones
  * type (’) read as the straight one ('), so "Ba’al" and "Ba'al" are the same word.
  */
-fun keyOf(word: String): String = word.trim().replace(WHITESPACE, " ").replace('’', '\'').lowercase()
+fun keyOf(word: String): String =
+    java.text.Normalizer.normalize(word, java.text.Normalizer.Form.NFC)
+        .trim().replace(WHITESPACE, " ").replace(APOSTROPHES, "'")
+        // The Turkish dotted capital İ lower-cases to two characters ("i" + a dot); read it as "i".
+        .replace('İ', 'i')
+        .lowercase()
 
 /** Key for a typed → corrected pair. */
 fun pairKey(typed: String, corrected: String): String = keyOf(typed) + "→" + keyOf(corrected)

@@ -42,10 +42,11 @@
     <string name="typebetter__word_invalid">One word, no spaces, up to 48 letters.</string>
     <string name="typebetter__word_save_failed">Could not save the word. Your old spelling was kept.</string>
     <string name="typebetter__delete_confirm_title">Delete?</string>
-    <string name="typebetter__delete_confirm_hint">The weekly copy can bring it back (Restore a weekly copy).</string>
+    <string name="typebetter__delete_confirm_hint">A weekly copy keeps it, so Restore a weekly copy can bring it back.</string>
 
     <string name="typebetter__starter_group">Starter pack</string>
     <string name="typebetter__starter_title">Use the starter pack</string>
+    <string name="typebetter__starter_needs_dictionary">Needs the personal dictionary: switch it on in Settings, Dictionary, then come back here.</string>
     <string name="typebetter__starter_summary">Campaign names, tech words and common slips. Turning it off removes only what it added.</string>
 
     <string name="typebetter__learn_title">Learn from text</string>

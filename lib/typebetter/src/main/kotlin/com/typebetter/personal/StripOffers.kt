@@ -52,12 +52,21 @@ object StripOffers {
     fun looksAddable(word: String): Boolean {
         if (word.isEmpty() || word.length > MAX_LENGTH) return false
         if (word.any { it.isWhitespace() || it == '@' || it == '/' || it == '\\' }) return false
+        // Invisible characters (zero-width joiners and spaces, direction marks) and emoji would make a
+        // look-alike of a real word, or something that is not a word at all.
+        if (word.any { Character.getType(it) == Character.FORMAT.toInt() || it.isSurrogate() }) return false
         val letters = word.count { it.isLetter() }
         if (letters < 2) return false
         // Two letters only as an acronym (DM, PC); short lower-case scraps are usually typos.
         if (word.length < 3 && !word.all { it.isUpperCase() }) return false
-        return word.first().isLetterOrDigit() && word.last().isLetterOrDigit()
+        // A word may end in a combining mark (an accent typed as its own character, Hindi vowel signs).
+        val last = word.last()
+        return word.first().isLetterOrDigit() &&
+            (last.isLetterOrDigit() || Character.getType(last) in COMBINING_MARKS)
     }
 
     private const val MAX_LENGTH = 40
+    private val COMBINING_MARKS = setOf(
+        Character.NON_SPACING_MARK.toInt(), Character.COMBINING_SPACING_MARK.toInt(), Character.ENCLOSING_MARK.toInt(),
+    )
 }

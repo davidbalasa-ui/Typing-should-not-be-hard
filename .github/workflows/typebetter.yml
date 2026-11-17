@@ -80,6 +80,8 @@ jobs:
         with:
           name: bergamot
           path: app/src/main/jniLibs/arm64-v8a
+      - name: Release key step never replaces the key
+        run: tools/test-release-key-step.sh
       - name: TypeBetter rules tests
         run: ./gradlew --no-daemon :lib:typebetter:test
       - name: App unit tests
@@ -143,11 +145,34 @@ jobs:
             echo "::error::TYPEBETTER_KEYSTORE_PASSWORD is shorter than 16 characters. The key file is public, so use a long password (four or more random words, or 20+ random characters) and run again."
             exit 1
           fi
+          # Length alone lets "passwordpassword" or "aaaaaaaaaaaaaaaa" through. Four random words, or 20
+          # random characters, always use well over ten different characters.
+          if [ "$(printf '%s' "$SECRET" | fold -w1 | sort -u | wc -l)" -lt 10 ]; then
+            echo "::error::TYPEBETTER_KEYSTORE_PASSWORD repeats too few different characters to be safe in a public repository. Use four or more random words, or 20+ random characters, and run again."
+            exit 1
+          fi
           # The password that opens the key: the secret stretched through scrypt (N=2^20, r=8: about one
           # second and 1 GiB per guess). Never written anywhere but this runner's memory and keystore.properties.
           KEYSTORE_PASSWORD=$(SECRET="$SECRET" python3 -c 'import os,hashlib;print(hashlib.scrypt(os.environ["SECRET"].encode(),salt=b"typebetter-release-key-v1",n=2**20,r=8,p=1,maxmem=2**31-1,dklen=32).hex())')
           echo "::add-mask::$KEYSTORE_PASSWORD"
-          if [ ! -f "$key" ]; then
+          # The key on the newest main is the only real key. Never trust the checked-out commit for this:
+          # a re-run of an older main build, or a push queued behind the build that made the key, checks out
+          # a commit from before the key existed, and making a key then would replace the real one on main
+          # (phones would refuse every later update). Ask main itself.
+          remote="https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fetched=false
+          for attempt in 1 2 3; do
+            if git fetch --depth=1 "$remote" main; then fetched=true; break; fi
+            sleep $((attempt * 10))
+          done
+          if [ "$fetched" != true ]; then
+            echo "::error::Could not read main to look for the release key. Nothing was made or published; run again."
+            exit 1
+          fi
+          if git cat-file -e "FETCH_HEAD:$key" 2>/dev/null; then
+            mkdir -p signing
+            git show "FETCH_HEAD:$key" > "$key"
+          else
             # One key for every build, made once on main: phones only accept updates signed with the key
             # they installed.
             mkdir -p signing
@@ -161,10 +186,14 @@ jobs:
             # Commit the key file on top of the newest main (main may have moved while this build ran),
             # without touching the checked-out tree being built. If saving fails, stop: nothing is
             # published, and the next run makes a fresh key.
-            remote="https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             pushed=false
             for attempt in 1 2 3; do
               if git fetch --depth=1 "$remote" main; then
+                if git cat-file -e "FETCH_HEAD:$key" 2>/dev/null; then
+                  # Another main build saved a key first: that one is the real key. Use it, never replace it.
+                  git show "FETCH_HEAD:$key" > "$key"
+                  pushed=true; break
+                fi
                 rm -f "$RUNNER_TEMP/key-index"
                 GIT_INDEX_FILE="$RUNNER_TEMP/key-index" git read-tree FETCH_HEAD
                 GIT_INDEX_FILE="$RUNNER_TEMP/key-index" git update-index --add "$key"
@@ -243,5 +272,10 @@ jobs:
         run: |
           tag="v$RUN"; title="TypeBetter build $RUN"
           notes="Built from ${SHA:0:7} on $REF. Install TypeBetter.apk below, or let Obtainium keep it updated."
-          gh release create "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --target "$SHA" \
-            --title "$title" --notes "$notes"
+          # A re-run of this job finds its release already made: replace the APK instead of failing.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+              --title "$title" --notes "$notes"
+          fi
