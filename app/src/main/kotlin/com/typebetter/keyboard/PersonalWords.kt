@@ -80,6 +80,23 @@ object PersonalWords {
 
     /** What the suggestion strip offers right now (see [StripOffer]); empty most of the time. */
     private val _offers = MutableStateFlow<List<StripOffer>>(emptyList())
+
+    /**
+     * Ticket for the newest offer request. Offers are worked out off the main thread, so an answer can
+     * arrive after the user has moved on: to another field (it would show there) or to a later word whose
+     * answer came back first. Only the newest request may set offers, and a clear cancels every request
+     * still in flight.
+     */
+    private var offerTicket = 0L
+    private val offerLock = Any()
+
+    private fun newOfferTicket(): Long = synchronized(offerLock) { ++offerTicket }
+
+    private fun setOffers(ticket: Long, offers: List<StripOffer>) {
+        synchronized(offerLock) {
+            if (ticket == offerTicket) _offers.value = offers
+        }
+    }
     val offers: StateFlow<List<StripOffer>> = _offers.asStateFlow()
 
     // ---------------------------------------------------------------------------------------------
@@ -255,9 +272,17 @@ object PersonalWords {
         var after: PersonalRules? = null
         // One lock around both steps: otherwise loading could finish in between, replay the queued change
         // onto the loaded rules, and this would then apply it a second time on top.
-        synchronized(loadLock) {
-            if (!ready) pending += change
-            _rules.update { current -> change(current).also { before = current; after = it } }
+        try {
+            synchronized(loadLock) {
+                _rules.update { current -> change(current).also { before = current; after = it } }
+                // Queued only once it has applied cleanly, so a refused change is not replayed at load.
+                if (!ready) pending += change
+            }
+        } catch (e: IllegalArgumentException) {
+            // A change the rules refuse (an empty or no-op fix) changes nothing; it must not crash the
+            // settings screen or the keyboard that asked for it.
+            flogError { "TypeBetter: change refused: ${e.message}" }
+            return
         }
         scope.launch { persist() }
         // Undo counters do not change what the keyboard suggests; only the lists do.
@@ -284,6 +309,9 @@ object PersonalWords {
      * be read, the last list read is returned (empty before the first read).
      */
     fun myWords(): List<String> = myWordsOrNull() ?: cachedWords
+
+    /** The last My words list read, without touching the dictionary (safe on the main thread). */
+    fun myWordsCached(): List<String> = cachedWords
 
     /** My words, or null when the personal dictionary cannot be read right now (off, not loaded, failing). */
     private fun myWordsOrNull(): List<String>? {
@@ -328,13 +356,27 @@ object PersonalWords {
         invalidateWords()
         val known = (myWordsOrNull() ?: return emptyList()).map { keyOf(it) }.toHashSet()
         val added = mutableListOf<String>()
-        for (raw in words) {
-            val word = raw.trim()
-            // A word is one word: an entry with spaces would never match anything typed.
-            if (!isValidWord(word) || !known.add(keyOf(word))) continue
-            runCatching {
-                dao.insert(UserDictionaryEntry(id = 0, word = word, freq = FREQUENCY_MAX, locale = null, shortcut = null))
-            }.onSuccess { added += word }
+        val insertAll = {
+            for (raw in words) {
+                val word = raw.trim()
+                // A word is one word: an entry with spaces would never match anything typed.
+                if (!isValidWord(word) || !known.add(keyOf(word))) continue
+                runCatching {
+                    dao.insert(UserDictionaryEntry(id = 0, word = word, freq = FREQUENCY_MAX, locale = null, shortcut = null))
+                }.onSuccess { added += word }
+            }
+        }
+        // Many words at once (starter pack, Learn from text, import) go in as one transaction, so the
+        // keyboard sees one dictionary change and rebuilds its word caches once instead of once per word.
+        val database = if (words.size > 1) manager.florisUserDictionaryDatabase() else null
+        if (database != null) {
+            runCatching { database.runInTransaction(Runnable { insertAll() }) }.onFailure {
+                // A failed transaction rolls back every insert; report nothing added and keep the cache honest.
+                flogError { "TypeBetter: adding ${words.size} words failed: $it" }
+                added.clear()
+            }
+        } else {
+            insertAll()
         }
         if (added.isNotEmpty()) {
             invalidateWords()
@@ -442,11 +484,15 @@ object PersonalWords {
      * keyboard's word learning is off) the undo is not counted or saved; only the "+ word" offer shows.
      */
     fun onCorrectionUndone(typed: String, corrected: String, remember: Boolean) {
+        val ticket = newOfferTicket()
         scope.launch {
             val mine = isMyWord(typed)
             if (!remember) {
-                _offers.value = StripOffers.afterUndo(_rules.value, typed, corrected, mine).second
-                    .filterIsInstance<StripOffer.AddWord>()
+                setOffers(
+                    ticket,
+                    StripOffers.afterUndo(_rules.value, typed, corrected, mine).second
+                        .filterIsInstance<StripOffer.AddWord>(),
+                )
                 return@launch
             }
             var offers: List<StripOffer> = emptyList()
@@ -455,7 +501,7 @@ object PersonalWords {
                 offers = shown
                 updated
             }
-            _offers.value = offers
+            setOffers(ticket, offers)
         }
     }
 
@@ -464,16 +510,20 @@ object PersonalWords {
      * off the main thread, like the personal dictionary lookup.
      */
     fun onWordFinished(word: String, isKnown: (String) -> Boolean) {
+        val ticket = newOfferTicket()
         scope.launch {
             if (!StripOffers.looksAddable(word.trim())) return@launch
             val known = runCatching { isKnown(word) }.getOrDefault(true)
             val offer = StripOffers.afterWord(word, known, isMyWord(word))
-            _offers.value = listOfNotNull(offer)
+            setOffers(ticket, listOfNotNull(offer))
         }
     }
 
     fun clearOffers() {
-        if (_offers.value.isNotEmpty()) _offers.value = emptyList()
+        synchronized(offerLock) {
+            offerTicket++
+            if (_offers.value.isNotEmpty()) _offers.value = emptyList()
+        }
     }
 
     /** The user tapped an offer. */

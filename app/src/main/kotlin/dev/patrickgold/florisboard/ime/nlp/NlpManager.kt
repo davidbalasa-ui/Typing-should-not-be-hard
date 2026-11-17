@@ -51,6 +51,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -185,16 +187,29 @@ class NlpManager(context: Context) {
         }
         subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
             preload(subtype)
+            warmOtherLanguagesForOffers(subtype)
         }
         // TypeBetter: a change to My words or My fixes takes effect from the very next keystroke.
-        PersonalWords.changes.collectLatestIn(scope) {
-            val subtype = subtypeManager.activeSubtype
-            notePersonalVocabularyChanged(subtype)
-            glideTypingManager.value.invalidateWordData()
-            suggest(subtype, editorInstance.activeContent)
+        // drop(1): a StateFlow replays its current value on collect, and at startup there is nothing to
+        // redo yet (this also keeps glide from being touched while this manager is still being built).
+        scope.launch {
+            PersonalWords.changes.drop(1).collectLatest {
+                val subtype = subtypeManager.activeSubtype
+                notePersonalVocabularyChanged(subtype)
+                // Only My words feed the glide index. Rebuilding it walks the whole dictionary, so a fix
+                // or a "Never change" edit must not trigger it.
+                val words = PersonalWords.myWords()
+                if (words !== lastGlidePersonalWords) {
+                    lastGlidePersonalWords = words
+                    glideTypingManager.value.invalidateWordData()
+                }
+                suggest(subtype, editorInstance.activeContent)
+            }
         }
-        PersonalWords.offers.collectLatestIn(scope) {
-            assembleCandidates()
+        scope.launch {
+            PersonalWords.offers.drop(1).collectLatest {
+                assembleCandidates()
+            }
         }
     }
 
@@ -666,6 +681,27 @@ class NlpManager(context: Context) {
     }
 
     /** Tells the active provider its cached copy of the personal dictionary is stale. */
+    /** The My words list the glide index was last rebuilt for (identity: the list is cached until it changes). */
+    @Volatile
+    private var lastGlidePersonalWords: List<String>? = null
+
+    /**
+     * TypeBetter: after a finished word the "+ word" offer asks every enabled language whether it knows
+     * the word. A language's word list is parsed the first time it is asked, under the same lock the
+     * suggestions use, so without this the first finished word could hold up suggestions while a second
+     * language loads. Warming it here, in the background when the keyboard's language is set, moves that
+     * one-time cost off the typing path. Only the word list is read: no download, no housekeeping.
+     */
+    private fun warmOtherLanguagesForOffers(active: Subtype) {
+        val others = subtypeManager.subtypes.filter { it != active }
+        if (others.isEmpty()) return
+        scope.launch {
+            for (subtype in others) {
+                runCatching { getSuggestionProvider(subtype).getFrequencyForWord(subtype, "") }
+            }
+        }
+    }
+
     private suspend fun notePersonalVocabularyChanged(subtype: Subtype) {
         (getSuggestionProvider(subtype) as? LearningProvider)?.onPersonalVocabularyChanged()
     }

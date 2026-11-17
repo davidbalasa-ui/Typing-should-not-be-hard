@@ -77,9 +77,8 @@ data class PersonalRules(
 
     /** Adds or replaces the fix for [fix]'s typed word. A word can only mean one thing. */
     fun withFix(fix: Fix): PersonalRules {
-        require(fix.typed.isNotBlank() && fix.meant.isNotBlank()) { "A fix needs both words" }
+        require(isUsableFix(fix.typed, fix.meant)) { "A fix needs both words and must change something" }
         val clean = fix.trimmed()
-        require(clean.typed != clean.meant) { "A fix must change something" }
         val rest = fixes.filterNot { it.key == fix.key }
         // A fix and a block for the same pair contradict each other; the newer statement wins.
         val blocks = neverChange.filterNot { it.key == pairKey(fix.typed, fix.meant) }
@@ -144,6 +143,14 @@ data class PersonalRules(
 }
 
 private fun Fix.trimmed() = copy(typed = typed.trim().replace(WHITESPACE, " "), meant = meant.trim())
+
+/**
+ * Whether [typed] → [meant] can be saved as a fix: both filled in, and different once spaces are tidied
+ * the way a saved fix tidies them. The settings dialog asks this, so it never offers Save for a fix that
+ * [PersonalRules.withFix] would refuse (for example "fey  wild" → "fey wild").
+ */
+fun isUsableFix(typed: String, meant: String): Boolean =
+    typed.isNotBlank() && meant.isNotBlank() && typed.trim().replace(WHITESPACE, " ") != meant.trim()
 private fun NeverChange.trimmed() = copy(typed = typed.trim(), blocked = blocked.trim())
 
 private val WHITESPACE = Regex("\\s+")

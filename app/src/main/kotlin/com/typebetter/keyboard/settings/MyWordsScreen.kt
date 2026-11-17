@@ -52,6 +52,7 @@ import com.typebetter.personal.NeverChange
 import com.typebetter.personal.Source
 import com.typebetter.personal.StarterPack
 import com.typebetter.personal.WordHarvester
+import com.typebetter.personal.isUsableFix
 import com.typebetter.personal.keyOf
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -88,7 +89,10 @@ fun MyWordsScreen() = FlorisScreen {
     val rules by PersonalWords.rules.collectAsState()
     val changes by PersonalWords.changes.collectAsState()
 
-    var words by remember { mutableStateOf<List<String>>(emptyList()) }
+    // Starts from the list already in memory, so the screen does not open on "0 words" and then jump.
+    var words by remember {
+        mutableStateOf(PersonalWords.myWordsCached().sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it }))
+    }
     LaunchedEffect(changes) {
         words = withContext(Dispatchers.IO) { PersonalWords.myWords() }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
@@ -160,6 +164,10 @@ fun MyWordsScreen() = FlorisScreen {
         }
     }
 
+    // Sorted once per change, not on every recomposition of the screen.
+    val sortedFixes = remember(rules.fixes) { rules.fixes.sortedBy { keyOf(it.typed) } }
+    val sortedNeverChange = remember(rules.neverChange) { rules.neverChange.sortedBy { keyOf(it.typed) } }
+
     content {
         Preference(
             icon = Icons.Default.ContentPaste,
@@ -172,7 +180,7 @@ fun MyWordsScreen() = FlorisScreen {
             val auto = stringRes(R.string.typebetter__fix_mode_auto)
             val suggest = stringRes(R.string.typebetter__fix_mode_suggest)
             val phrase = stringRes(R.string.typebetter__fix_phrase)
-            rules.fixes.sortedBy { keyOf(it.typed) }.forEach { fix ->
+            sortedFixes.forEach { fix ->
                 Preference(
                     icon = Icons.Default.AutoFixHigh,
                     title = "${fix.typed}  →  ${fix.meant}",
@@ -192,7 +200,7 @@ fun MyWordsScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.typebetter__never_group, "count" to rules.neverChange.size)) {
-            rules.neverChange.sortedBy { keyOf(it.typed) }.forEach { entry ->
+            sortedNeverChange.forEach { entry ->
                 Preference(
                     icon = Icons.Default.Block,
                     title = "${entry.typed}  ↛  ${entry.blocked}",
@@ -387,7 +395,8 @@ private fun FixDialog(
     var typed by remember { mutableStateOf(fix.typed) }
     var meant by remember { mutableStateOf(fix.meant) }
     var auto by remember { mutableStateOf(fix.mode == FixMode.AUTO) }
-    val valid = typed.isNotBlank() && meant.isNotBlank() && typed.trim() != meant.trim()
+    // The same check the rules apply on save, so Save is never offered for a fix that would be refused.
+    val valid = isUsableFix(typed, meant)
 
     JetPrefAlertDialog(
         scrollModifier = florisDialogScroll(),
