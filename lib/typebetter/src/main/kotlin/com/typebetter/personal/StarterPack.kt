@@ -141,6 +141,17 @@ object StarterPack {
         return rules.copy(fixes = updated, starterPackVersion = VERSION)
     }
 
+    /**
+     * The user deleted [deleted] from My words: those that were the pack's are no longer the pack's, so a
+     * backup made from now on knows they were deleted (and a restore on a new phone takes them out again).
+     */
+    fun forgetWords(rules: PersonalRules, deleted: Collection<String>): PersonalRules {
+        if (rules.starterWords.isEmpty() || deleted.isEmpty()) return rules
+        val gone = deleted.map { keyOf(it) }.toHashSet()
+        val kept = rules.starterWords.filterNot { keyOf(it) in gone }
+        return if (kept.size == rules.starterWords.size) rules else rules.copy(starterWords = kept)
+    }
+
     fun recordWordsAdded(rules: PersonalRules, added: List<String>): PersonalRules =
         rules.copy(starterWords = (rules.starterWords + added).distinctBy { keyOf(it) })
 

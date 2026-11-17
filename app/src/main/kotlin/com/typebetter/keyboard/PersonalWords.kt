@@ -68,6 +68,15 @@ object PersonalWords {
     )
     private val writeLock = Mutex()
 
+    /**
+     * One at a time for every change to My words and the starter pack (add, delete, rename, import, pack on
+     * or off). Each of them reads the dictionary and then writes it; two at once (a double tap, the pack
+     * being switched off while it is still going on, an import during the first-start pack) used to insert
+     * the same word twice or leave the pack switched on with its words gone. A plain monitor, because the
+     * callers are not coroutines; every caller is off the main thread. Reentrant, so rename can add and delete.
+     */
+    private val wordsLock = Any()
+
     @Volatile
     private var appContext: Context? = null
 
@@ -80,6 +89,23 @@ object PersonalWords {
 
     /** What the suggestion strip offers right now (see [StripOffer]); empty most of the time. */
     private val _offers = MutableStateFlow<List<StripOffer>>(emptyList())
+
+    /**
+     * Ticket for the newest offer request. Offers are worked out off the main thread, so an answer can
+     * arrive after the user has moved on: to another field (it would show there) or to a later word whose
+     * answer came back first. Only the newest request may set offers, and a clear cancels every request
+     * still in flight.
+     */
+    private var offerTicket = 0L
+    private val offerLock = Any()
+
+    private fun newOfferTicket(): Long = synchronized(offerLock) { ++offerTicket }
+
+    private fun setOffers(ticket: Long, offers: List<StripOffer>) {
+        synchronized(offerLock) {
+            if (ticket == offerTicket) _offers.value = offers
+        }
+    }
     val offers: StateFlow<List<StripOffer>> = _offers.asStateFlow()
 
     // ---------------------------------------------------------------------------------------------
@@ -179,7 +205,11 @@ object PersonalWords {
             val file = File(folder, RULES_FILE)
             val temp = File(folder, "$RULES_FILE.tmp")
             temp.writeText(PersonalCodec.encodeRules(rules))
-            if (file.exists()) file.copyTo(File(folder, "$RULES_FILE.bak"), overwrite = true)
+            // The previous version becomes the .bak only if it reads: after a damaged file was kept aside at
+            // start-up, copying it would overwrite the good .bak the lists were just loaded from.
+            if (file.exists() && runCatching { PersonalCodec.decodeRules(file.readText()) }.getOrNull() != null) {
+                file.copyTo(File(folder, "$RULES_FILE.bak"), overwrite = true)
+            }
             if (!temp.renameTo(file)) {
                 temp.copyTo(file, overwrite = true)
                 temp.delete()
@@ -202,14 +232,19 @@ object PersonalWords {
             if (!ready || !settingsLoaded || saveBlocked) return
             val folder = File(dir(context), BACKUP_DIR).apply { mkdirs() }
             val today = LocalDate.now()
-            val week = "%d-W%02d".format(today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
+            // Locale.ROOT: with Arabic or Persian digits as the phone's number format, the file names did not
+            // sort or read back as weeks.
+            val week = String.format(java.util.Locale.ROOT, "%d-W%02d", today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
             val target = File(folder, "$WEEKLY_PREFIX$week.json")
             val words = myWordsOrNull()
                 ?: lastSavedWords(target)
                 ?: weeklyFiles(context).firstNotNullOfOrNull { lastSavedWords(it) }
                 ?: return
-            // Rewritten on every save during the week, so the copy holds the week's latest state.
-            val backup = PersonalBackup.of(_rules.value, words, System.currentTimeMillis())
+            // Rewritten on every save during the week: the week's latest state plus what was deleted this week.
+            // Keeps what this week's copy held before (deleted since), so a word deleted this week, even one
+            // added this week, can still be restored from it. Restoring only adds, so that costs nothing.
+            val earlier = if (target.exists()) runCatching { PersonalCodec.decodeBackup(target.readText()) }.getOrNull() else null
+            val backup = PersonalBackup.of(_rules.value, words, System.currentTimeMillis()).keepingEarlier(earlier)
             if (backup.words.isEmpty() && backup.fixes.isEmpty() && backup.neverChange.isEmpty()) return
             val temp = File(folder, "${target.name}.tmp")
             temp.writeText(PersonalCodec.encodeBackup(backup))
@@ -255,9 +290,17 @@ object PersonalWords {
         var after: PersonalRules? = null
         // One lock around both steps: otherwise loading could finish in between, replay the queued change
         // onto the loaded rules, and this would then apply it a second time on top.
-        synchronized(loadLock) {
-            if (!ready) pending += change
-            _rules.update { current -> change(current).also { before = current; after = it } }
+        try {
+            synchronized(loadLock) {
+                _rules.update { current -> change(current).also { before = current; after = it } }
+                // Queued only once it has applied cleanly, so a refused change is not replayed at load.
+                if (!ready) pending += change
+            }
+        } catch (e: IllegalArgumentException) {
+            // A change the rules refuse (an empty or no-op fix) changes nothing; it must not crash the
+            // settings screen or the keyboard that asked for it.
+            flogError { "TypeBetter: change refused: ${e.message}" }
+            return
         }
         scope.launch { persist() }
         // Undo counters do not change what the keyboard suggests; only the lists do.
@@ -284,6 +327,9 @@ object PersonalWords {
      * be read, the last list read is returned (empty before the first read).
      */
     fun myWords(): List<String> = myWordsOrNull() ?: cachedWords
+
+    /** The last My words list read, without touching the dictionary (safe on the main thread). */
+    fun myWordsCached(): List<String> = cachedWords
 
     /** My words, or null when the personal dictionary cannot be read right now (off, not loaded, failing). */
     private fun myWordsOrNull(): List<String>? {
@@ -321,27 +367,50 @@ object PersonalWords {
      * Runs on the caller's thread; the dictionary allows that, and every caller is off the main thread
      * or adds one word.
      */
-    fun addWords(words: List<String>): List<String> {
-        val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return emptyList()
+    fun addWords(words: List<String>): List<String> = addWordsOrNull(words).orEmpty()
+
+    /**
+     * Like [addWords], but null when the words could not be added at all (dictionary off, unreadable, or the
+     * write failed), as opposed to an empty list: nothing was new. The starter pack needs the difference.
+     */
+    private fun addWordsOrNull(words: List<String>): List<String>? = synchronized(wordsLock) {
+        val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return null
         manager.loadUserDictionariesIfNecessary()
-        val dao = manager.florisUserDictionaryDao() ?: return emptyList()
+        val dao = manager.florisUserDictionaryDao() ?: return null
         invalidateWords()
-        val known = (myWordsOrNull() ?: return emptyList()).map { keyOf(it) }.toHashSet()
+        // Read under [wordsLock], so nothing can add the same word between this check and the insert.
+        val known = (myWordsOrNull() ?: return null).map { keyOf(it) }.toHashSet()
+        var failed = false
         val added = mutableListOf<String>()
-        for (raw in words) {
-            val word = raw.trim()
-            // A word is one word: an entry with spaces would never match anything typed.
-            if (!isValidWord(word) || !known.add(keyOf(word))) continue
-            runCatching {
-                dao.insert(UserDictionaryEntry(id = 0, word = word, freq = FREQUENCY_MAX, locale = null, shortcut = null))
-            }.onSuccess { added += word }
+        val insertAll = {
+            for (raw in words) {
+                val word = raw.trim()
+                // A word is one word: an entry with spaces would never match anything typed.
+                if (!isValidWord(word) || !known.add(keyOf(word))) continue
+                runCatching {
+                    dao.insert(UserDictionaryEntry(id = 0, word = word, freq = FREQUENCY_MAX, locale = null, shortcut = null))
+                }.onSuccess { added += word }.onFailure { failed = true }
+            }
+        }
+        // Many words at once (starter pack, Learn from text, import) go in as one transaction, so the
+        // keyboard sees one dictionary change and rebuilds its word caches once instead of once per word.
+        val database = if (words.size > 1) manager.florisUserDictionaryDatabase() else null
+        if (database != null) {
+            runCatching { database.runInTransaction(Runnable { insertAll() }) }.onFailure {
+                // A failed transaction rolls back every insert; report nothing added and keep the cache honest.
+                flogError { "TypeBetter: adding ${words.size} words failed: $it" }
+                added.clear()
+                failed = true
+            }
+        } else {
+            insertAll()
         }
         if (added.isNotEmpty()) {
             invalidateWords()
             bump()
             refreshWeeklyCopy()
         }
-        return added
+        return if (failed && added.isEmpty()) null else added
     }
 
     /** What My words accepts: one word, no spaces, at most [MAX_WORD_LENGTH] characters. */
@@ -352,15 +421,17 @@ object PersonalWords {
      * Changes [old] to [new] in My words. The new spelling is written before the old one is removed, so a
      * failed write never loses the word. Returns false (and changes nothing) when it could not be saved.
      */
-    fun renameWord(old: String, new: String): Boolean {
+    fun renameWord(old: String, new: String): Boolean = synchronized(wordsLock) {
         val word = new.trim()
         if (!isValidWord(word)) return false
         if (old == word) return true
         if (keyOf(old) == keyOf(word)) {
             // Only the capitals change: the dictionary holds one entry per word, so swap it.
+            val wasPackWord = _rules.value.starterWords.any { keyOf(it) == keyOf(old) }
             removeWords(listOf(old))
             if (addWord(word)) return true
-            addWord(old)
+            // Put it back as it was, including being the pack's (removeWords forgot that).
+            if (addWord(old) && wasPackWord) update { StarterPack.recordWordsAdded(it, listOf(old)) }
             return false
         }
         if (!addWord(word)) return false
@@ -371,15 +442,18 @@ object PersonalWords {
     fun addWord(word: String): Boolean = addWords(listOf(word)).isNotEmpty()
 
     /** Removes [words] from My words, whatever their case. */
-    fun removeWords(words: List<String>) {
+    fun removeWords(words: List<String>): Unit = synchronized(wordsLock) {
         if (words.isEmpty()) return
         val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return
         manager.loadUserDictionariesIfNecessary()
         val dao = manager.florisUserDictionaryDao() ?: return
         val keys = words.map { keyOf(it) }.toHashSet()
-        runCatching {
-            dao.queryAll().filter { it.shortcut.isNullOrBlank() && keyOf(it.word) in keys }.forEach { dao.delete(it) }
-        }
+        val removed = runCatching {
+            dao.queryAll().filter { it.shortcut.isNullOrBlank() && keyOf(it.word) in keys }.onEach { dao.delete(it) }
+        }.getOrNull().orEmpty()
+        // A starter word the user deleted is no longer the pack's: backups made from now on say so, and a
+        // restore on a new phone takes it out again instead of bringing it back.
+        if (removed.isNotEmpty()) update { StarterPack.forgetWords(it, removed.map { e -> e.word }) }
         invalidateWords()
         bump()
         refreshWeeklyCopy()
@@ -442,11 +516,15 @@ object PersonalWords {
      * keyboard's word learning is off) the undo is not counted or saved; only the "+ word" offer shows.
      */
     fun onCorrectionUndone(typed: String, corrected: String, remember: Boolean) {
+        val ticket = newOfferTicket()
         scope.launch {
             val mine = isMyWord(typed)
             if (!remember) {
-                _offers.value = StripOffers.afterUndo(_rules.value, typed, corrected, mine).second
-                    .filterIsInstance<StripOffer.AddWord>()
+                setOffers(
+                    ticket,
+                    StripOffers.afterUndo(_rules.value, typed, corrected, mine).second
+                        .filterIsInstance<StripOffer.AddWord>(),
+                )
                 return@launch
             }
             var offers: List<StripOffer> = emptyList()
@@ -455,7 +533,7 @@ object PersonalWords {
                 offers = shown
                 updated
             }
-            _offers.value = offers
+            setOffers(ticket, offers)
         }
     }
 
@@ -464,16 +542,35 @@ object PersonalWords {
      * off the main thread, like the personal dictionary lookup.
      */
     fun onWordFinished(word: String, isKnown: (String) -> Boolean) {
+        val ticket = newOfferTicket()
         scope.launch {
             if (!StripOffers.looksAddable(word.trim())) return@launch
+            // The part of a My word before its apostrophe or hyphen ("Krezakar" of "Krezakar'thuul") is
+            // not a new word: the keyboard only ended the word there.
+            if (typingRules().isMyWordFragment(word)) return@launch
             val known = runCatching { isKnown(word) }.getOrDefault(true)
             val offer = StripOffers.afterWord(word, known, isMyWord(word))
-            _offers.value = listOfNotNull(offer)
+            setOffers(ticket, listOfNotNull(offer))
         }
     }
 
+    /**
+     * Hides [shown] if those are still the offers on the strip, without cancelling an answer still being
+     * worked out: the strip calls this when the user has moved past an old offer, which can happen just
+     * after the next word was finished and its own offer requested.
+     */
+    fun dropStaleOffers(shown: List<StripOffer>) {
+        synchronized(offerLock) {
+            if (_offers.value === shown) _offers.value = emptyList()
+        }
+    }
+
+    /** Ends every offer, shown or still being worked out (a new field, or an offer was tapped). */
     fun clearOffers() {
-        if (_offers.value.isNotEmpty()) _offers.value = emptyList()
+        synchronized(offerLock) {
+            offerTicket++
+            if (_offers.value.isNotEmpty()) _offers.value = emptyList()
+        }
     }
 
     /** The user tapped an offer. */
@@ -496,7 +593,15 @@ object PersonalWords {
         }
     }
 
-    private fun applyStarterPack(force: Boolean) {
+    /**
+     * False while the personal dictionary is off: the pack's words can then be neither added nor removed,
+     * so the settings screen disables the switch and says why.
+     */
+    fun canChangeStarterPack(): Boolean =
+        runCatching { DictionaryManager.default().also { it.loadUserDictionariesIfNecessary() }.florisUserDictionaryDao() }
+            .getOrNull() != null
+
+    private fun applyStarterPack(force: Boolean): Unit = synchronized(wordsLock) {
         // With the personal dictionary unavailable the words could not be added; try again next start
         // instead of marking the pack as applied without them.
         val manager = runCatching { DictionaryManager.default() }.getOrNull() ?: return
@@ -504,13 +609,22 @@ object PersonalWords {
         if (manager.florisUserDictionaryDao() == null) return
         val (withPack, words) = StarterPack.apply(_rules.value, force)
         if (withPack === _rules.value && words.isEmpty()) return
-        val added = addWords(words)
+        // When the words could not be added (dictionary failing), nothing is recorded: the pack is tried
+        // again at the next start instead of being marked as applied without its words.
+        val added = addWordsOrNull(words) ?: run {
+            flogError { "TypeBetter: starter words could not be added; will try again" }
+            return
+        }
         // Re-applied to the current rules, so a change made meanwhile is not lost. Same [force] as above:
         // an upgrade from an older pack version must not bring back entries the user deleted.
         update { current -> StarterPack.recordWordsAdded(StarterPack.apply(current, force).first, added) }
     }
 
-    private fun removeStarterPack() {
+    private fun removeStarterPack(): Unit = synchronized(wordsLock) {
+        // With the personal dictionary off, the pack's words could not be deleted, and clearing the record
+        // of which words were the pack's would make them impossible to remove later. Do nothing instead
+        // (the switch is disabled with a reason in that state).
+        if (!canChangeStarterPack()) return
         var words: List<String> = emptyList()
         update { rules -> StarterPack.remove(rules).also { words = it.second }.first }
         removeWords(words)
@@ -569,7 +683,7 @@ object PersonalWords {
                 if (out.size() > MAX_IMPORT_BYTES) null else out.toString(Charsets.UTF_8.name())
             }
         }.getOrNull() ?: return null
-        val backup = PersonalCodec.decodeBackup(text) ?: return null
+        val backup = runCatching { PersonalCodec.decodeBackup(text) }.getOrNull() ?: return null
         return runCatching {
             val result = PersonalImport.merge(_rules.value, myWords(), backup)
             val before = _rules.value.fixes.map { it.key }.toSet()
@@ -590,12 +704,12 @@ object PersonalWords {
 
     /** Adds what [text] (an export, a weekly copy or a saved rules file) holds. Null when it is none of those. */
     fun importText(text: String): ImportSummary? {
-        val backup = PersonalCodec.decodeBackup(text) ?: return null
+        val backup = runCatching { PersonalCodec.decodeBackup(text) }.getOrNull() ?: return null
         return importBackup(backup)
     }
 
-    private fun importBackup(backup: PersonalBackup): ImportSummary? {
-        return runCatching {
+    private fun importBackup(backup: PersonalBackup): ImportSummary? = synchronized(wordsLock) {
+        runCatching {
             var result: com.typebetter.personal.ImportResult? = null
             invalidateWords()
             // Fixes and Never change are restored even while My words cannot be read; the words that could
@@ -603,6 +717,8 @@ object PersonalWords {
             val words = myWordsOrNull() ?: cachedWords
             update { current -> PersonalImport.merge(current, words, backup).also { result = it }.rules }
             val merged = result ?: return@runCatching null
+            // Starter words the backup's owner had deleted (new phone only, see [PersonalImport]).
+            if (merged.removedStarterWords.isNotEmpty()) removeWords(merged.removedStarterWords)
             val added = addWords(merged.newWords)
             val wanted = merged.newWords.count { isValidWord(it) }
             ImportSummary(added.size, merged.addedFixes, merged.addedBlocks, wordsNotAdded = (wanted - added.size).coerceAtLeast(0))

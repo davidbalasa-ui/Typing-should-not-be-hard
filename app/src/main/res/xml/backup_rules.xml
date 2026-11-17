@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 8 to 11. Like data_extraction_rules.xml (Android 12+), the cloud backup only takes these files
+  when it is end-to-end encrypted with the screen lock (requireFlags, read from Android 9 on), which is
+  what the privacy policy says. Before, Android 9 to 11 backed them up unencrypted too.
+-->
 <full-backup-content>
     <include
         domain="root"
-        path="jetpref_datastore"/>
+        path="jetpref_datastore"
+        requireFlags="clientSideEncryption"/>
     <include
         domain="file"
-        path="ime"/>
+        path="ime"
+        requireFlags="clientSideEncryption"/>
     <!-- TypeBetter: My fixes, Never change and their weekly copies. -->
     <include
         domain="file"
-        path="typebetter"/>
+        path="typebetter"
+        requireFlags="clientSideEncryption"/>
     <include
         domain="database"
-        path="floris_user_dictionary"/>
+        path="floris_user_dictionary"
+        requireFlags="clientSideEncryption"/>
     <!-- The saved prompts, as data_extraction_rules.xml explains. -->
     <include
         domain="database"
-        path="prompts.db"/>
+        path="prompts.db"
+        requireFlags="clientSideEncryption"/>
 </full-backup-content>

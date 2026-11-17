@@ -2534,11 +2534,16 @@ object DictateController {
             FinalFullStop.droppable(paragraphed, head = rawText.dropLast(text.length))
         // Deterministic find-and-replace dictionary (issue #129), applied right before insert.
         // TypeBetter: then My fixes (typed → meant, phrases included), so "fey wild" arrives as "Feywild".
-        val outputText = com.typebetter.keyboard.PersonalWords.fixTranscript(
-            prefs.dictate.customMappings.get().apply(
-                if (stopLeftOff) paragraphed.dropLast(1) else paragraphed,
-            ),
+        // Not in a password or incognito field: typing there is never changed by My fixes either, and a
+        // dictated password must arrive exactly as spoken.
+        val mapped = prefs.dictate.customMappings.get().apply(
+            if (stopLeftOff) paragraphed.dropLast(1) else paragraphed,
         )
+        val outputText = if (isSensitiveDictationField(appContext)) {
+            mapped
+        } else {
+            com.typebetter.keyboard.PersonalWords.fixTranscript(mapped)
+        }
         // The whole dictation, for what keeps a record of it — the history, the stats, the re-insert cache —
         // while the field gets only the part that was not handed over (#421). [text] is the tail of [rawText].
         val dictated = if (text.length == rawText.length) {
