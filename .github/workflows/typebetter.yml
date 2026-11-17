@@ -1,7 +1,10 @@
 # Builds, tests and publishes the TypeBetter keyboard.
 #
 # - Every push and pull request: run the unit tests and build a release APK.
-# - Push to main: publish the APK as a GitHub release (Obtainium installs and updates from these).
+# - Push to main: publish the APK as a GitHub release (Obtainium installs and updates from these), with
+#   the matching Play app bundle (TypeBetter.aab) beside it. If the repository secret
+#   PLAY_SERVICE_ACCOUNT_JSON is set, the bundle also goes to the Play internal testing track, where the
+#   Play Store installs and updates it. See docs/play/README.md.
 # - Push to a claude/* work branch: build and test only. Work branches never see the release key and
 #   never publish, so nothing unreviewed can reach the phone as an update.
 #
@@ -82,6 +85,8 @@ jobs:
           path: app/src/main/jniLibs/arm64-v8a
       - name: Release key step never replaces the key
         run: tools/test-release-key-step.sh
+      - name: Play upload script (against a local mock of the Play API)
+        run: tools/test-play-upload.sh
       - name: TypeBetter rules tests
         run: ./gradlew --no-daemon :lib:typebetter:test
       - name: App unit tests
@@ -220,7 +225,7 @@ jobs:
             echo "keyPassword=$KEYSTORE_PASSWORD"
           } > keystore.properties
           echo "signed=true" >> "$GITHUB_OUTPUT"
-      - name: Build release APK
+      - name: Build release APK and Play bundle
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
@@ -228,12 +233,15 @@ jobs:
           TB_VERSION_CODE=$((142000 + GITHUB_RUN_NUMBER))
           BASE_VERSION=$(grep '^projectVersionName=' gradle.properties | cut -d= -f2 | cut -d- -f1)
           TB_VERSION_NAME="$BASE_VERSION-typebetter.$GITHUB_RUN_NUMBER"
+          # The APK and the app bundle come from the same build, with the same version code. The bundle is
+          # signed with the release key, which Play keeps as the upload key (Google re-signs for phones).
           if [ "$SIGNED" = "true" ]; then
-            ./gradlew --no-daemon :app:assembleRelease \
+            ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease \
               -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
           else
-            # Without the secret, the benchmark type is the release build signed with a debug key.
-            ./gradlew --no-daemon :app:assembleBenchmark \
+            # Without the secret, the benchmark type is the release build signed with a debug key. Its bundle
+            # is built too, only to prove the bundle still builds; it is never uploaded.
+            ./gradlew --no-daemon :app:assembleBenchmark :app:bundleBenchmark \
               -PprojectVersionCode="$TB_VERSION_CODE" -PprojectVersionName="$TB_VERSION_NAME"
           fi
       - name: Name the APK
@@ -244,11 +252,18 @@ jobs:
           [ -n "$apk" ] || { echo "::error::No APK was built"; exit 1; }
           # One fixed name, so .../releases/latest/download/TypeBetter.apk is always the newest build.
           cp "$apk" "out/TypeBetter.apk"
+          aab=$(find app/build/outputs/bundle -name '*.aab' \( -path '*release*' -o -path '*benchmark*' \) | head -n 1)
+          [ -n "$aab" ] || { echo "::error::No app bundle was built"; exit 1; }
+          cp "$aab" "out/TypeBetter.aab"
           ls -l out
       - uses: actions/upload-artifact@v4
         with:
           name: TypeBetter-apk
           path: out/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TypeBetter-aab
+          path: out/*.aab
 
   publish:
     name: Publish
@@ -264,6 +279,10 @@ jobs:
         with:
           name: TypeBetter-apk
           path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: TypeBetter-aab
+          path: out
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -272,11 +291,47 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           tag="v$RUN"; title="TypeBetter build $RUN"
-          notes="Built from ${SHA:0:7} on $REF. Install TypeBetter.apk below, or let Obtainium keep it updated."
-          # A re-run of this job finds its release already made: replace the APK instead of failing.
+          notes="Built from ${SHA:0:7} on $REF. Install TypeBetter.apk below, or let Obtainium keep it updated. TypeBetter.aab is the same build for the Google Play Console (not installable on a phone)."
+          # A re-run of this job finds its release already made: replace the files instead of failing.
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$tag" out/TypeBetter.apk out/TypeBetter.aab --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$tag" out/*.apk --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            gh release create "$tag" out/TypeBetter.apk out/TypeBetter.aab --repo "$GITHUB_REPOSITORY" --target "$SHA" \
               --title "$title" --notes "$notes"
           fi
+
+  play:
+    name: Google Play internal test
+    needs: [test, apk]
+    # Same gate as Publish: only a reviewed main build, signed with the real key, ever reaches Play.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.apk.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One Play upload at a time, in order, never cancelled half way (an edit left open blocks the next).
+    concurrency:
+      group: typebetter-play
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/play-upload.sh
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: TypeBetter-aab
+          path: out
+      - name: Upload to the internal testing track
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          RUN: ${{ github.run_number }}
+        run: |
+          # Optional: without the secret the bundle is still on the GitHub release for a manual upload.
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "PLAY_SERVICE_ACCOUNT_JSON is not set, so nothing goes to Google Play. TypeBetter.aab is on the GitHub release for a manual upload (docs/play/README.md)."
+            exit 0
+          fi
+          # Same version code as the Build step: 142000 + run number.
+          tools/play-upload.sh out/TypeBetter.aab com.typebetter.keyboard internal "TypeBetter build $RUN" $((142000 + RUN))
