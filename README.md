@@ -1,5 +1,7 @@
 # Typing should not be hard
 
+<img src="app/src/main/ic_app_icon-playstore.png" alt="TypeBetter logo: a T over a typo squiggle that straightens into a clean line, with dictation sound waves" width="120">
+
 An Android keyboard project focused on comfortable typing, predictable corrections, useful clipboard tools, GIFs, and reliable dictation.
 
 ## Install on your phone

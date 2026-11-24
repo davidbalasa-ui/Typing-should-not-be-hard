@@ -1,0 +1,46 @@
+<!--
+  TypeBetter launcher icon, foreground layer ("Typo Fixed" logo, sound-wave version, chosen by
+  David 2026-11-24). A bold T over a red typo squiggle that straightens into a clean green line,
+  with dictation sound waves underneath. Original artwork drawn from plain shapes, no fonts.
+  Everything stays inside the 66dp safe circle of the 108dp adaptive canvas so no launcher mask
+  crops it. Same shapes as ic_app_icon_monochrome.xml; keep the two in step.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- The T -->
+    <path
+        android:pathData="M39,30H69M54,30V50"
+        android:strokeColor="#FF1E2A4A"
+        android:strokeWidth="8.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Typo squiggle that straightens out: red on the wavy part, green on the straight part -->
+    <path
+        android:pathData="M33,61q3,-5 6,0t6,0t6,0q3,-5 6,0L75,61"
+        android:strokeWidth="4.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="33"
+                android:startY="61"
+                android:endX="75"
+                android:endY="61">
+                <item android:offset="0.45" android:color="#FFF0483E" />
+                <item android:offset="0.56" android:color="#FF1FA67A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Dictation sound waves -->
+    <path
+        android:pathData="M44,73v4M49,70.5v9M54,68.5v13M59,70.5v9M64,73v4"
+        android:strokeColor="#FF1E2A4A"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

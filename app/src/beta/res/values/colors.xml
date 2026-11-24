@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- beta builds use the TypeBetter logo on a light blue background so they are easy to tell apart from release. -->
+    <color name="ic_app_icon_background">#DCEBFF</color>
+</resources>
