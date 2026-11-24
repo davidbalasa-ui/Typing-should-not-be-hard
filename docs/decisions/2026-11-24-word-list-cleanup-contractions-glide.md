@@ -3,7 +3,7 @@
 **Decision.** Three changes, asked for by David on 2026-11-24 ("Yes", to cleaning the misspellings out,
 and "I need swipe to type"):
 
-1. **22 misspellings removed from `en.json`.** adress, begining, commited, definately, embarassing,
+1. **23 misspellings removed from `en.json`.** teh, adress, begining, commited, definately, embarassing,
    goverment, grammer, happend, millenium, occured, publically, realy, recieve, seperate, suprise,
    therefor, thier, truely, untill, wellcome, wether, wich. The upstream FlorisBoard word list was built
    without a spelling filter, so these counted as words and were never corrected. Each correct spelling
@@ -13,7 +13,12 @@ and "I need swipe to type"):
    (`ContextualFixes.SAFE_CONTRACTIONS`: dont, doesnt, im, cant, thats, youre, …). Until now every
    contraction was offered but never swapped, because ill / well / were / its are real words. Those
    ambiguous ones stay offer-only. A word in My words is never swapped.
-3. **Glide (swipe) typing is on by default.** A device where it was switched off by hand keeps its choice.
+3. **Glide (swipe) typing is on by default.** A device where it was switched off by hand keeps its choice;
+   every device that never touched the switch gets it on, existing ones included. While glide is on, the
+   swipe gestures on letter keys (up/down/left/right) are off, as they always were with glide; the
+   space-bar and delete-key gestures are unaffected. Turning glide off in Gestures brings them back.
+   `wont` and `cant` are real but rare words; they are swapped anyway because on a phone they are almost
+   always the contraction (as other keyboards do), and adding one to My words stops it.
 
 **How it was chosen.** The misspellings were found by listing every `en.json` word one edit from a far
 more common word through a classic slip (vowel swap, single/double consonant, vowel substitution), then

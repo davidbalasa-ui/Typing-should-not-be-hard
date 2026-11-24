@@ -1616,7 +1616,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // "im"→"I'm". The apostrophe-less form is often itself a dictionary word (so the generic correction
         // path below skips it), yet the apostrophe form is usually what was meant and more common. Offered at
         // the front of the strip as a tap suggestion — not auto-committed, so a genuine "ill"/"well" is never
-        // silently turned into "i'll"/"we'll".
+        // silently turned into "i'll"/"we'll". (English exception: a curated list of bare spellings nobody
+        // means, `dont`/`im`, is swapped — see [ContextualFixes.SAFE_CONTRACTIONS] and autoCommitKey below.)
         //
         // French gets nothing at all out of that loop and needs the most: elisions are 4 % of everything
         // written in the language, and the word list holds 13 apostrophe entries in 68,605 words, because

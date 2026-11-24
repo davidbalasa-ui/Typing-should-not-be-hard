@@ -241,7 +241,7 @@ class ContextualFixesTest {
             "occured" to "occurred", "publically" to "publicly", "realy" to "really", "recieve" to "receive",
             "seperate" to "separate", "suprise" to "surprise", "therefor" to "therefore", "thier" to "their",
             "truely" to "truly", "untill" to "until", "wellcome" to "welcome", "wether" to "whether",
-            "wich" to "which",
+            "wich" to "which", "teh" to "the",
         )
         val raw = EvalKeyboard.readDict("en.json").keys
         val stillThere = raw.filter { it.lowercase() in removed }
@@ -255,8 +255,13 @@ class ContextualFixesTest {
 
     @Test
     fun safeContractionsHaveExactlyOneApostropheForm() {
+        // The provider offers a form only when it is more frequent than the bare spelling, so count those.
         val bad = ContextualFixes.SAFE_CONTRACTIONS.filter { bare ->
-            (1 until bare.length).count { i -> (bare.substring(0, i) + "'" + bare.substring(i)) in freq } != 1
+            val bareFreq = freq[bare] ?: 0
+            (1 until bare.length).count { i ->
+                val form = freq[bare.substring(0, i) + "'" + bare.substring(i)]
+                form != null && form > bareFreq
+            } != 1
         }
         // With no single form the keyboard swaps nothing, so a listed word that fails here is dead weight.
         assertTrue(bad.isEmpty(), "contractions without exactly one apostrophe form in en.json: $bad")
