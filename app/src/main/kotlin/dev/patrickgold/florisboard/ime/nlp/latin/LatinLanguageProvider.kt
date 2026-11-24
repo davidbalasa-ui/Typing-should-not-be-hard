@@ -642,6 +642,33 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
+    private val soundIndexByLang = guardedByLock { mutableMapOf<String, Pair<Map<String, Int>, ContextualFixes.SoundIndex>>() }
+
+    /** The sound-alike index for [index]'s dictionary, built once per dictionary (TypeBetter). */
+    private suspend fun soundIndexFor(index: LowerIndex): ContextualFixes.SoundIndex =
+        soundIndexByLang.withLock { cache ->
+            cache[index.lang]?.takeIf { it.first === index.freq }?.second
+                ?: ContextualFixes.SoundIndex(index.freq).also { cache[index.lang] = index.freq to it }
+        }
+
+    /** Puts [candidate] at [position] in the strip order (clamped to the end), keeping the rest in order. */
+    private fun insertAt(
+        out: LinkedHashMap<String, SuggestionCandidate>,
+        position: Int,
+        key: String,
+        candidate: SuggestionCandidate,
+    ) {
+        if (out.containsKey(key)) return
+        val entries = out.entries.map { it.key to it.value }
+        out.clear()
+        val at = position.coerceIn(0, entries.size)
+        for ((i, e) in entries.withIndex()) {
+            if (i == at) out[key] = candidate
+            out[e.first] = e.second
+        }
+        if (at == entries.size) out[key] = candidate
+    }
+
     // --- Spell check / autocorrect core (issue #127 follow-up) --------------------------------------
 
     /**
@@ -728,6 +755,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 bigramsByLang.withLock { it.clear() }
                 trigramsByLang.withLock { it.clear() }
                 prefixIndexByLang.withLock { it.clear() }
+                soundIndexByLang.withLock { it.clear() }
             }
         }
     }
@@ -2074,6 +2102,96 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                         sourceProvider = this,
                     ),
                 )
+            }
+
+            // Sound-alike spellings (TypeBetter): the consonants right and the vowels wrong, `siezers` for
+            // seizures — three edits away, so neither reader above can reach it. Offered right behind the
+            // first fix; swapped in on Space only where nothing else would be (see [ContextualFixes]).
+            if (index.lang == ContextualFixes.LANG) {
+                currentCoroutineContext().ensureActive()
+                val reading = ContextualFixes.soundAlikes(
+                    typed = index.fold(word),
+                    index = soundIndexFor(index),
+                    freq = index.freq,
+                    strength = prefs.correction.autoCorrectStrength.get(),
+                    othersWouldCommit = out.values.any { it.isEligibleForAutoCommit },
+                    distance1Empty = distance1Empty,
+                )
+                if (reading.words.isNotEmpty()) {
+                    // The typed word stays tappable, left-most, whatever happens (issue #150).
+                    val typed = out.remove(word.lowercase()) ?: WordSuggestionCandidate(
+                        text = word, confidence = 1.0, isEligibleForAutoCommit = false, sourceProvider = this,
+                    )
+                    insertAt(out, 0, word.lowercase(), typed)
+                    // A capitalised word nothing knows, mid-sentence, is most often a name: offered, never
+                    // swapped. At the start of a sentence (no previous word) the capital says nothing.
+                    val mayAuto = reading.autoCommit && autoCorrectOn && !(wantCapitalized && prevWord != null)
+                    var at = if (mayAuto) 1 else 2
+                    reading.words.forEachIndexed { i, match ->
+                        val text = cased(index.canonical[match] ?: match)
+                        if (out.containsKey(text.lowercase())) return@forEachIndexed
+                        val candidate = WordSuggestionCandidate(
+                            text = text,
+                            confidence = (index.freq[match] ?: 0) / 255.0,
+                            isEligibleForAutoCommit = i == 0 && mayAuto,
+                            sourceProvider = this,
+                        )
+                        insertAt(out, at++, text.lowercase(), candidate)
+                    }
+                }
+            }
+        }
+
+        // A rare dictionary word that is one neighbouring key from a far more common word the previous word
+        // is constantly followed by — `responsible dor` meant `for` (TypeBetter). Never a word of the user's
+        // own (personal dictionary or learned), never one another keyboard language knows, and never a word
+        // the bigram table has seen after this previous word. See [ContextualFixes.realWordFix].
+        // Cheapest checks first: this runs on every keystroke, and most typed words are common.
+        val realWordFolded = if (isKnown && index.lang == ContextualFixes.LANG && word.length >= 2) index.fold(word) else null
+        val realWordFreq = realWordFolded?.let { index.freq[it] }
+        if (realWordFolded != null && realWordFreq != null && realWordFreq < ContextualFixes.RARE_MAX_FREQ &&
+            isDictionaryJudgeable(word) && word.drop(1).none { it.isUpperCase() }
+        ) {
+            currentCoroutineContext().ensureActive()
+            val folded = realWordFolded
+            val prevWord = previousWordOf(content, index)
+            val isUsersOwn = prevWord != null && (
+                learnedSnapshot?.scoreOfKey(folded)?.let { it > 0.0 } == true ||
+                    isInUserDictionary(word, subtype) || isWordInAnotherLanguage(word, subtype)
+                )
+            if (prevWord != null && !isUsersOwn) {
+                val bigrams = bigramsFor(subtype)
+                val fix = ContextualFixes.realWordFix(
+                    typed = folded,
+                    prev = prevWord,
+                    freq = index.freq,
+                    bigramCount = { bigrams.countOf(it) },
+                    sqDistance = KeyProximityInfo::normSqDistance,
+                    strength = prefs.correction.autoCorrectStrength.get(),
+                )
+                if (fix != null) {
+                    val text = cased(index.canonical[fix.word] ?: fix.word)
+                    val slotTaken = out.values.any { it.isEligibleForAutoCommit }
+                    out.remove(text.lowercase())
+                    out.remove(word.lowercase())
+                    insertAt(
+                        out, 0, word.lowercase(),
+                        WordSuggestionCandidate(
+                            text = word, confidence = 1.0, isEligibleForAutoCommit = false, sourceProvider = this,
+                        ),
+                    )
+                    insertAt(
+                        out, 1, text.lowercase(),
+                        WordSuggestionCandidate(
+                            text = text,
+                            confidence = (index.freq[fix.word] ?: 0) / 255.0,
+                            // A capitalised word with a word before it is mid-sentence (the previous word
+                            // stops at sentence punctuation), so most likely a name: offered, never swapped.
+                            isEligibleForAutoCommit = fix.autoCommit && autoCorrectOn && !slotTaken && !wantCapitalized,
+                            sourceProvider = this,
+                        ),
+                    )
+                }
             }
         }
 
