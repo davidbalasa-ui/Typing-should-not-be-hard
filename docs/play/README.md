@@ -79,6 +79,10 @@ the internal test on its own and the Play Store updates the phone. It is easier 
   [data-safety.md](data-safety.md). An internal test does not.
 - **New personal developer accounts** must run a closed test with 12 testers for 14 days before a
   public production release. That does not affect a private internal test.
+- **App icon for the store listing**: when Play asks for a 512 × 512 app icon (Grow → Store presence →
+  Main store listing), open
+  **https://github.com/davidbalasa-ui/Typing-should-not-be-hard/raw/main/app/src/main/ic_app_icon-playstore.png**
+  on the phone, save it, and upload it. It is the same logo as the app's launcher icon.
 - **Privacy policy**: [privacy-policy.md](privacy-policy.md) (its GitHub link is the URL to give Play).
 - **Dictate Cloud** stays in the menu but cannot sell credit in TypeBetter (its products belong to the
   original Dictate listing). Use your own provider key or on-device recognition.
