@@ -69,7 +69,7 @@ configure<ApplicationExtension> {
 
     defaultConfig {
         // TypeBetter installs beside Dictate instead of replacing it, so it has its own id.
-        applicationId = "com.typebetter.keyboard"
+        applicationId = "com.poeticsquirrel.typebetter"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
         versionCode = projectVersionCode.toInt()

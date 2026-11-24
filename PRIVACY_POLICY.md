@@ -13,7 +13,7 @@ If you have any questions about this policy, contact us at
 **contact@devemperor.net**.
 
 > **TypeBetter.** This build of the App is TypeBetter (application ID
-> `com.typebetter.keyboard`), a personal fork of Dictate Keyboard. Everything in
+> `com.poeticsquirrel.typebetter`), a personal fork of Dictate Keyboard. Everything in
 > this policy applies to it, plus what TypeBetter adds on top, described in
 > section 2.9. TypeBetter adds no server, account, analytics or network use of its
 > own.
