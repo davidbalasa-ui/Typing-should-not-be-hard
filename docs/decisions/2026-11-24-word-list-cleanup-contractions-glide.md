@@ -3,9 +3,11 @@
 **Decision.** Three changes, asked for by David on 2026-11-24 ("Yes", to cleaning the misspellings out,
 and "I need swipe to type"):
 
-1. **23 misspellings removed from `en.json`.** teh, adress, begining, commited, definately, embarassing,
+1. **22 misspellings removed from `en.json`.** teh, adress, begining, commited, definately, embarassing,
    goverment, grammer, happend, millenium, occured, publically, realy, recieve, seperate, suprise,
-   therefor, thier, truely, untill, wellcome, wether, wich. The upstream FlorisBoard word list was built
+   therefor, thier, truely, untill, wellcome, wether. `wich` stays for now: it is also a German word (past of *weichen*), and
+   removing it puts it into `AutocorrectEvalTest`'s German "must not be touched" population, which shifts
+   that sampled test over its 1 % Balanced budget. That test is not loosened; `wich` waits for its own change. The upstream FlorisBoard word list was built
    without a spelling filter, so these counted as words and were never corrected. Each correct spelling
    is one edit away or its sound-alike (asserted in `ContextualFixesTest`), so ordinary autocorrect now
    fixes them. `wether` and `therefor` are archaic real words; nobody typing on a phone means them.

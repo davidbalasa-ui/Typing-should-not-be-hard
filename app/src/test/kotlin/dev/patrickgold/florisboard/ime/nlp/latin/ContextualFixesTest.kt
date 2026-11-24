@@ -241,7 +241,7 @@ class ContextualFixesTest {
             "occured" to "occurred", "publically" to "publicly", "realy" to "really", "recieve" to "receive",
             "seperate" to "separate", "suprise" to "surprise", "therefor" to "therefore", "thier" to "their",
             "truely" to "truly", "untill" to "until", "wellcome" to "welcome", "wether" to "whether",
-            "wich" to "which", "teh" to "the",
+            "teh" to "the",
         )
         val raw = EvalKeyboard.readDict("en.json").keys
         val stillThere = raw.filter { it.lowercase() in removed }

@@ -246,7 +246,7 @@ class DictionaryLanguagesTest {
         assertTrue("expected English completions, got $out", out.any { it.equals("hello", true) })
 
         // A one-key slip. The bundled en.json is the upstream FlorisBoard word list; TypeBetter removed the
-        // famous misspellings it held (teh, recieve, seperate, definately, thier, wich and others — see
+        // famous misspellings it held (teh, recieve, seperate, definately, thier and others — see
         // ContextualFixesTest), so those are now corrected like any other typo.
         val corrections = suggestionsFor(en, "morninh")
         Log.i(TAG, "en  morninh -> $corrections")
