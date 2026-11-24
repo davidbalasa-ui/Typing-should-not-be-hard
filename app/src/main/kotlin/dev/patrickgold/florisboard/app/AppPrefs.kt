@@ -1369,9 +1369,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val glide = Glide()
     inner class Glide {
+        // On by default in TypeBetter (David, 2026-11-24: "I need swipe to type"). A device where it was
+        // switched off by hand keeps its stored choice; only the untouched default changes.
         val enabled = boolean(
             key = "glide__enabled",
-            default = false,
+            default = true,
         )
         val showTrail = boolean(
             key = "glide__show_trail",
