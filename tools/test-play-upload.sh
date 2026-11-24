@@ -50,7 +50,7 @@ class H(BaseHTTPRequestHandler):
         if not self.authed(): return
         if p.endswith("/edits"):
             log({"step": "edit"}); return self.send(200, {"id": "e1"})
-        if p == "/upload/androidpublisher/v3/applications/com.typebetter.keyboard/edits/e1/bundles?uploadType=media":
+        if p == "/upload/androidpublisher/v3/applications/com.poeticsquirrel.typebetter/edits/e1/bundles?uploadType=media":
             same = data == open(os.path.join(T, "app.aab"), "rb").read()
             log({"step": "upload", "same_bytes": same, "type": self.headers.get("Content-Type")})
             if mode() == "duplicate":
@@ -87,13 +87,13 @@ port=$(cat "$T/port")
 export PLAY_API_BASE="http://127.0.0.1:$port" PLAY_TOKEN_URL="http://127.0.0.1:$port/token"
 export PLAY_SERVICE_ACCOUNT_JSON
 PLAY_SERVICE_ACCOUNT_JSON=$(jq -n --rawfile k "$T/sa.pem" '{type:"service_account", client_email:"ci@p.iam.gserviceaccount.com", private_key:$k}')
-up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.typebetter.keyboard internal "Build 31" 142031 > "$T/out" 2>&1; }
+up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.poeticsquirrel.typebetter internal "Build 31" 142031 > "$T/out" 2>&1; }
 check() { jq -se "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
 
 rm -f "$T/log.jsonl"; up || { echo "FAIL: normal upload exited non-zero"; cat "$T/out"; exit 1; }
 check '.[0].type=="application/x-www-form-urlencoded" and .[0].claims.aud==env.PLAY_TOKEN_URL and .[0].sig_ok and .[0].claims.scope=="https://www.googleapis.com/auth/androidpublisher" and .[0].claims.iss=="ci@p.iam.gserviceaccount.com" and (.[0].claims.exp-.[0].claims.iat)==3600 and .[0].grant=="urn:ietf:params:oauth:grant-type:jwt-bearer"' "JWT is not a valid signed service-account assertion"
 check 'map(select(.step=="upload"))[0] | .same_bytes and .type=="application/octet-stream"' "bundle bytes changed on the way"
-check 'map(select(.step=="track"))[0] | .path=="/androidpublisher/v3/applications/com.typebetter.keyboard/edits/e1/tracks/internal" and .body.releases[0].versionCodes==["142031"] and .body.releases[0].status=="completed" and .body.releases[0].name=="Build 31"' "track not set to the uploaded version"
+check 'map(select(.step=="track"))[0] | .path=="/androidpublisher/v3/applications/com.poeticsquirrel.typebetter/edits/e1/tracks/internal" and .body.releases[0].versionCodes==["142031"] and .body.releases[0].status=="completed" and .body.releases[0].name=="Build 31"' "track not set to the uploaded version"
 check 'map(select(.step=="commit")) | length==1 and .[0].status=="completed"' "edit not committed as a completed release"
 echo "OK: normal app: signed JWT, bundle uploaded unchanged, internal track released"
 

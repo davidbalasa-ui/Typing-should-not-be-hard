@@ -2,7 +2,7 @@
 
 **Effective date:** 17 November 2026
 
-TypeBetter (application ID `com.typebetter.keyboard`) is a personal Android keyboard built on the open
+TypeBetter (application ID `com.poeticsquirrel.typebetter`) is a personal Android keyboard built on the open
 source Dictate Keyboard. It is published on Google Play by the owner of the Play developer account named
 on its store page ("we" below), as a private test for its own developer. Questions: open an issue at
 https://github.com/davidbalasa-ui/Typing-should-not-be-hard/issues.
