@@ -47,8 +47,12 @@ internal object ContextualFixes {
     const val AUTO_FREQ_GAP = 50
     const val AUTO_MIN_CONTEXT = 50L
 
-    /** Squared key-width distance within which two keys count as neighbours (1.3 key widths). */
-    const val NEIGHBOUR_SQ_DIST = 1.7f
+    /**
+     * Squared key-width distance within which two keys count as neighbours. KeyProximityInfo divides both
+     * axes by the key width, so on a phone a key one row up is ~1.4–1.6 widths away (squared ~2.0–2.5)
+     * and a diagonal neighbour a little more; 2.6 takes in the row above and below, not two keys across.
+     */
+    const val NEIGHBOUR_SQ_DIST = 2.6f
 
     class Fix(val word: String, val autoCommit: Boolean)
 
@@ -159,7 +163,8 @@ internal object ContextualFixes {
      * Auto-commit is for the case where nothing else would be: the caller passes [othersWouldCommit] and
      * [distance1Empty]. Then it needs exactly one common match, at most one letter longer or shorter, that
      * differs from the typed word by at most [SOUND_AUTO_MAX_LETTER_DIFF] letters as a multiset. Measured
-     * on German words the English dictionary lacks, the rule changes 0.4 % that nothing else would have.
+     * on German words the English dictionary lacks, the rule changes about 0.6 % that nothing else would
+     * have (asserted under 1 % in `ContextualFixesTest`).
      */
     fun soundAlikes(
         typed: String,

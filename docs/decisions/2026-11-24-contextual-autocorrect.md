@@ -19,10 +19,13 @@ following the existing Autocorrect strength setting:
 `en.json` (the subtitle corpus holds many rare strings like dor, thar, yiu), and the keyboard never
 corrected a known word. "siezers" is three edits from "seizures", past the corrector's two-edit limit.
 Thresholds were tuned on the shipped files and are asserted in `ContextualFixesTest`:
-- rule 1 at Balanced swaps 0.46 % of rare words typed correctly after 20 common words (an upper bound)
-  and fixes about 50 % of key slips that land on a rare word;
-- rule 2 swaps 0.4 % of German words typed into the English keyboard that nothing else would change
+- rule 1 at Balanced swaps about 0.5 % of rare words typed correctly after 20 common words (an upper
+  bound) and fixes about 50 % of key slips that land on a rare word;
+- rule 2 swaps about 0.6 % of German words typed into the English keyboard that nothing else would change
   (the same harm measure `AutocorrectEvalTest` uses, budget under 1 % at Balanced).
+
+Neither rule swaps a capitalised word in mid-sentence (most likely a name); it is only offered.
+Neighbouring keys are those within 2.6 key-widths² (the row above and below on a real phone).
 
 **What changed.** `ContextualFixes.kt` (rules), `LatinLanguageProvider.suggest()` (wiring),
 `ContextualFixesTest.kt` (measurements). English only, because only English ships a bigram table and

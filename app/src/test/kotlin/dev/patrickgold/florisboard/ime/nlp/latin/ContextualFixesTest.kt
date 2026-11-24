@@ -165,13 +165,15 @@ class ContextualFixesTest {
     @Test
     fun classicMisspellings() {
         val expected = mapOf(
-            "siezure" to "seizure", "recieve" to "receive", "definately" to "definitely",
-            "seperate" to "separate", "beleive" to "believe", "occured" to "occurred",
-            "freind" to "friend", "tommorow" to "tomorrow", "untill" to "until",
+            "siezure" to "seizure", "beleive" to "believe",
+            "freind" to "friend", "tommorow" to "tomorrow",
             "accomodate" to "accommodate", "neccessary" to "necessary", "arguement" to "argument",
             "existance" to "existence", "independant" to "independent", "buisness" to "business",
             "becuase" to "because", "agressive" to "aggressive",
         )
+        // Only words the dictionary lacks reach this rule in the keyboard (`mayCorrect`), so only they count.
+        val known = expected.keys.filter { it in freq }
+        assertTrue(known.isEmpty(), "in en.json, so never sound-alike corrected: $known")
         val missed = expected.filter { (typo, meant) -> sounds(typo).words.firstOrNull() != meant }
         assertTrue(missed.isEmpty(), "not first: $missed")
     }

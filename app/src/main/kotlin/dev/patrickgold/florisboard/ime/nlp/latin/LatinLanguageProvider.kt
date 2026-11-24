@@ -2119,20 +2119,21 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 )
                 if (reading.words.isNotEmpty()) {
                     // The typed word stays tappable, left-most, whatever happens (issue #150).
-                    out.putIfAbsent(
-                        word.lowercase(),
-                        WordSuggestionCandidate(
-                            text = word, confidence = 1.0, isEligibleForAutoCommit = false, sourceProvider = this,
-                        ),
+                    val typed = out.remove(word.lowercase()) ?: WordSuggestionCandidate(
+                        text = word, confidence = 1.0, isEligibleForAutoCommit = false, sourceProvider = this,
                     )
-                    var at = if (reading.autoCommit) 1 else 2
+                    insertAt(out, 0, word.lowercase(), typed)
+                    // A capitalised word nothing knows, mid-sentence, is most often a name: offered, never
+                    // swapped. At the start of a sentence (no previous word) the capital says nothing.
+                    val mayAuto = reading.autoCommit && autoCorrectOn && !(wantCapitalized && prevWord != null)
+                    var at = if (mayAuto) 1 else 2
                     reading.words.forEachIndexed { i, match ->
                         val text = cased(index.canonical[match] ?: match)
                         if (out.containsKey(text.lowercase())) return@forEachIndexed
                         val candidate = WordSuggestionCandidate(
                             text = text,
                             confidence = (index.freq[match] ?: 0) / 255.0,
-                            isEligibleForAutoCommit = i == 0 && reading.autoCommit && autoCorrectOn,
+                            isEligibleForAutoCommit = i == 0 && mayAuto,
                             sourceProvider = this,
                         )
                         insertAt(out, at++, text.lowercase(), candidate)
@@ -2145,15 +2146,20 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // is constantly followed by — `responsible dor` meant `for` (TypeBetter). Never a word of the user's
         // own (personal dictionary or learned), never one another keyboard language knows, and never a word
         // the bigram table has seen after this previous word. See [ContextualFixes.realWordFix].
-        if (isKnown && !mayCorrect && index.lang == ContextualFixes.LANG && word.length >= 2 &&
+        // Cheapest checks first: this runs on every keystroke, and most typed words are common.
+        val realWordFolded = if (isKnown && index.lang == ContextualFixes.LANG && word.length >= 2) index.fold(word) else null
+        val realWordFreq = realWordFolded?.let { index.freq[it] }
+        if (realWordFolded != null && realWordFreq != null && realWordFreq < ContextualFixes.RARE_MAX_FREQ &&
             isDictionaryJudgeable(word) && word.drop(1).none { it.isUpperCase() }
         ) {
             currentCoroutineContext().ensureActive()
-            val folded = index.fold(word)
+            val folded = realWordFolded
             val prevWord = previousWordOf(content, index)
-            val isUsersOwn = learnedSnapshot?.scoreOfKey(folded)?.let { it > 0.0 } == true ||
-                isInUserDictionary(word, subtype) || isWordInAnotherLanguage(word, subtype)
-            if (prevWord != null && index.freq.containsKey(folded) && !isUsersOwn) {
+            val isUsersOwn = prevWord != null && (
+                learnedSnapshot?.scoreOfKey(folded)?.let { it > 0.0 } == true ||
+                    isInUserDictionary(word, subtype) || isWordInAnotherLanguage(word, subtype)
+                )
+            if (prevWord != null && !isUsersOwn) {
                 val bigrams = bigramsFor(subtype)
                 val fix = ContextualFixes.realWordFix(
                     typed = folded,
@@ -2179,7 +2185,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                         WordSuggestionCandidate(
                             text = text,
                             confidence = (index.freq[fix.word] ?: 0) / 255.0,
-                            isEligibleForAutoCommit = fix.autoCommit && autoCorrectOn && !slotTaken,
+                            // A capitalised word with a word before it is mid-sentence (the previous word
+                            // stops at sentence punctuation), so most likely a name: offered, never swapped.
+                            isEligibleForAutoCommit = fix.autoCommit && autoCorrectOn && !slotTaken && !wantCapitalized,
                             sourceProvider = this,
                         ),
                     )
