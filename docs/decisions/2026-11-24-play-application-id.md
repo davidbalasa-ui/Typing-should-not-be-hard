@@ -3,7 +3,7 @@
 - Play Console reported `com.typebetter.keyboard` as already in use, so David chose
   `com.poeticsquirrel.typebetter` for the Play listing.
 - Changed: release `applicationId` (app and wear, which must match), the Play upload step in
-  `.github/workflows/typebetter.yml`, its test `tools/test-play-upload.sh`, and the privacy policy.
+  `.github/workflows/typebetter.yml`, its test `tools/test-play-upload.sh`, and both privacy policies (`PRIVACY_POLICY.md` and `docs/play/privacy-policy.md`).
   Debug/beta/bench keep their `.debug`/`.beta`/`.bench` suffixes on the new id.
 - Unchanged on purpose: Gradle `namespace`, the Kotlin package `com.typebetter.keyboard` (code
   packages are independent of the app id), IME/service class names, keystore and signing.
