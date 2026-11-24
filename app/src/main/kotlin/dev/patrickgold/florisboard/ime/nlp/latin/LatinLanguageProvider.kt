@@ -1616,7 +1616,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // "im"→"I'm". The apostrophe-less form is often itself a dictionary word (so the generic correction
         // path below skips it), yet the apostrophe form is usually what was meant and more common. Offered at
         // the front of the strip as a tap suggestion — not auto-committed, so a genuine "ill"/"well" is never
-        // silently turned into "i'll"/"we'll".
+        // silently turned into "i'll"/"we'll". (English exception: a curated list of bare spellings nobody
+        // means, `dont`/`im`, is swapped — see [ContextualFixes.SAFE_CONTRACTIONS] and autoCommitKey below.)
         //
         // French gets nothing at all out of that loop and needs the most: elisions are 4 % of everything
         // written in the language, and the word list holds 13 apostrophe entries in 68,605 words, because
@@ -1625,7 +1626,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // "n'on" from "non" as "j'aime" from "jaime", since "on" is a word and `n'` is a prefix. The corpus
         // is what tells the two apart, and it decides both whether a form is offered at all and whether it
         // may be taken silently; [ElisionEvidence] carries the measurements.
-        if (word.length >= 3 && word.none { it == '\'' || it == '’' }) {
+        // English `im` is the one two-letter word worth it: it is "I'm" all but always (TypeBetter).
+        val englishIm = index.lang == ContextualFixes.LANG && word.equals("im", ignoreCase = true)
+        if ((word.length >= 3 || englishIm) && word.none { it == '\'' || it == '’' }) {
             val typedFreq = index.freq[index.fold(word)] ?: 0
             // Corpus key → its frequency on the dictionary's 128..255 scale and the spelling to show.
             // Insertion order is the order they reach the strip.
@@ -1664,9 +1667,17 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             // is lopsided enough to say the apostrophe-less spelling was a slip rather than a word
             // ([ElisionEvidence.DOMINANCE]). Every other language stays tap-only, because "ill", "well" and
             // "its" are exactly as common as the contractions they would be rewritten into.
+            //
+            // English is the exception for a curated list of contractions whose apostrophe-less spelling is
+            // not a word anyone means — `dont`, `doesnt`, `im` — while `ill`, `well`, `were`, `its`, `lets`,
+            // `hell`, `shell`, `wed`, `id` stay tap-only (TypeBetter, [ContextualFixes.SAFE_CONTRACTIONS]).
             val autoCommitKey = forms.keys.singleOrNull()?.takeIf {
-                autoCorrectOn && index.lang == ELISION_LANG &&
-                    ElisionEvidence.mayReplace(corpus, ElisionEvidence.key(index.fold(word)), it)
+                autoCorrectOn && (
+                    (index.lang == ELISION_LANG &&
+                        ElisionEvidence.mayReplace(corpus, ElisionEvidence.key(index.fold(word)), it)) ||
+                        (index.lang == ContextualFixes.LANG && index.fold(word) in ContextualFixes.SAFE_CONTRACTIONS &&
+                            !isInUserDictionary(word, subtype))
+                    )
             }
             if (rebuilt || autoCommitKey != null) {
                 // Keep the typed spelling tappable and left-most, so an elision can be refused before it is

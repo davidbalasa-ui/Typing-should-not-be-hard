@@ -112,6 +112,21 @@ internal object ContextualFixes {
         return Fix(word, auto)
     }
 
+    // ── Contractions ─────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * English contractions typed without the apostrophe that may be fixed on Space: the bare spelling is
+     * not a word anyone writes on purpose. Words that are also ordinary words (`ill`, `well`, `were`,
+     * `its`, `lets`, `hell`, `shell`, `wed`, `shed`, `id`, `hed`) are deliberately absent: they are offered,
+     * never swapped. The provider still requires the dictionary to hold exactly one apostrophe form.
+     */
+    val SAFE_CONTRACTIONS: Set<String> = setOf(
+        "im", "ive", "dont", "doesnt", "didnt", "isnt", "wasnt", "arent", "werent", "hasnt", "havent",
+        "hadnt", "couldnt", "wouldnt", "shouldnt", "mustnt", "neednt", "cant", "wont", "aint",
+        "youre", "theyre", "youve", "theyve", "weve", "youll", "theyll", "shouldve", "wouldve", "couldve",
+        "thats", "whats", "theres", "heres", "wheres", "whos", "hows", "hes", "shes",
+    )
+
     // ── Sound-alike fallback ─────────────────────────────────────────────────────────────────────
 
     /** Shorter words have too few consonants for the skeleton to say anything. */

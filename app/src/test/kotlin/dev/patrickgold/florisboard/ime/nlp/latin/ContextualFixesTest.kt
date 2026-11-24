@@ -225,6 +225,55 @@ class ContextualFixesTest {
         assertTrue(pct < 1.0, "sound-alike swaps $pct % of correctly typed foreign words")
     }
 
+    // ── Word-list cleanup and contractions ───────────────────────────────────────────────────────
+
+    /**
+     * Misspellings the upstream word list held as words (TypeBetter, 2026-11-24), so nothing ever corrected
+     * them. Each one is gone, and what it means is one edit away or its sound-alike, so the ordinary
+     * corrector now reaches it.
+     */
+    @Test
+    fun removedMisspellingsStayRemovedAndAreReachable() {
+        val removed = mapOf(
+            "adress" to "address", "begining" to "beginning", "commited" to "committed",
+            "definately" to "definitely", "embarassing" to "embarrassing", "goverment" to "government",
+            "grammer" to "grammar", "happend" to "happened", "millenium" to "millennium",
+            "occured" to "occurred", "publically" to "publicly", "realy" to "really", "recieve" to "receive",
+            "seperate" to "separate", "suprise" to "surprise", "therefor" to "therefore", "thier" to "their",
+            "truely" to "truly", "untill" to "until", "wellcome" to "welcome", "wether" to "whether",
+            "teh" to "the",
+        )
+        val raw = EvalKeyboard.readDict("en.json").keys
+        val stillThere = raw.filter { it.lowercase() in removed }
+        assertTrue(stillThere.isEmpty(), "back in en.json: $stillThere")
+        val alphabet = ('a'..'z').toSet() + '\''
+        val unreachable = removed.filter { (typo, meant) ->
+            meant !in freq || (meant !in EditDistance.edits1(typo, alphabet) && meant !in sounds(typo).words)
+        }
+        assertTrue(unreachable.isEmpty(), "not one edit or a sound-alike away: $unreachable")
+    }
+
+    @Test
+    fun safeContractionsHaveExactlyOneApostropheForm() {
+        // The provider offers a form only when it is more frequent than the bare spelling, so count those.
+        val bad = ContextualFixes.SAFE_CONTRACTIONS.filter { bare ->
+            val bareFreq = freq[bare] ?: 0
+            (1 until bare.length).count { i ->
+                val form = freq[bare.substring(0, i) + "'" + bare.substring(i)]
+                form != null && form > bareFreq
+            } != 1
+        }
+        // With no single form the keyboard swaps nothing, so a listed word that fails here is dead weight.
+        assertTrue(bad.isEmpty(), "contractions without exactly one apostrophe form in en.json: $bad")
+    }
+
+    @Test
+    fun ambiguousContractionsAreNeverSwapped() {
+        val words = listOf("ill", "well", "were", "its", "lets", "hell", "shell", "wed", "shed", "id", "hed")
+        val listed = words.filter { it in ContextualFixes.SAFE_CONTRACTIONS }
+        assertTrue(listed.isEmpty(), "real words in the swap list: $listed")
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────────────────────────
 
     @Test
