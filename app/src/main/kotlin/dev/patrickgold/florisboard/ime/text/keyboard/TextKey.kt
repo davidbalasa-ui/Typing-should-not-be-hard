@@ -61,6 +61,13 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
      */
     var ownPopupsOnly: Boolean = false
 
+    /**
+     * True for a key the user put on their own bottom row (Keys & buttons). Such a key is always shown:
+     * the visibility rules for the stock globe and emoji keys (the utility-key setting) are for the
+     * stock row, and must not hide a key the user placed there on purpose.
+     */
+    var placedByUser: Boolean = false
+
     // This should exclusively be set and used by the TextKeyboardLayout
     var computedDataOnDown: KeyData = TextKeyData.UNSPECIFIED
 
@@ -69,7 +76,7 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
         val keyboardMode = keyboard.mode
         val computed = data.compute(evaluator)
 
-        if (computed == null || !evaluator.evaluateVisible(computed)) {
+        if (computed == null || (!placedByUser && !evaluator.evaluateVisible(computed))) {
             computedData = TextKeyData.UNSPECIFIED
             computedPopups.clear()
             isEnabled = false

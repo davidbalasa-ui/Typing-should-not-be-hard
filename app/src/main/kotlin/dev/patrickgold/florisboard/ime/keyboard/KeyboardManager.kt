@@ -145,6 +145,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
+    /**
+     * How many top-bar buttons the Smartbar last had room for, before the user's own limit. The Keys &
+     * buttons screen reads it to say how many fit; 0 until the keyboard has been shown once.
+     */
+    var smartbarFittingDynamicActionsCount by mutableIntStateOf(0)
     private var lastToastReference = WeakReference<Toast>(null)
 
     /**
@@ -501,6 +506,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             prefs.keyboard.utilityKeyAction.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators()
+            }
+            // The user's own bottom row (Keys & buttons) changes the keys themselves, so the cached letter
+            // keyboards are rebuilt, like the digit row above.
+            prefs.keyboard.bottomRowKeys.asFlow().collectLatestIn(scope) {
+                updateActiveEvaluators {
+                    keyboardCache.clear(KeyboardMode.CHARACTERS)
+                }
             }
             activeState.collectLatestIn(scope) {
                 updateActiveEvaluators()
@@ -1306,6 +1318,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * FlorisBoard internal or system-wide.
      */
     private fun handleLanguageSwitch() {
+        // With a single language there is nothing to cycle, and the switch would do nothing at all. The
+        // stock globe is hidden then, but a globe the user placed on their own bottom row (Keys & buttons)
+        // is not, so it moves on to the next keyboard app, as the quick action already does (issue #200).
+        if (subtypeManager.subtypes.size < 2) {
+            FlorisImeService.switchToNextInputMethod()
+            return
+        }
         when (prefs.keyboard.utilityKeyAction.get()) {
             UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
             UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
@@ -2482,13 +2501,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     IncognitoMode.FORCE_OFF, IncognitoMode.FORCE_ON -> false
                     IncognitoMode.DYNAMIC_ON_OFF -> !editorInfo.imeOptions.flagNoPersonalizedLearning
                 }
-                KeyCode.LANGUAGE_SWITCH -> {
-                    subtypeManager.subtypes.size > 1
-                }
+                // Always usable: with one language it moves on to the next keyboard app (handleLanguageSwitch),
+                // so a globe the user placed on their own bottom row (Keys & buttons) is never a dead key.
+                // The stock globe is hidden with one language anyway, by the utility-key rules.
+                KeyCode.LANGUAGE_SWITCH -> true
                 KeyCode.SPLIT_LAYOUT -> {
                     // Two halves of a window this narrow would be two rows of slivers (issue #362), so
-                    // the action is greyed out rather than hidden — the same answer the language switch
-                    // gives when there is only one language. The measured window is asked first and the
+                    // the action is greyed out rather than hidden. The measured window is asked first and the
                     // display only as a fallback: the Smartbar can compose before the keyboard view has
                     // been measured, and a window of no width yet would grey the action out for the
                     // first frames of every keyboard that opens.

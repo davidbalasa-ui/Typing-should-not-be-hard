@@ -162,6 +162,11 @@ object Routes {
         @Deeplink("settings/typebetter/words")
         object TypeBetterWords
 
+        // TypeBetter: Keys & buttons, the layout editor.
+        @Serializable
+        @Deeplink("settings/typebetter/keys")
+        object TypeBetterKeys
+
         // TypeBetter: My corrections (typed → meant, the simple screen).
         @Serializable
         @Deeplink("settings/typebetter/corrections")
@@ -421,6 +426,7 @@ object Routes {
             composableWithDeepLink(Settings.DictateProvidersAdd::class) { DictateAddProviderScreen() }
             composableWithDeepLink(Settings.DictateMappings::class) { DictateMappingsScreen() }
             composableWithDeepLink(Settings.TypeBetterWords::class) { com.typebetter.keyboard.settings.MyWordsScreen() }
+            composableWithDeepLink(Settings.TypeBetterKeys::class) { com.typebetter.keyboard.settings.KeysAndButtonsScreen() }
             composableWithDeepLink(Settings.TypeBetterCorrections::class) { com.typebetter.keyboard.settings.MyCorrectionsScreen() }
             composableWithDeepLink(Settings.DictateCloud::class) { DictateCloudScreen() }
             composableWithDeepLink(Settings.DictateProxy::class) { DictateProxyScreen() }

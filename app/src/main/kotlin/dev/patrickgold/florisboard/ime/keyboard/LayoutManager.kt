@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsLayout
 import dev.patrickgold.florisboard.dictate.symbols.CustomSymbolsStore
+import com.typebetter.keyboard.keys.BottomRow
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.popup.PopupMapping
@@ -315,6 +316,14 @@ class LayoutManager(context: Context) {
             }
         }
 
+        // The user's own bottom row (Keys & buttons). Only on the letters with the stock bottom row: a
+        // language that brings its own (Arabic, Hebrew, the kana keyboards...) keeps it, since its extra
+        // keys are part of how that script is typed. After the hints, so the symbol hints that belong to
+        // the stock row's positions are not handed to whatever key the user put there.
+        if (keyboardMode == KeyboardMode.CHARACTERS && modifierToLoad == modifier && computedArrangement.isNotEmpty()) {
+            applyUserBottomRow(computedArrangement)
+        }
+
         if (isSplit && keyboardMode.isSplittable()) {
             addSecondSpaceBar(computedArrangement)
         }
@@ -330,6 +339,22 @@ class LayoutManager(context: Context) {
                 flogWarning(LogTopic.LAYOUT_MANAGER) { it.toString() }
             }.getOrNull()?.mapping
         )
+    }
+
+    /**
+     * Replaces the letters' last row with the one the user arranged in Keys & buttons, if they have.
+     * ?123, the space bar and Enter stay the stock keys themselves; the user's keys are pinned visible,
+     * since a globe or emoji key the user placed on purpose must not be hidden by the utility-key
+     * setting the custom row replaces.
+     */
+    private fun applyUserBottomRow(arrangement: ArrayList<Array<TextKey>>) {
+        val row = BottomRow.parse(prefs.keyboard.bottomRowKeys.get()) ?: return
+        val last = arrangement.lastIndex
+        val stock = arrangement[last].toList()
+        val merged = BottomRow.applyTo(stock, codeOf = { (it.data as? TextKeyData)?.code ?: KeyCode.UNSPECIFIED }, row) { action ->
+            TextKey(action.data).also { it.placedByUser = true }
+        } ?: return
+        arrangement[last] = merged.toTypedArray()
     }
 
     /**

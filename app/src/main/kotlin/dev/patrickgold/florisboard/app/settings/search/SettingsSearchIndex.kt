@@ -371,7 +371,6 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.pref__smartbar__selection_metrics__label, R.string.settings__smartbar__title, Routes.Settings.Smartbar, anchor = "pref__smartbar__selection_metrics__label",
             keywordsRes = R.string.settings__search__keywords__selection_metrics),
         SettingsSearchEntry(R.string.pref__smartbar__flip_toggles__label, R.string.settings__smartbar__title, Routes.Settings.Smartbar, anchor = "pref__smartbar__flip_toggles__label"),
-        SettingsSearchEntry(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label, R.string.settings__smartbar__title, Routes.Settings.Smartbar, anchor = "pref__smartbar__shared_actions_auto_expand_collapse__label"),
         SettingsSearchEntry(R.string.pref__smartbar__extended_actions_placement__label, R.string.settings__smartbar__title, Routes.Settings.Smartbar, anchor = "pref__smartbar__extended_actions_placement__label"),
         SettingsSearchEntry(R.string.pref__theme__high_contrast__label, R.string.settings__theme__title, Routes.Settings.Theme, anchor = "pref__theme__high_contrast__label"),
         SettingsSearchEntry(R.string.pref__theme__mode__label, R.string.settings__theme__title, Routes.Settings.Theme, anchor = "pref__theme__mode__label"),
@@ -398,5 +397,13 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.pref__spelling__use_contacts__label, R.string.settings__typing__title, Routes.Settings.Typing, anchor = "pref__spelling__use_contacts__label"),
         SettingsSearchEntry(R.string.pref__spelling__use_udm_entries__label, R.string.settings__typing__title, Routes.Settings.Typing, anchor = "pref__spelling__use_udm_entries__label"),
         SettingsSearchEntry(R.string.settings__dictionary__title, R.string.settings__typing__title, Routes.Settings.Typing, anchor = "settings__dictionary__title"),
+        // Hand-added: Keys & buttons is a TypeBetter screen the generator does not know, and its rows are
+        // a drawn keyboard, not jetpref rows. The keywords carry the names people use for these parts.
+        SettingsSearchEntry(R.string.typebetter__kb_title, R.string.typebetter__kb_title, Routes.Settings.TypeBetterKeys,
+            keywordsRes = R.string.typebetter__kb_search_keywords),
+        SettingsSearchEntry(R.string.typebetter__kb_top_bar, R.string.typebetter__kb_title, Routes.Settings.TypeBetterKeys,
+            anchor = "typebetter__kb_top_bar", keywordsRes = R.string.typebetter__kb_search_keywords_top),
+        SettingsSearchEntry(R.string.typebetter__kb_bottom_row, R.string.typebetter__kb_title, Routes.Settings.TypeBetterKeys,
+            anchor = "typebetter__kb_bottom_row", keywordsRes = R.string.typebetter__kb_search_keywords_bottom),
     )
 }
