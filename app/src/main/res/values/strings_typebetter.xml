@@ -180,7 +180,7 @@
     <string name="typebetter__kb_status_reset_top">Top bar is back to the standard buttons.</string>
     <string name="typebetter__kb_status_count" comment="{count} is a number">{count} buttons on the bar.</string>
     <string name="typebetter__kb_status_sticky_none">No button is always shown now.</string>
-    <string name="typebetter__kb_custom_row_note">Your own bottom row is on, so this setting rests. Change keys in Keys &amp; buttons.</string>
+    <string name="typebetter__kb_custom_row_note">Your own bottom row is on, so it decides which keys show. Change keys in Keys &amp; buttons.</string>
     <string name="typebetter__kb_key_comma">Comma (@ in emails, / in web addresses)</string>
     <string name="typebetter__kb_key_period">Period</string>
     <string name="typebetter__kb_key_question">Question mark</string>

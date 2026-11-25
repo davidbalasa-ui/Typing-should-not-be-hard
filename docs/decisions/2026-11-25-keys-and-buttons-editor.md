@@ -32,10 +32,14 @@ change. Also: settings are overly complicated.
    extra keys are part of typing that script. The fixed keys stay the very same key objects, so long
    presses and space-bar gestures are untouched. Keys the user placed are pinned visible
    (`TextKey.placedByUser`), because the utility-key rules would otherwise hide a globe placed on purpose.
-   While a custom row is on, the utility-key settings on the Keyboard screen are greyed and point here.
-5. **Language key with one language** now moves to the next keyboard app instead of doing nothing. The
-   stock globe is hidden with one language anyway, so this only changes the old "Switch language"
-   utility mode with one language, where the key used to be dead.
+   While a custom row is on, the utility-key on/off switch on the Keyboard screen is greyed and points
+   here; the utility-key action stays, since it still decides what a globe does with two languages.
+   The top-bar picker leaves out a button another setting keeps off the bar (the magic wand while the
+   prompts have their own row), since it would vanish the moment it was picked.
+5. **Language key with one language** is no longer greyed out: it moves to the next keyboard app instead
+   of doing nothing. The stock globe is hidden with one language anyway, so this changes only a globe the
+   user placed, the "Switch language" quick action, and the old "Switch language" utility mode, all of
+   which used to be dead keys with one language.
 6. **Top bar edits reuse the stored arrangement** (sticky / bar-then-⋯ / hidden) through
    `TopBarEditor`, so the keyboard draws it exactly as before and the in-keyboard drag editor still
    works on the same data. New int pref `smartbar__visible_actions_count` (0 = as many as fit, the old

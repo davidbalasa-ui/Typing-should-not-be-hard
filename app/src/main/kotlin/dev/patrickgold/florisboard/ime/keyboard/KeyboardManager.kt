@@ -2490,13 +2490,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     IncognitoMode.FORCE_OFF, IncognitoMode.FORCE_ON -> false
                     IncognitoMode.DYNAMIC_ON_OFF -> !editorInfo.imeOptions.flagNoPersonalizedLearning
                 }
-                KeyCode.LANGUAGE_SWITCH -> {
-                    subtypeManager.subtypes.size > 1
-                }
+                // Always usable: with one language it moves on to the next keyboard app (handleLanguageSwitch),
+                // so a globe the user placed on their own bottom row (Keys & buttons) is never a dead key.
+                // The stock globe is hidden with one language anyway, by the utility-key rules.
+                KeyCode.LANGUAGE_SWITCH -> true
                 KeyCode.SPLIT_LAYOUT -> {
                     // Two halves of a window this narrow would be two rows of slivers (issue #362), so
-                    // the action is greyed out rather than hidden — the same answer the language switch
-                    // gives when there is only one language. The measured window is asked first and the
+                    // the action is greyed out rather than hidden. The measured window is asked first and the
                     // display only as a fallback: the Smartbar can compose before the keyboard view has
                     // been measured, and a window of no width yet would grey the action out for the
                     // first frames of every keyboard that opens.

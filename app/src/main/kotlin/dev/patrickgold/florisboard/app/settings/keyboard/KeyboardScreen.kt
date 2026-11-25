@@ -84,7 +84,8 @@ fun KeyboardScreen() = FlorisScreen {
             onClick = { navController.navigate(Routes.Settings.CustomSymbols) },
         )
         // Once the user arranged their own bottom row (Keys & buttons), that row decides which of these
-        // keys are there, so the two settings below rest and say where the keys are changed now.
+        // keys are there: the on/off switch below rests. The action list stays, since it still decides
+        // what a globe key does with two or more languages.
         Preference(
             title = stringRes(R.string.typebetter__kb_title),
             summary = stringRes(R.string.typebetter__kb_custom_row_note),
@@ -103,7 +104,6 @@ fun KeyboardScreen() = FlorisScreen {
             modifier = Modifier.settingsSearchAnchor("pref__keyboard__utility_key_action__label"),
             title = stringRes(R.string.pref__keyboard__utility_key_action__label),
             entries = enumDisplayEntriesOf(UtilityKeyAction::class),
-            enabledIf = { prefs.keyboard.bottomRowKeys isEqualTo "" },
             visibleIf = { prefs.keyboard.utilityKeyEnabled isEqualTo true },
         )
         ListPreference(

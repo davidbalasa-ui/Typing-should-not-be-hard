@@ -377,7 +377,9 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             val currentName = current.computeDisplayName(DefaultComputingEvaluator)
             ActionPickerDialog(
                 title = stringRes(R.string.typebetter__kb_picker_button_title),
-                actions = allActions,
+                // A button another setting keeps off the bar (the magic wand while the prompts have their
+                // own row) would vanish from the bar the moment it was picked, so it is not offered.
+                actions = allActions.filter(isOnBar),
                 current = current,
                 placeLabel = { placeLabel(TopBarEditor.placeOf(arrangement, it, count, isOnBar)) },
                 onPick = { picked ->
@@ -457,9 +459,8 @@ fun KeysAndButtonsScreen() = FlorisScreen {
 
         keyPicker?.let { slot ->
             val current = row[slot]
-            if (current == null) {
-                keyPicker = null
-            } else {
+            // A slot that no longer exists (the row changed meanwhile) simply shows no dialog.
+            if (current != null) {
                 KeyPickerDialog(
                     title = stringRes(R.string.typebetter__kb_picker_key_title),
                     row = row,
@@ -505,9 +506,7 @@ fun KeysAndButtonsScreen() = FlorisScreen {
 
         pendingKeySwap?.let { (slot, picked) ->
             val current = row[slot]
-            if (current == null) {
-                pendingKeySwap = null
-            } else {
+            if (current != null) {
                 val newName = stringRes(keyNameRes(picked))
                 val oldName = stringRes(keyNameRes(current))
                 AlertDialog(
