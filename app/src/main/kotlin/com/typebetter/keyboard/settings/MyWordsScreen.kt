@@ -84,7 +84,7 @@ import org.florisboard.lib.compose.stringRes
  */
 // The open dialog survives a rotation or a theme change (the activity is recreated): its entry is saved
 // as plain values, and the dialog's own fields use rememberSaveable.
-private val FixSaver = Saver<Fix?, List<Any>>(
+internal val FixSaver = Saver<Fix?, List<Any>>(
     save = { fix -> fix?.let { listOf(it.typed, it.meant, it.mode.name, it.source.name, it.addedAt) } ?: emptyList() },
     restore = { v ->
         if (v.size < 5) null else runCatching {
@@ -459,6 +459,7 @@ internal fun FixDialog(
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__fix_typed)) },
                 placeholder = { Text("silos") },
+                keyboardOptions = VerbatimKeyboardOptions,
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -468,6 +469,7 @@ internal fun FixDialog(
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__fix_meant)) },
                 placeholder = { Text("Xylos") },
+                keyboardOptions = VerbatimKeyboardOptions,
             )
             Spacer(Modifier.height(4.dp))
             SwitchRow(
@@ -527,6 +529,7 @@ private fun NeverChangeDialog(
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__never_typed)) },
                 placeholder = { Text("its") },
+                keyboardOptions = VerbatimKeyboardOptions,
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -536,6 +539,7 @@ private fun NeverChangeDialog(
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__never_blocked)) },
                 placeholder = { Text("it's") },
+                keyboardOptions = VerbatimKeyboardOptions,
             )
             HintText(stringRes(R.string.typebetter__never_hint))
         }

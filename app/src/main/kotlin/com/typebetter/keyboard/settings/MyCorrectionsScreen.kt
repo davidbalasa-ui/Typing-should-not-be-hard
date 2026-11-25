@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AutoFixHigh
@@ -23,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.typebetter.keyboard.PersonalWords
 import com.typebetter.personal.Fix
@@ -79,8 +76,9 @@ fun MyCorrectionsScreen() = FlorisScreen {
     var typed by rememberSaveable { mutableStateOf("") }
     var meant by rememberSaveable { mutableStateOf("") }
     var justAdded by rememberSaveable { mutableStateOf<String?>(null) }
-    var editing by rememberSaveable { mutableStateOf<String?>(null) }
-    var pendingDelete by remember { mutableStateOf<Fix?>(null) }
+    // Kept as plain values (FixSaver), so an open dialog survives rotation and the app being reclaimed.
+    var editing by rememberSaveable(stateSaver = FixSaver) { mutableStateOf<Fix?>(null) }
+    var pendingDelete by rememberSaveable(stateSaver = FixSaver) { mutableStateOf<Fix?>(null) }
 
     // Newest first: the one just added is the one you look for.
     val fixes = remember(rules.fixes) { newestFirst(rules.fixes) }
@@ -126,12 +124,8 @@ fun MyCorrectionsScreen() = FlorisScreen {
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__corrections_typed)) },
                 placeholder = { Text("dor") },
-                // The misspelling is typed on purpose here: no capital, no autocorrect from the app's side.
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Next,
-                ),
+                // The misspelling is typed on purpose here: the keyboard must not "fix" it on the way in.
+                keyboardOptions = VerbatimKeyboardOptions.copy(imeAction = ImeAction.Next),
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -141,10 +135,7 @@ fun MyCorrectionsScreen() = FlorisScreen {
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__corrections_meant)) },
                 placeholder = { Text("for") },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    imeAction = ImeAction.Done,
-                ),
+                keyboardOptions = VerbatimKeyboardOptions.copy(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { add() }),
             )
             Spacer(Modifier.height(8.dp))
@@ -192,7 +183,7 @@ fun MyCorrectionsScreen() = FlorisScreen {
                         phrase.takeIf { fix.isPhrase },
                         starter.takeIf { fix.source == Source.STARTER },
                     ).joinToString(" · "),
-                    onClick = { editing = fix.typed },
+                    onClick = { editing = fix },
                     trailing = {
                         IconButton(onClick = { pendingDelete = fix }) {
                             Icon(
@@ -213,27 +204,20 @@ fun MyCorrectionsScreen() = FlorisScreen {
             onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
         )
 
-        // Edited by its typed word, so the dialog follows the saved list (and closes if the fix is gone).
-        editing?.let { key ->
-            val fix = rules.fixFor(key)
-            if (fix == null) {
-                // Deleted or renamed elsewhere (another screen, an import): nothing left to edit.
-                LaunchedEffect(key) { editing = null }
-            } else {
-                FixDialog(
-                    fix = fix,
-                    onDismiss = { editing = null },
-                    existing = { candidate -> rules.fixFor(candidate)?.takeIf { it.key != fix.key } },
-                    onSave = { updated ->
-                        PersonalWords.setFix(updated, replacing = fix.typed)
-                        editing = null
-                    },
-                    onDelete = {
-                        editing = null
-                        pendingDelete = fix
-                    },
-                )
-            }
+        editing?.let { fix ->
+            FixDialog(
+                fix = fix,
+                onDismiss = { editing = null },
+                existing = { candidate -> rules.fixFor(candidate)?.takeIf { it.key != fix.key } },
+                onSave = { updated ->
+                    PersonalWords.setFix(updated, replacing = fix.typed)
+                    editing = null
+                },
+                onDelete = {
+                    editing = null
+                    pendingDelete = fix
+                },
+            )
         }
 
         pendingDelete?.let { fix ->

@@ -19,12 +19,18 @@ at German words in general", and settings should be simple.
    `en.json`): `TypingRules.apply` puts an AUTO fix first and auto-commits it, whatever the dictionary
    says. Now pinned by `TypingRulesTest` ("my own fix for a word the dictionary knows is still made on
    Space"). The gap was finding the setting, not the engine.
-4. **`wich` is removed from `en.json`** (now corrected to *which*). German was never used for English
+4. **`wich` is removed from `en.json`**: it is now treated as a typo and offered with its fixes (*with*, *which*) instead of being accepted as a word. It is not swapped in by itself, because it is a prefix of *Wichita* and one edit from both *with* and *which*, so the keyboard cannot know which was meant; a `wich → which` entry in My corrections makes it automatic. German was never used for English
    typing; it only appeared in the tests, where German words stand in for "correctly typed words the
    dictionary does not know". Those stand-ins now leave out the known English typos
    (`EvalKeyboard.ENGLISH_TYPOS`, one list shared with `ContextualFixesTest`): for an English keyboard,
    correcting `wich` is the goal, not harm. Every budget is unchanged; the populations are the same
    words as before `wich` was removed, so the sampled numbers do not move.
+
+5. **The correction boxes are typed verbatim.** The *When I type* / *Change it to* boxes (and the same
+   boxes in My words & fixes) carry a `privateImeOptions` marker (`VerbatimField`); TypeBetter's keyboard
+   then never swaps a word there on Space, so typing "dor " or "fey wild" into them is not "fixed" before
+   it is saved. Suggestions still show. Android's auto-correct input flag could not be used: ordinary
+   fields leave it unset too.
 
 **Not changed.** German stays a keyboard language you can add, and its own dictionary is used only when
 the German keyboard is active (`GlideDictionaryCatalog`, `LatinLanguageProvider`).
