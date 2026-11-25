@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.dictate.provider
 
 import android.content.Context
+import android.util.Log
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineCanaryModelConfig
 import com.k2fsa.sherpa.onnx.OfflineDolphinModelConfig
@@ -58,7 +59,11 @@ import java.util.concurrent.TimeUnit
  */
 class LocalTranscriptionProvider(
     private val modelDir: File,
-    private val numThreads: Int = 2,
+    /**
+     * CPU threads for the recognizer. Was a fixed 2, which left most of a modern phone idle while the
+     * user watched a spinner; see [defaultThreads].
+     */
+    private val numThreads: Int = defaultThreads(),
     /**
      * How long the whole decode may take before it counts as failed, in milliseconds; 0 means no limit
      * (issue #354). Fed from the same "Request timeout" setting the cloud providers use, so the user has
@@ -171,7 +176,14 @@ class LocalTranscriptionProvider(
                     if (vadFile.exists() && samples.size > singlePassSamples) {
                         transcribeSegmented(recognizer, vadFile, samples)
                     } else {
-                        decodeOnce(recognizer, samples)
+                        val passStartedNanos = System.nanoTime()
+                        decodeOnce(recognizer, samples).also {
+                            Log.i(
+                                LATENCY_TAG,
+                                "phase=localSinglePass audioMs=${samples.size * 1000L / AudioDecode.TARGET_SAMPLE_RATE} " +
+                                    "ms=${(System.nanoTime() - passStartedNanos) / 1_000_000} threads=$numThreads",
+                            )
+                        }
                     }
                 } finally {
                     RecognizerCache.endUse()
@@ -217,8 +229,7 @@ class LocalTranscriptionProvider(
      * auto-detect. Whisper expects the base ISO code (e.g. "de"), so any region suffix is dropped. Shared by
      * [transcribe] and [preload] so both ask the cache for the same entry.
      */
-    private fun recognizerLanguage(language: String?): String =
-        language?.substringBefore('-')?.takeIf { it.isNotBlank() }.orEmpty()
+    private fun recognizerLanguage(language: String?): String = normalizedLanguage(language)
 
     /**
      * The last thing every on-device transcript passes through: trimmed, and with the space taken back
@@ -276,43 +287,37 @@ class LocalTranscriptionProvider(
     }
 
     /** Single whole-buffer Whisper pass (fine for clips up to ~30 s). */
-    private fun decodeOnce(recognizer: OfflineRecognizer, samples: FloatArray): String {
-        val stream = recognizer.createStream()
-        return try {
-            stream.acceptWaveform(samples, AudioDecode.TARGET_SAMPLE_RATE)
-            recognizer.decode(stream)
-            recognizer.getResult(stream).text
-        } finally {
-            stream.release()
-        }
-    }
+    private fun decodeOnce(recognizer: OfflineRecognizer, samples: FloatArray): String =
+        decodeSamples(recognizer, samples)
 
     /**
-     * Long-audio path: a Silero VAD splits the waveform into speech segments (each capped well under
-     * Whisper's 30 s window), every segment is transcribed and the texts are joined in order. Falls back
+     * Long-audio path: a Silero VAD finds the speech, [SpeechWindowPlanner] packs it into windows as full
+     * as this model takes, and each window is transcribed once; the texts are joined in order. Falls back
      * to a single pass if the VAD detects no speech at all.
+     *
+     * Packing is the point (issue: slow long dictations). This used to decode every VAD segment on its own,
+     * and Whisper pads every decode to a full 30 s window, so a minute of speech with a breath every few
+     * seconds cost fifteen or more encoder passes where three do the same job.
      */
     private fun transcribeSegmented(
         recognizer: OfflineRecognizer,
         vadFile: File,
         samples: FloatArray,
     ): String {
-        val vad = Vad(
-            config = VadModelConfig().apply {
-                sileroVadModelConfig = SileroVadModelConfig(
-                    model = vadFile.absolutePath,
-                    threshold = 0.5f,
-                    minSilenceDuration = 0.25f,
-                    minSpeechDuration = 0.25f,
-                    windowSize = VAD_WINDOW,
-                    // Keep every segment inside what this model actually takes, not inside Whisper's.
-                    maxSpeechDuration = maxSegmentSeconds.toFloat(),
-                )
-                sampleRate = AudioDecode.TARGET_SAMPLE_RATE
-                numThreads = 1
-            },
+        val vad = newSegmentVad(vadFile, maxSegmentSeconds, numThreads = 1)
+        val planner = SpeechWindowPlanner(
+            targetSamples = windowSamples(maxSegmentSeconds),
+            maxSamples = windowSamples(maxSegmentSeconds),
+            padSamples = PAD_SAMPLES,
         )
         val parts = StringBuilder()
+        var windows = 0
+        val segmentedStartedNanos = System.nanoTime()
+        fun decodeWindow(w: SpeechWindowPlanner.Window) {
+            checkDeadline()
+            appendDecoded(recognizer, w.copyFrom(samples), parts)
+            windows++
+        }
         try {
             val window = FloatArray(VAD_WINDOW)
             var i = 0
@@ -327,21 +332,20 @@ class LocalTranscriptionProvider(
                 }
                 vad.acceptWaveform(chunk)
                 i = end
-                drainSegments(vad, recognizer, parts)
+                drainSegments(vad) { s, e -> planner.add(s, e).forEach(::decodeWindow) }
             }
             vad.flush()
-            drainSegments(vad, recognizer, parts)
+            drainSegments(vad) { s, e -> planner.add(s, e).forEach(::decodeWindow) }
+            planner.flush()?.let(::decodeWindow)
         } finally {
             vad.release()
         }
+        Log.i(
+            LATENCY_TAG,
+            "phase=localSegmented audioMs=${samples.size * 1000L / AudioDecode.TARGET_SAMPLE_RATE} " +
+                "windows=$windows ms=${(System.nanoTime() - segmentedStartedNanos) / 1_000_000}",
+        )
         return parts.toString().trim().ifBlank { decodeOnce(recognizer, samples) }
-    }
-
-    private fun drainSegments(vad: Vad, recognizer: OfflineRecognizer, out: StringBuilder) {
-        while (!vad.empty()) {
-            appendDecoded(recognizer, vad.front().samples, out)
-            vad.pop()
-        }
     }
 
     /**
@@ -350,21 +354,118 @@ class LocalTranscriptionProvider(
      * sherpa-onnx silently drops everything beyond a Whisper decode's 30 s (the original bug).
      */
     private fun appendDecoded(recognizer: OfflineRecognizer, samples: FloatArray, out: StringBuilder) {
-        var offset = 0
-        while (offset < samples.size) {
-            checkDeadline()
-            val end = minOf(offset + maxSegmentSamples, samples.size)
-            val piece = if (offset == 0 && end == samples.size) samples else samples.copyOfRange(offset, end)
-            TranscriptJoin.appendPiece(out, decodeOnce(recognizer, piece), tighteningSymbols)
-            offset = end
-        }
+        decodeCapped(recognizer, samples, maxSegmentSamples, tighteningSymbols, out) { checkDeadline() }
     }
 
     companion object {
+        internal const val LATENCY_TAG = "DictateLatency"
+
+        /**
+         * Recognizer threads for this phone: half its cores, at least 2 and at most 4.
+         *
+         * Phones pair a few fast cores with several slow ones. Whisper's encoder is one big matrix job that
+         * runs as fast as its slowest thread, so spreading it over every core drags it onto the slow ones,
+         * while the old fixed 2 left fast cores idle. Half the cores is the fast cluster on the common
+         * 8-core layouts (4) and stays at the old 2 on small phones.
+         */
+        internal fun defaultThreads(cores: Int = Runtime.getRuntime().availableProcessors()): Int =
+            (cores / 2).coerceIn(2, 4)
+
+        /** Silence kept on each side of a speech segment when segments are packed into a window. */
+        internal const val PAD_SAMPLES = AudioDecode.TARGET_SAMPLE_RATE / 5L
+
+        /** A full window for a model that takes [maxSegmentSeconds] in one decode. */
+        internal fun windowSamples(maxSegmentSeconds: Int): Long =
+            maxSegmentSeconds.toLong() * AudioDecode.TARGET_SAMPLE_RATE
+
+        /**
+         * One decode at a time, process-wide. The early decoder ([LocalEarlyDecoder]) runs during a
+         * recording and a transcription may run beside it (a resend, the previous dictation still
+         * finishing); sharing one native recognizer across threads mid-decode is not something sherpa-onnx
+         * promises, so decodes queue instead.
+         */
+        private val DECODE_LOCK = Any()
+
+        /**
+         * Borrows the cached recognizer for [modelDir] and [language] (built if needed), for code outside
+         * this class that decodes on its own ([LocalEarlyDecoder]). Every call is paired with
+         * [releaseRecognizer]. [language] is normalised the same way [transcribe] does it, so both ask the
+         * cache for the same entry.
+         */
+        internal fun acquireRecognizer(modelDir: File, numThreads: Int, language: String?): OfflineRecognizer =
+            RecognizerCache.acquire(modelDir, numThreads, normalizedLanguage(language))
+
+        /** Hands back a recognizer borrowed with [acquireRecognizer]. */
+        internal fun releaseRecognizer() = RecognizerCache.endUse()
+
+        private fun normalizedLanguage(language: String?): String =
+            language?.substringBefore('-')?.takeIf { it.isNotBlank() }.orEmpty()
+
+        /** One recognizer pass over [samples]. */
+        internal fun decodeSamples(recognizer: OfflineRecognizer, samples: FloatArray): String =
+            synchronized(DECODE_LOCK) {
+                val stream = recognizer.createStream()
+                try {
+                    stream.acceptWaveform(samples, AudioDecode.TARGET_SAMPLE_RATE)
+                    recognizer.decode(stream)
+                    recognizer.getResult(stream).text
+                } finally {
+                    stream.release()
+                }
+            }
+
+        /**
+         * Decodes [samples] in pieces of at most [maxPieceSamples] and appends each piece's text to [out].
+         * [beforeEach] runs ahead of every piece (deadline checks, cancellation).
+         */
+        internal fun decodeCapped(
+            recognizer: OfflineRecognizer,
+            samples: FloatArray,
+            maxPieceSamples: Int,
+            tighteningSymbols: String,
+            out: StringBuilder,
+            beforeEach: () -> Unit = {},
+        ) {
+            var offset = 0
+            while (offset < samples.size) {
+                beforeEach()
+                val end = minOf(offset + maxPieceSamples, samples.size)
+                val piece = if (offset == 0 && end == samples.size) samples else samples.copyOfRange(offset, end)
+                TranscriptJoin.appendPiece(out, decodeSamples(recognizer, piece), tighteningSymbols)
+                offset = end
+            }
+        }
+
+        /** The Silero VAD that cuts speech for decoding, kept inside what this model takes per pass. */
+        internal fun newSegmentVad(vadFile: File, maxSegmentSeconds: Int, numThreads: Int): Vad = Vad(
+            config = VadModelConfig().apply {
+                sileroVadModelConfig = SileroVadModelConfig(
+                    model = vadFile.absolutePath,
+                    threshold = 0.5f,
+                    minSilenceDuration = 0.25f,
+                    minSpeechDuration = 0.25f,
+                    windowSize = VAD_WINDOW,
+                    maxSpeechDuration = maxSegmentSeconds.toFloat(),
+                )
+                sampleRate = AudioDecode.TARGET_SAMPLE_RATE
+                this.numThreads = numThreads
+            },
+        )
+
+        /** Hands every closed VAD segment to [onSegment] as `start, endExclusive` sample positions. */
+        internal fun drainSegments(vad: Vad, onSegment: (Long, Long) -> Unit) {
+            while (!vad.empty()) {
+                val seg = vad.front()
+                val len = seg.samples.size
+                if (len > 0 && seg.start >= 0) onSegment(seg.start.toLong(), seg.start.toLong() + len)
+                vad.pop()
+            }
+        }
+
         /** Audio longer than this (~28 s at 16 kHz) is VAD-segmented; shorter takes the single pass. */
         /** Whisper's ceiling, and the fallback for an id the catalog no longer knows. */
         private const val DEFAULT_MAX_SEGMENT_SECONDS = 28
-        private const val VAD_WINDOW = 512
+        internal const val VAD_WINDOW = 512
 
 
         /** Feed size for the streaming batch path (~100 ms), matching what the live session sees. */
@@ -501,6 +602,10 @@ private object RecognizerCache {
         // out of the key for those — otherwise switching languages would throw the model away for nothing.
         val languageless = kind == LocalModelKind.NEMO_TRANSDUCER || kind == LocalModelKind.DOLPHIN
         val cacheKey = modelDir.absolutePath + "|" + (if (languageless) "" else language)
+        // Another user is mid-decode on a different model or language (the early decoder of a recording
+        // and a transcription can overlap). Freeing its recognizer under it would be a native
+        // use-after-free, so wait for it to hand the recognizer back first.
+        while (activeUsers > 0 && recognizer != null && cacheKey != key) monitor.wait()
         val existing = recognizer
         val rec = if (existing != null && cacheKey == key) {
             existing
@@ -526,8 +631,13 @@ private object RecognizerCache {
         if (activeUsers > 0) activeUsers--
         if (activeUsers == 0) {
             if (releasePending) freeNow() else armIdle()
+            monitor.notifyAll()
         }
     }
+
+    /** This object's own monitor, which `@Synchronized` locks, for [acquire] to wait on. */
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+    private val monitor: Object get() = this as Object
 
     /** Requests freeing the model from RAM. Deferred until the last active user returns if one is in flight. */
     @Synchronized
