@@ -63,11 +63,13 @@ import dev.patrickgold.florisboard.dictate.data.stats.DictateStats
 import dev.patrickgold.florisboard.dictate.field.TranscriptHandover
 import dev.patrickgold.florisboard.dictate.provider.ChatRequest
 import dev.patrickgold.florisboard.dictate.provider.DictateApiException
+import dev.patrickgold.florisboard.dictate.provider.LocalEarlyDecoder
 import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
 import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
 import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 import dev.patrickgold.florisboard.dictate.provider.LocalRealtimeSession
 import dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider
+import dev.patrickgold.florisboard.dictate.provider.TranscriptionResult
 import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
 import dev.patrickgold.florisboard.dictate.provider.RealtimeApi
 import dev.patrickgold.florisboard.dictate.provider.RealtimeCallbacks
@@ -410,6 +412,9 @@ object DictateController {
     private var segmentGeneration = 0
     private var segmentRecordedSeconds = 0L
     private var segmentVad: LiveSpeechSplitter? = null  // live VAD auto-split, when enabled (Phase 2)
+    // On-device batch dictation: transcribes the recording while it is being spoken, so the stop only waits
+    // for the last few seconds (see [LocalEarlyDecoder]). Null for every other kind of recording.
+    @Volatile private var earlyDecoder: LocalEarlyDecoder? = null
     private val segmentAudioFiles = HashMap<Int, File>()  // kept segment WAVs (index -> file) for history merge
     private var segmentKeepAudio = false                  // whether to keep + merge segment audio (retention on)
     // Which engines answered this dictation's segments, for the history to name (#457): the fallback that
@@ -1381,6 +1386,7 @@ object DictateController {
         startJob?.cancel()
         recorder?.cancel()
         recorder = null
+        discardEarlyDecoder()
         // Long-form segmented (#170): abort the background segment transcriptions; the realtime cleanup
         // below removes the progressively-shown preview text (segmented reuses realtimeShown/Context).
         if (segmentedActive) {
@@ -1635,7 +1641,11 @@ object DictateController {
                     // Off the main thread: opening the stream builds an HTTP client and a WebSocket, and
                     // doing that inline stalled the UI thread long enough for Android to cancel the
                     // in-flight touch — which killed push-to-talk ~90 ms into a hold (#235).
-                    !segmented -> withContext(Dispatchers.IO) { openRealtimeSession(appContext) }
+                    // No stream to feed: an on-device batch dictation transcribes as it goes instead.
+                    !segmented -> withContext(Dispatchers.IO) {
+                        openRealtimeSession(appContext)
+                            ?: startEarlyDecoder(appContext)?.let { d -> { pcm: ByteArray, len: Int -> d.feed(pcm, len) } }
+                    }
                     segmentVad != null -> { val v = segmentVad!!; { pcm, len -> v.feed(pcm, len) } }
                     else -> null
                 }
@@ -1685,6 +1695,7 @@ object DictateController {
                 realtimeClosed = null
                 segmentVad?.release()
                 segmentVad = null
+                discardEarlyDecoder()
                 _livePromptActive.value = false
                 cleanupAudioRouting()
                 // Cancelled by [cancelRecording] rather than failed: the user ended the start, and that is
@@ -1818,6 +1829,11 @@ object DictateController {
         logLatency(latencyTrace, "audioRoutingCleaned", routingCleanupStartedNanos)
         val carry = carryOverAudio
         carryOverAudio = null
+        // What was already transcribed while the user spoke. It covers this recording's file and nothing
+        // else, so a carried-over segment or a missing file sends the dictation down the normal path.
+        val early = earlyDecoder
+        earlyDecoder = null
+        if (carry != null || audioFile == null || !audioFile.exists() || audioFile.length() == 0L) early?.cancel()
         if (audioFile == null || !audioFile.exists() || audioFile.length() == 0L) {
             // The new segment is unusable. If we were continuing an interrupted recording, fall back to
             // transcribing the carried-over segment alone rather than losing it.
@@ -1831,7 +1847,10 @@ object DictateController {
             return
         }
         if (carry == null) {
-            transcribe(context, audioFile, recordedSeconds, forceLocal = forceLocal, latencyTrace = latencyTrace)
+            transcribe(
+                context, audioFile, recordedSeconds, forceLocal = forceLocal, latencyTrace = latencyTrace,
+                early = early,
+            )
             return
         }
         // Continuation: stitch the carried-over segment and the new one into a single audio so the whole
@@ -1933,6 +1952,9 @@ object DictateController {
         // (#455). It runs exactly as if it were the active provider, with its own model, key and formats,
         // and is never handed on again.
         fallbackAccount: ProviderAccount? = null,
+        // The recording's text so far, transcribed while it was spoken (on-device batch only). Used only
+        // if it was made with the model and language this transcription resolves to; otherwise dropped.
+        early: LocalEarlyDecoder? = null,
     ) {
         logLatency(latencyTrace, "transcribeEntered")
         val account = fallbackAccount ?: if (forceLocal) localTranscriptionAccount() else transcriptionAccount()
@@ -2051,6 +2073,33 @@ object DictateController {
                     )
                 }
                 reconcileActiveLanguage() // correct a stale active language before it's read for the request
+                // On-device and already transcribed while the user spoke: only the tail is left. No answer
+                // from it (it failed, or heard no speech) means the normal path below, silence gate and all.
+                var earlyResult: LocalEarlyDecoder.Result? = null
+                if (early != null) {
+                    val requestLanguage = prefs.dictate.activeInputLanguage.get()
+                        .takeIf { it != DictateLanguages.DETECT }
+                    if (localEngine && early.modelId == model && early.language == requestLanguage) {
+                        val earlyStartedNanos = SystemClock.elapsedRealtimeNanos()
+                        val budget = localTimeoutMillis()
+                        earlyResult = try {
+                            if (budget > 0L) {
+                                (withTimeoutOrNull(budget) { EarlyAnswer(early.finish()) }
+                                    ?: throw DictateApiException(
+                                        DictateApiException.Kind.TIMEOUT,
+                                        "On-device transcription exceeded the ${budget / 1000} s budget",
+                                    )).result
+                            } else {
+                                early.finish()
+                            }
+                        } finally {
+                            early.cancel() // a no-op once finished; stops the worker on a timeout or a stop
+                        }
+                        logLatency(latencyTrace, "earlyDecodeCompleted", earlyStartedNanos)
+                    } else {
+                        early.cancel()
+                    }
+                }
                 // Local Silero VAD pass before spending an upload. Two purposes, both skipped for picked
                 // files / resends (gate=false) and while long-form dictation runs its own segment-cutting:
                 //   • Silence gate (#93): a recording with no speech is dropped so silent clips can't produce
@@ -2061,7 +2110,7 @@ object DictateController {
                 val skipSilent = prefs.dictate.skipSilentRecordings.get()
                 val trimGaps = prefs.dictate.trimSilentGaps.get()
                 val longform = prefs.dictate.longformMode.get().isEnabled
-                if (gate && !longform && (skipSilent || trimGaps)) {
+                if (earlyResult == null && gate && !longform && (skipSilent || trimGaps)) {
                     val gateStartedNanos = SystemClock.elapsedRealtimeNanos()
                     if (trimGaps) {
                         // One VAD pass yields both the speech decision and the segment map for trimming.
@@ -2202,7 +2251,9 @@ object DictateController {
                     vocabulary = if (chatAudio) emptyList() else customWordList(prefs),
                 )
                 val providerStartedNanos = SystemClock.elapsedRealtimeNanos()
-                val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
+                val result = if (earlyResult != null) {
+                    TranscriptionResult(earlyResult.text)
+                } else if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
                     // On-device (issue #104): no HTTP client, no key; transcribe locally via sherpa-onnx.
                     // Tell the recognizer cache how long it may stay resident once idle (RAM unload).
                     LocalTranscriptionProvider.setIdleUnloadMillis(
@@ -3945,6 +3996,7 @@ object DictateController {
             return
         }
         recorder = null
+        discardEarlyDecoder()
         _livePromptActive.value = false
         // Realtime (#128): drop the stream; the WAV is stashed below and recoverable via batch as usual.
         realtimeCancelled = true
@@ -4825,6 +4877,39 @@ object DictateController {
     private fun warmUpRewordingServer() = warmUp(rewordingAccount(), apiKey = rewordingApiKey())
 
     /**
+     * Starts transcribing the recording that is about to begin, when this is an on-device batch dictation
+     * with a model installed: anything else (a cloud account, a live streaming model, a continued recording
+     * whose first part is in another file) returns null and records as before. Its model and language are
+     * the ones [transcribe] will resolve; [transcribe] checks that again before trusting its text.
+     */
+    private fun startEarlyDecoder(appContext: Context): LocalEarlyDecoder? {
+        discardEarlyDecoder()
+        if (carryOverAudio != null) return null
+        val account = transcriptionAccount()
+        val preset = presetFor(account)
+        if (preset.transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE) return null
+        if (localStreamingModelDir(appContext) != null) return null
+        val model = transcriptionModelFor(appContext, account, preset)
+        if (!LocalModelManager.isInstalled(appContext, model) || LocalModelCatalog.isStreaming(model)) return null
+        val vadFile = SpeechGate.ensureVadModel(appContext) ?: return null
+        val language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT }
+        return runCatching {
+            LocalEarlyDecoder(
+                LocalTranscriptionProvider.modelDir(appContext, model),
+                vadFile,
+                language,
+                appContext.transcriptTighteningSymbols(),
+            )
+        }.getOrNull().also { earlyDecoder = it }
+    }
+
+    /** Stops and forgets the early decoder of a recording that will not be transcribed from it. */
+    private fun discardEarlyDecoder() {
+        earlyDecoder?.cancel()
+        earlyDecoder = null
+    }
+
+    /**
      * Loads the on-device model while a recording runs (#449), so the stop finds it in memory instead of
      * starting the load. The model is freed after the idle window ("Unload idle model after", 5 min by
      * default), and reloading Parakeet's 670 MB after the stop is what made the first dictation after a
@@ -5467,4 +5552,7 @@ object DictateController {
      * would eventually have finished. The slider goes to 600 s for exactly that case.
      */
     private fun localTimeoutMillis(): Long = prefs.dictate.requestTimeout.get() * 1000L
+
+    /** Tells "the early decoder had no answer" apart from "the wait for it timed out". */
+    private class EarlyAnswer(val result: LocalEarlyDecoder.Result?)
 }
