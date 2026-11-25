@@ -28,7 +28,7 @@ at German words in general", and settings should be simple.
 
 5. **The correction boxes are typed verbatim.** The *When I type* / *Change it to* boxes (and the same
    boxes in My words & fixes) carry a `privateImeOptions` marker (`VerbatimField`); TypeBetter's keyboard
-   then never swaps a word there on Space, so typing "dor " or "fey wild" into them is not "fixed" before
+   then never swaps, capitalises or learns a word there, so typing "dor " or "fey wild" into them is not "fixed" before
    it is saved. Suggestions still show. Android's auto-correct input flag could not be used: ordinary
    fields leave it unset too.
 

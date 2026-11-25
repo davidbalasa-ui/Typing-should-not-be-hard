@@ -125,7 +125,7 @@ fun MyCorrectionsScreen() = FlorisScreen {
                 label = { Text(stringRes(R.string.typebetter__corrections_typed)) },
                 placeholder = { Text("dor") },
                 // The misspelling is typed on purpose here: the keyboard must not "fix" it on the way in.
-                keyboardOptions = VerbatimKeyboardOptions.copy(imeAction = ImeAction.Next),
+                keyboardOptions = verbatimKeyboardOptions(ImeAction.Next),
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -135,7 +135,7 @@ fun MyCorrectionsScreen() = FlorisScreen {
                 singleLine = true,
                 label = { Text(stringRes(R.string.typebetter__corrections_meant)) },
                 placeholder = { Text("for") },
-                keyboardOptions = VerbatimKeyboardOptions.copy(imeAction = ImeAction.Done),
+                keyboardOptions = verbatimKeyboardOptions(ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { add() }),
             )
             Spacer(Modifier.height(8.dp))
