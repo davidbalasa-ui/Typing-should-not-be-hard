@@ -748,6 +748,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * path needs to know, and asking [NlpManager] a second time after the commit would be a different
      * question.
      */
+    /** TypeBetter: the field is a box where a correction is typed, kept exactly as typed ([VerbatimField]). */
+    private fun isVerbatimField(): Boolean =
+        com.typebetter.keyboard.VerbatimField.isVerbatim(editorInstance.activeInfo.base.privateImeOptions)
+
     private fun endOfWord(): SuggestionCandidate? {
         val candidate = nlpManager.getAutoCommitCandidate(editorInstance.activeContent.composingText)
         if (candidate != null) {
@@ -769,6 +773,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * which time the separator has been committed and the trace has been reset for the next word.
      */
     private fun offerFinishedWordForLearning() {
+        // TypeBetter: a correction box holds the misspelling on purpose; never learn it or offer "+ dor".
+        if (isVerbatimField()) {
+            lastTypedWord = null
+            return
+        }
         val content = editorInstance.activeContent
         val word = content.composingText
         if (word.isBlank()) {
@@ -1464,6 +1473,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun pendingStandaloneCapitalization(): Pair<String, String>? {
         if (!prefs.correction.autoCapitalization.get()) return null
+        // TypeBetter: "i" typed into a correction box stays "i".
+        if (isVerbatimField()) return null
         if (activeState.keyVariation == KeyVariation.PASSWORD) return null
         val content = editorInstance.activeContent
         if (content.selection.isSelectionMode) return null

@@ -57,6 +57,7 @@ import org.florisboard.lib.compose.stringRes
 
 /** Title resources shown as quick "Popular" shortcuts when the search box is still empty. */
 internal val POPULAR_TITLES = listOf(
+    R.string.typebetter__corrections_title,
     R.string.dictate__rewording_title,
     R.string.dictate__providers_title,
     R.string.dictate__realtime_title,

@@ -90,6 +90,29 @@ internal object EvalKeyboard {
         error("could not locate ime/dict/$name — run from the repository or the app module")
     }
 
+    /**
+     * Well-known English misspellings the upstream word list held as words, taken out of `en.json`
+     * (TypeBetter, 2026-11-24 and 2026-11-25), each with what it means.
+     *
+     * TypeBetter's keyboard is English. A word on this list is a typo to fix, never a correctly typed
+     * foreign word to protect, even where another language has it (`wich` is German, past of *weichen*).
+     * So the "must not be touched" populations below, which borrow German words as stand-ins for names and
+     * jargon, leave these out: correcting `wich` to `which` is the goal, not harm.
+     */
+    val ENGLISH_TYPOS: Map<String, String> = mapOf(
+        "adress" to "address", "begining" to "beginning", "commited" to "committed",
+        "definately" to "definitely", "embarassing" to "embarrassing", "goverment" to "government",
+        "grammer" to "grammar", "happend" to "happened", "millenium" to "millennium",
+        "occured" to "occurred", "publically" to "publicly", "realy" to "really", "recieve" to "receive",
+        "seperate" to "separate", "suprise" to "surprise", "therefor" to "therefore", "thier" to "their",
+        "truely" to "truly", "untill" to "until", "wellcome" to "welcome", "wether" to "whether",
+        "teh" to "the", "wich" to "which",
+    )
+
+    /** [word] as a stand-in for a correctly typed unknown word: not English, and not an English typo. */
+    fun isForeignStandIn(word: String, en: Map<String, Int>): Boolean =
+        word !in en && word.lowercase() !in ENGLISH_TYPOS
+
     /** `{"word": 231, …}` into a map. Hand-parsed to keep the test off the serialization runtime. */
     fun readDict(name: String): Map<String, Int> = parseDict(dictFile(name).readText())
 

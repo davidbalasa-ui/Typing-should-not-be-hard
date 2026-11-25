@@ -210,4 +210,23 @@
     <string name="typebetter__home_more_settings">More settings</string>
     <string name="typebetter__home_more_settings_summary">Keyboard size, top bar style, clipboard, emoji and GIFs, translation, backup and more</string>
     <string name="typebetter__home_fewer_settings">Fewer settings</string>
+    <!-- My corrections: the simple screen for typed → meant pairs (first row of Settings) -->
+    <string name="typebetter__corrections_title">My corrections</string>
+    <string name="typebetter__corrections_home_summary">Type dor, get for. Add the words you always mistype.</string>
+    <string name="typebetter__corrections_search_keywords">autocorrect, auto correct, corrections, fixes, typos, replace, text replacement, shortcuts</string>
+    <string name="typebetter__corrections_intro">Add a word you often get wrong and what it should be. The keyboard changes it for you when you press space.</string>
+    <string name="typebetter__corrections_typed">When I type</string>
+    <string name="typebetter__corrections_meant">Change it to</string>
+    <string name="typebetter__corrections_add">Add</string>
+    <string name="typebetter__corrections_added">Added: {fix}</string>
+    <string name="typebetter__corrections_list">Your corrections ({count})</string>
+    <string name="typebetter__corrections_empty">None yet. Add your first one above.</string>
+    <string name="typebetter__corrections_edit_hint">Tap one to change it, stop it changing by itself, or delete it.</string>
+    <string name="typebetter__corrections_from_starter">From the starter pack</string>
+    <string name="typebetter__corrections_try">Try it in the box at the bottom: type the word, then a space.</string>
+    <string name="typebetter__corrections_autocorrect_off">Auto-correct is off, so your corrections are only suggested, never made by themselves.</string>
+    <string name="typebetter__corrections_suggestions_off">Suggestions are off, so your corrections are not used while typing.</string>
+    <string name="typebetter__corrections_turn_on">Turn on</string>
+    <string name="typebetter__corrections_more">Never change, My words and backup</string>
+    <string name="typebetter__corrections_more_summary">The rest of your word lists</string>
 </resources>

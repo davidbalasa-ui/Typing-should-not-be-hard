@@ -253,6 +253,13 @@ fun HomeScreen() = FlorisScreen {
                 dictateContext.startActivity(TranscribeShareActivity.intentFor(dictateContext, uri))
             }
         }
+        // TypeBetter: "type dor, get for" first, where it is found without looking (David, 2026-11-25).
+        Preference(
+            icon = Icons.Default.Spellcheck,
+            title = stringRes(R.string.typebetter__corrections_title),
+            summary = stringRes(R.string.typebetter__corrections_home_summary),
+            onClick = { navController.navigate(Routes.Settings.TypeBetterCorrections) },
+        )
         Preference(
             icon = Icons.Default.Mic,
             title = stringRes(R.string.dictate__title),

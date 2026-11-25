@@ -47,7 +47,7 @@ change. Also: settings are overly complicated.
    the keyboard has been opened. Replacing a button with one from the ⋯ menu or the hidden list moves
    the old one into the ⋯ menu (never silently hidden); replacing it with another visible one asks and
    swaps.
-7. **Settings home**: Dictate, My words & fixes, Keys & buttons, Typing, Gestures, Languages, Theme on
+7. **Settings home**: My corrections (PR #14), Dictate, My words & fixes, Keys & buttons, Typing, Gestures, Languages, Theme on
    top; Keyboard, Smartbar, Clipboard, Media, Translation, Extensions and Other behind one "More
    settings" row. Nothing was removed, and settings search still finds everything. The Smartbar screen
    links to Keys & buttons. The disabled "auto expand/collapse" row (deprecated, always on, with an
