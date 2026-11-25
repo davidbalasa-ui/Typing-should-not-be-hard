@@ -514,6 +514,8 @@ class NlpManager(context: Context) {
      * now stands as typed.
      */
     fun getAutoCommitCandidate(composingWord: CharSequence): SuggestionCandidate? {
+        // TypeBetter: a box where a correction is being entered keeps the word as typed.
+        if (com.typebetter.keyboard.VerbatimField.isVerbatim(editorInstance.activeInfo.base.privateImeOptions)) return null
         val forWord = suggestionsWord
         if (forWord != null && forWord != composingWord.toString()) return null
         return activeCandidates.firstOrNull { it.isEligibleForAutoCommit }

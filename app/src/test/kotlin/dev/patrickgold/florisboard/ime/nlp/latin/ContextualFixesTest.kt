@@ -210,7 +210,7 @@ class ContextualFixesTest {
     fun soundAlikeHarmStaysUnderBudget() {
         val alphabet = ('a'..'z').toSet()
         val german = EvalKeyboard.readDict("de.json").keys.map { it.lowercase() }.toSet()
-            .filter { it.length >= ContextualFixes.SOUND_MIN_LEN && it.all { c -> c in 'a'..'z' } && it !in freq }
+            .filter { it.length >= ContextualFixes.SOUND_MIN_LEN && it.all { c -> c in 'a'..'z' } && EvalKeyboard.isForeignStandIn(it, freq) }
         var total = 0
         var swapped = 0
         for (w in german) {
@@ -234,15 +234,7 @@ class ContextualFixesTest {
      */
     @Test
     fun removedMisspellingsStayRemovedAndAreReachable() {
-        val removed = mapOf(
-            "adress" to "address", "begining" to "beginning", "commited" to "committed",
-            "definately" to "definitely", "embarassing" to "embarrassing", "goverment" to "government",
-            "grammer" to "grammar", "happend" to "happened", "millenium" to "millennium",
-            "occured" to "occurred", "publically" to "publicly", "realy" to "really", "recieve" to "receive",
-            "seperate" to "separate", "suprise" to "surprise", "therefor" to "therefore", "thier" to "their",
-            "truely" to "truly", "untill" to "until", "wellcome" to "welcome", "wether" to "whether",
-            "teh" to "the",
-        )
+        val removed = EvalKeyboard.ENGLISH_TYPOS
         val raw = EvalKeyboard.readDict("en.json").keys
         val stillThere = raw.filter { it.lowercase() in removed }
         assertTrue(stillThere.isEmpty(), "back in en.json: $stillThere")

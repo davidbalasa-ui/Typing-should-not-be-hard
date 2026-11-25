@@ -39,6 +39,9 @@ data class SettingsSearchEntry(
 object SettingsSearchIndex {
     val entries: List<SettingsSearchEntry> = listOf(
         SettingsSearchEntry(R.string.about__title, R.string.about__title, Routes.Settings.About),
+        SettingsSearchEntry(R.string.typebetter__corrections_title, R.string.typebetter__corrections_title, Routes.Settings.TypeBetterCorrections,
+            keywordsRes = R.string.typebetter__corrections_search_keywords),
+        SettingsSearchEntry(R.string.typebetter__screen_title, R.string.typebetter__screen_title, Routes.Settings.TypeBetterWords),
         SettingsSearchEntry(R.string.backup_and_restore__back_up__title, R.string.backup_and_restore__back_up__title, Routes.Settings.Backup, parentRes = R.string.settings__other__title),
         SettingsSearchEntry(R.string.settings__other__title, R.string.settings__other__title, Routes.Settings.Other),
         SettingsSearchEntry(R.string.physical_keyboard__title, R.string.physical_keyboard__title, Routes.Settings.PhysicalKeyboard, parentRes = R.string.settings__other__title),
