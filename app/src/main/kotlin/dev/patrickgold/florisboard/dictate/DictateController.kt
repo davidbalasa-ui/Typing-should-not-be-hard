@@ -2598,10 +2598,16 @@ object DictateController {
         val mapped = prefs.dictate.customMappings.get().apply(
             if (stopLeftOff) paragraphed.dropLast(1) else paragraphed,
         )
+        // Then My words where the model wrote a sound-alike ("Naya" for Niah): the on-device Whisper takes no
+        // prompt, so this is the one way its transcript learns them. Off the main thread: the dictionary
+        // lookups behind it may have to read the word list first.
         val outputText = if (isSensitiveDictationField(appContext)) {
             mapped
         } else {
-            com.typebetter.keyboard.PersonalWords.fixTranscript(mapped)
+            val frequencyOf = appContext.englishWordFrequency(prefs.dictate.activeInputLanguage.get())
+            withContext(Dispatchers.Default) {
+                com.typebetter.keyboard.PersonalWords.fixTranscript(mapped, frequencyOf)
+            }
         }
         // The whole dictation, for what keeps a record of it — the history, the stats, the re-insert cache —
         // while the field gets only the part that was not handed over (#421). [text] is the tail of [rawText].

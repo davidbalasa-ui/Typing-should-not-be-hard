@@ -3,6 +3,7 @@ package com.typebetter.keyboard
 import android.content.Context
 import android.net.Uri
 import com.typebetter.personal.Fix
+import com.typebetter.personal.HeardNameFixer
 import com.typebetter.personal.NeverChange
 import com.typebetter.personal.PersonalBackup
 import com.typebetter.personal.PersonalCodec
@@ -492,12 +493,28 @@ object PersonalWords {
     @Volatile
     private var cachedFixer: Pair<PersonalRules, TranscriptFixer>? = null
 
-    /** My fixes applied to a dictated transcript (automatic fixes only, phrases included). */
-    fun fixTranscript(text: String): String {
+    @Volatile
+    private var cachedNameFixer: Triple<PersonalRules, List<String>, HeardNameFixer>? = null
+
+    /**
+     * My fixes applied to a dictated transcript (automatic fixes only, phrases included), then My words put
+     * back where the speech model wrote a sound-alike ("Naya" → Niah, see [HeardNameFixer]). The second
+     * step needs [frequencyOf], the English dictionary's frequency of a word (null: not a word it knows);
+     * without one (no English keyboard, keyboard not up) it is left out, since it cannot tell a real word
+     * from a misheard name.
+     */
+    fun fixTranscript(text: String, frequencyOf: ((String) -> Int?)? = null): String {
         val rules = _rules.value
         val fixer = cachedFixer?.takeIf { it.first === rules }?.second
             ?: TranscriptFixer(rules).also { cachedFixer = rules to it }
-        return runCatching { fixer.apply(text) }.getOrDefault(text)
+        val fixed = runCatching { fixer.apply(text) }.getOrDefault(text)
+        if (frequencyOf == null) return fixed
+        return runCatching {
+            val words = myWords()
+            val names = cachedNameFixer?.takeIf { (r, w, _) -> r === rules && w === words }?.third
+                ?: HeardNameFixer(words, rules).also { cachedNameFixer = Triple(rules, words, it) }
+            names.apply(fixed, frequencyOf)
+        }.getOrDefault(fixed)
     }
 
     /**

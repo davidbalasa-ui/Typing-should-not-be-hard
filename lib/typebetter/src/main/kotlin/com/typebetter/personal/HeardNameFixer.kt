@@ -1,0 +1,220 @@
+package com.typebetter.personal
+
+/**
+ * Puts My words back into a dictation where the speech model wrote a sound-alike instead: "Naya" for
+ * Niah, "Zephania" for Zephaniah, "Strad" for Strahd.
+ *
+ * Why this exists: the on-device Whisper (sherpa-onnx 1.13.3) takes no prompt, so My words cannot be
+ * given to it the way they are given to a cloud model. The transcript is corrected afterwards instead,
+ * on every path, after My fixes ([TranscriptFixer]).
+ *
+ * A heard word becomes a My word only when all of this holds:
+ * - both have the same [SoundKey] and no other My word has that key (never a guess between two);
+ * - the heard word is not itself a My word, and no "Never change" entry blocks the pair;
+ * - the heard word is not a real word in its own right. It may be one the dictionary does not know at
+ *   all, or a rare one that the model itself wrote with a capital, the way it writes a name: under
+ *   [MAX_FREQ_NAME] in the middle of a sentence, under [MAX_FREQ_SENTENCE_START] at the start of one,
+ *   where every word has a capital. Common words ("now", "soon") and lower-case real words ("silos")
+ *   are never changed, the rule the keyboard follows for typing too.
+ *
+ * [frequencyOf] gives a word's dictionary frequency (128..255) or null when the dictionary does not
+ * know it. It is only asked about words that already sound like a My word.
+ */
+class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = PersonalRules()) {
+
+    private val byKey: Map<String, String> = run {
+        val groups = HashMap<String, MutableSet<String>>()
+        for (word in myWords) {
+            val w = word.trim()
+            if (!isTarget(w)) continue
+            val key = SoundKey.of(w) ?: continue
+            groups.getOrPut(key) { LinkedHashSet() }.add(w)
+        }
+        // Two My words that sound the same: the transcript cannot say which was meant, so neither is used.
+        groups.filterValues { it.size == 1 }.mapValues { it.value.first() }
+    }
+
+    private val myKeys: Set<String> = myWords.map { keyOf(it) }.toHashSet()
+
+    val isEmpty: Boolean get() = byKey.isEmpty()
+
+    fun apply(input: String, frequencyOf: (String) -> Int?): String {
+        if (input.isEmpty() || byKey.isEmpty()) return input
+        val text = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFC)
+        val out = StringBuilder(text.length)
+        var cursor = 0
+        for (match in TOKEN.findAll(text)) {
+            val token = match.value
+            // "Naya's" is Niah's; any other apostrophe ("don't") is not a name.
+            val possessive = POSSESSIVE.find(token)
+            val heard = possessive?.groupValues?.get(1) ?: token
+            if (possessive == null && token.any { it in APOSTROPHE_CHARS }) continue
+            val replacement = replacementFor(heard, isSentenceStart(text, match.range.first), frequencyOf) ?: continue
+            out.append(text, cursor, match.range.first).append(replacement)
+            if (possessive != null) out.append(possessive.groupValues[2])
+            cursor = match.range.last + 1
+        }
+        if (cursor == 0) return text
+        out.append(text, cursor, text.length)
+        return out.toString()
+    }
+
+    private fun replacementFor(heard: String, sentenceStart: Boolean, frequencyOf: (String) -> Int?): String? {
+        if (heard.length < MIN_HEARD_LENGTH) return null
+        if (keyOf(heard) in myKeys) return null
+        val key = SoundKey.of(heard) ?: return null
+        val target = byKey[key] ?: return null
+        if (kotlin.math.abs(target.length - heard.length) > MAX_LENGTH_DIFFERENCE) return null
+        if (rules.isBlocked(heard, target)) return null
+        val freq = frequencyOf(heard.lowercase())
+        if (freq != null) {
+            val writtenAsName = heard.first().isUpperCase() && !heard.all { !it.isLetter() || it.isUpperCase() }
+            if (!writtenAsName) return null
+            val limit = if (sentenceStart) MAX_FREQ_SENTENCE_START else MAX_FREQ_NAME
+            if (freq >= limit) return null
+        }
+        val replacement = CaseStyle.apply(heard, target)
+        return replacement.takeIf { it != heard }
+    }
+
+    private fun isTarget(word: String): Boolean {
+        if (word.length < MIN_HEARD_LENGTH || word.any { it.isWhitespace() || it.isDigit() }) return false
+        val letters = word.filter { it.isLetter() }
+        // Acronyms (NPC, MCP) are spelled out, not sounded; nothing to hear them as.
+        if (letters.length > 1 && letters.all { it.isUpperCase() }) return false
+        return letters.any { it.lowercaseChar() in "aeiouy" }
+    }
+
+    private fun isSentenceStart(text: String, at: Int): Boolean {
+        var i = at - 1
+        while (i >= 0) {
+            val ch = text[i]
+            if (ch.isWhitespace() || ch in OPENERS) {
+                i--
+                continue
+            }
+            return ch in ENDERS
+        }
+        return true
+    }
+
+    companion object {
+        /** A rare word the model capitalised mid-sentence is read as a misheard name below this. */
+        const val MAX_FREQ_NAME = 170
+
+        /** At a sentence start every word has a capital, so only very rare words count. */
+        const val MAX_FREQ_SENTENCE_START = 150
+
+        const val MIN_HEARD_LENGTH = 3
+        const val MAX_LENGTH_DIFFERENCE = 3
+
+        private const val APOSTROPHE_CHARS = "'’‘ʼ＇"
+        private val TOKEN = Regex("[\\p{L}\\p{M}]+(?:['’‘ʼ＇][\\p{L}\\p{M}]+)*")
+        private val POSSESSIVE = Regex("^(.+?)(['’‘ʼ＇][sS])$")
+        private const val OPENERS = "\"'“‘([{«-–—*"
+        private const val ENDERS = ".!?…"
+    }
+}
+
+/**
+ * A rough English sound key for names: the consonants, plus each vowel sound reduced to one of four
+ * classes. Spellings that sound alike share a key: Niah, Naya and Nia → `nIA`; Zephaniah and Zefania →
+ * `sIfAnIA`; Xylos and silos → `sIlOs`. Noah (`nO`, too short to use) stays apart from Niah. It is deliberately coarse;
+ * [HeardNameFixer] decides with it only together with its other conditions.
+ *
+ * Returns null for a word with nothing to compare (fewer than three key characters).
+ */
+object SoundKey {
+    fun of(word: String): String? {
+        var s = fold(word)
+        if (s.length < 2) return null
+        s = when {
+            s.startsWith("kn") || s.startsWith("wr") || s.startsWith("ps") || s.startsWith("gn") -> s.drop(1)
+            s.startsWith("x") -> "s" + s.drop(1)
+            s.startsWith("wh") -> "w" + s.drop(2)
+            else -> s
+        }
+        // Silent final e after a consonant: Sune, Arcadiane.
+        if (s.length > 3 && s.last() == 'e' && s[s.length - 2] !in VOWELS) s = s.dropLast(1)
+        val out = StringBuilder()
+        var i = 0
+        while (i < s.length) {
+            val ch = s[i]
+            val next = s.getOrNull(i + 1)
+            // y opens a word as a consonant (Yaga); everywhere else it is a vowel (Lyla, Naya).
+            val isVowel = ch in VOWELS && !(ch == 'y' && i == 0 && next != null && next in VOWELS)
+            if (isVowel) {
+                var j = i
+                while (j < s.length && s[j] in VOWELS) j++
+                appendVowels(s.substring(i, j), out)
+                i = j
+                continue
+            }
+            val (sound, used) = consonant(s, i)
+            if (sound.isNotEmpty() && (out.isEmpty() || !out.endsWith(sound))) out.append(sound)
+            i += used
+        }
+        return out.toString().takeIf { it.length >= 3 }
+    }
+
+    private const val VOWELS = "aeiouy"
+
+    private fun fold(word: String): String =
+        java.text.Normalizer.normalize(word, java.text.Normalizer.Form.NFD)
+            .lowercase()
+            .filter { it in 'a'..'z' }
+
+    /** The sound of the consonant at [i] and how many letters it took. "" for a silent letter. */
+    private fun consonant(s: String, i: Int): Pair<String, Int> {
+        val ch = s[i]
+        val next = s.getOrNull(i + 1)
+        val prev = s.getOrNull(i - 1)
+        return when (ch) {
+            'p' -> if (next == 'h') "f" to 2 else "p" to 1
+            's' -> if (next == 'h') "S" to 2 else "s" to 1
+            't' -> when {
+                next == 'h' -> "T" to 2
+                next == 'c' && s.getOrNull(i + 2) == 'h' -> "C" to 3
+                else -> "t" to 1
+            }
+            'c' -> when (next) {
+                'h' -> "C" to 2
+                'k' -> "k" to 2
+                'e', 'i', 'y' -> "s" to 1
+                else -> "k" to 1
+            }
+            'g' -> if (next == 'h') (if (i == 0) "g" to 2 else "" to 2) else "g" to 1
+            'q' -> if (next == 'u') "kw" to 2 else "k" to 1
+            'x' -> "ks" to 1
+            'z' -> "s" to 1
+            // h after a vowel or at the end is not heard: Niah, Strahd, Sarah.
+            'h' -> if (prev != null && prev in VOWELS || next == null) "" to 1 else "h" to 1
+            else -> ch.toString() to 1
+        }
+    }
+
+    /** One run of vowel letters as vowel classes, repeats merged: "aya" → IA, "ia" → IA, "oa" → OA. */
+    private fun appendVowels(run: String, out: StringBuilder) {
+        var k = 0
+        while (k < run.length) {
+            val (cls, used) = vowel(run, k)
+            if (out.isEmpty() || out.last() != cls) out.append(cls)
+            k += used
+        }
+    }
+
+    private fun vowel(run: String, k: Int): Pair<Char, Int> {
+        val two = run.substring(k, minOf(k + 2, run.length))
+        return when (two) {
+            "ay", "ai", "ey", "ei", "ee", "ea", "ie" -> 'I' to 2
+            "oa", "au" -> 'O' to 2
+            "oo", "ue", "ou" -> 'U' to 2
+            else -> when (run[k]) {
+                'a' -> 'A' to 1
+                'o' -> 'O' to 1
+                'u' -> 'U' to 1
+                else -> 'I' to 1 // e, i, y
+            }
+        }
+    }
+}
