@@ -145,6 +145,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
+    /**
+     * How many top-bar buttons the Smartbar last had room for, before the user's own limit. The Keys &
+     * buttons screen reads it to say how many fit; 0 until the keyboard has been shown once.
+     */
+    var smartbarFittingDynamicActionsCount by mutableIntStateOf(0)
     private var lastToastReference = WeakReference<Toast>(null)
 
     /**
@@ -501,6 +506,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             prefs.keyboard.utilityKeyAction.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators()
+            }
+            // The user's own bottom row (Keys & buttons) changes the keys themselves, so the cached letter
+            // keyboards are rebuilt, like the digit row above.
+            prefs.keyboard.bottomRowKeys.asFlow().collectLatestIn(scope) {
+                updateActiveEvaluators {
+                    keyboardCache.clear(KeyboardMode.CHARACTERS)
+                }
             }
             activeState.collectLatestIn(scope) {
                 updateActiveEvaluators()
@@ -1297,6 +1309,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * FlorisBoard internal or system-wide.
      */
     private fun handleLanguageSwitch() {
+        // With a single language there is nothing to cycle, and the switch would do nothing at all. The
+        // stock globe is hidden then, but a globe the user placed on their own bottom row (Keys & buttons)
+        // is not, so it moves on to the next keyboard app, as the quick action already does (issue #200).
+        if (subtypeManager.subtypes.size < 2) {
+            FlorisImeService.switchToNextInputMethod()
+            return
+        }
         when (prefs.keyboard.utilityKeyAction.get()) {
             UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
             UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,

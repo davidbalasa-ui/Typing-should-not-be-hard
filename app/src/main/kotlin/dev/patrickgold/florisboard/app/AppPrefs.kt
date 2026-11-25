@@ -1568,6 +1568,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             // joins it (docs/decisions/2026-11-25-emoji-key-always-visible.md).
             default = UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
         )
+        // The letters' bottom row as the user arranged it in Keys & buttons, see
+        // com.typebetter.keyboard.keys.BottomRow. Empty = the stock row from the layout file, which the
+        // utility-key setting above shapes; once set, this row replaces that and the setting rests.
+        val bottomRowKeys = string(
+            key = "keyboard__bottom_row_keys",
+            default = "",
+        )
         val spaceBarMode = enum(
             key = "keyboard__space_bar_display_mode",
             default = SpaceBarMode.CURRENT_LANGUAGE,
@@ -1721,6 +1728,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "smartbar__action_second_actions",
             default = QuickActionSecondActions.Default,
             serializer = QuickActionSecondActions.Serializer,
+        )
+        // How many buttons the top bar shows before the rest go into the ⋯ menu (Keys & buttons). 0 = as
+        // many as fit, the way it always worked; a number is a ceiling, since a narrow screen can still
+        // fit fewer.
+        val visibleActionsCount = int(
+            key = "smartbar__visible_actions_count",
+            default = 0,
         )
         val flipToggles = boolean(
             key = "smartbar__flip_toggles",

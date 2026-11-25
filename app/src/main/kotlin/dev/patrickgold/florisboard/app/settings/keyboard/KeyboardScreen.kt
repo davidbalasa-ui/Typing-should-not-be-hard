@@ -83,17 +83,27 @@ fun KeyboardScreen() = FlorisScreen {
             summary = customSymbolsSummary(),
             onClick = { navController.navigate(Routes.Settings.CustomSymbols) },
         )
+        // Once the user arranged their own bottom row (Keys & buttons), that row decides which of these
+        // keys are there, so the two settings below rest and say where the keys are changed now.
+        Preference(
+            title = stringRes(R.string.typebetter__kb_title),
+            summary = stringRes(R.string.typebetter__kb_custom_row_note),
+            visibleIf = { prefs.keyboard.bottomRowKeys isNotEqualTo "" },
+            onClick = { navController.navigate(Routes.Settings.TypeBetterKeys) },
+        )
         SwitchPreference(
             prefs.keyboard.utilityKeyEnabled,
             modifier = Modifier.settingsSearchAnchor("pref__keyboard__utility_key_enabled__label"),
             title = stringRes(R.string.pref__keyboard__utility_key_enabled__label),
             summary = stringRes(R.string.pref__keyboard__utility_key_enabled__summary),
+            enabledIf = { prefs.keyboard.bottomRowKeys isEqualTo "" },
         )
         ListPreference(
             prefs.keyboard.utilityKeyAction,
             modifier = Modifier.settingsSearchAnchor("pref__keyboard__utility_key_action__label"),
             title = stringRes(R.string.pref__keyboard__utility_key_action__label),
             entries = enumDisplayEntriesOf(UtilityKeyAction::class),
+            enabledIf = { prefs.keyboard.bottomRowKeys isEqualTo "" },
             visibleIf = { prefs.keyboard.utilityKeyEnabled isEqualTo true },
         )
         ListPreference(

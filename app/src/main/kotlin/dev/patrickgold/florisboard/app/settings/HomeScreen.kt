@@ -28,6 +28,10 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.AutoFixHigh
@@ -269,25 +273,12 @@ fun HomeScreen() = FlorisScreen {
             summary = stringRes(R.string.typebetter__home_summary),
             onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
         )
+        // TypeBetter: the layout editor, for what the keys and top buttons do.
         Preference(
-            icon = Icons.Default.Language,
-            title = stringRes(R.string.settings__localization__title),
-            onClick = { navController.navigate(Routes.Settings.Localization) },
-        )
-        Preference(
-            icon = Icons.Outlined.Palette,
-            title = stringRes(R.string.settings__theme__title),
-            onClick = { navController.navigate(Routes.Settings.Theme) },
-        )
-        Preference(
-            icon = Icons.Outlined.Keyboard,
-            title = stringRes(R.string.settings__keyboard__title),
-            onClick = { navController.navigate(Routes.Settings.Keyboard) },
-        )
-        Preference(
-            icon = Icons.Default.SmartButton,
-            title = stringRes(R.string.settings__smartbar__title),
-            onClick = { navController.navigate(Routes.Settings.Smartbar) },
+            icon = Icons.Default.SportsEsports,
+            title = stringRes(R.string.typebetter__kb_title),
+            summary = stringRes(R.string.typebetter__kb_home_summary),
+            onClick = { navController.navigate(Routes.Settings.TypeBetterKeys) },
         )
         Preference(
             icon = Icons.Default.Spellcheck,
@@ -300,31 +291,65 @@ fun HomeScreen() = FlorisScreen {
             onClick = { navController.navigate(Routes.Settings.Gestures) },
         )
         Preference(
-            icon = Icons.AutoMirrored.Outlined.Assignment,
-            title = stringRes(R.string.settings__clipboard__title),
-            onClick = { navController.navigate(Routes.Settings.Clipboard) },
+            icon = Icons.Default.Language,
+            title = stringRes(R.string.settings__localization__title),
+            onClick = { navController.navigate(Routes.Settings.Localization) },
         )
         Preference(
-            icon = Icons.Default.SentimentSatisfiedAlt,
-            title = stringRes(R.string.settings__media__title),
-            onClick = { navController.navigate(Routes.Settings.Media) },
+            icon = Icons.Outlined.Palette,
+            title = stringRes(R.string.settings__theme__title),
+            onClick = { navController.navigate(Routes.Settings.Theme) },
         )
-        // With the other tools the Smartbar opens (issue #424): it is one, and not a dictation feature.
+        // TypeBetter: the everyday screens above, the rest one tap away (docs/decisions/
+        // 2026-11-25-keys-and-buttons-editor.md). Nothing is removed, and the search above still finds
+        // every setting wherever it sits.
+        var moreSettingsExpanded by rememberSaveable { mutableStateOf(false) }
         Preference(
-            icon = Icons.Outlined.Translate,
-            title = stringRes(R.string.settings__translation__title),
-            onClick = { navController.navigate(Routes.Settings.Translation) },
+            icon = if (moreSettingsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            title = stringRes(
+                if (moreSettingsExpanded) R.string.typebetter__home_fewer_settings else R.string.typebetter__home_more_settings,
+            ),
+            summary = if (moreSettingsExpanded) null else stringRes(R.string.typebetter__home_more_settings_summary),
+            onClick = { moreSettingsExpanded = !moreSettingsExpanded },
         )
-        Preference(
-            icon = Icons.Default.Extension,
-            title = stringRes(R.string.ext__home__title),
-            onClick = { navController.navigate(Routes.Ext.Home) },
-        )
-        Preference(
-            icon = Icons.Outlined.Build,
-            title = stringRes(R.string.settings__other__title),
-            onClick = { navController.navigate(Routes.Settings.Other) },
-        )
+        if (moreSettingsExpanded) {
+            Preference(
+                icon = Icons.Outlined.Keyboard,
+                title = stringRes(R.string.settings__keyboard__title),
+                onClick = { navController.navigate(Routes.Settings.Keyboard) },
+            )
+            Preference(
+                icon = Icons.Default.SmartButton,
+                title = stringRes(R.string.settings__smartbar__title),
+                onClick = { navController.navigate(Routes.Settings.Smartbar) },
+            )
+            Preference(
+                icon = Icons.AutoMirrored.Outlined.Assignment,
+                title = stringRes(R.string.settings__clipboard__title),
+                onClick = { navController.navigate(Routes.Settings.Clipboard) },
+            )
+            Preference(
+                icon = Icons.Default.SentimentSatisfiedAlt,
+                title = stringRes(R.string.settings__media__title),
+                onClick = { navController.navigate(Routes.Settings.Media) },
+            )
+            // With the other tools the Smartbar opens (issue #424): it is one, and not a dictation feature.
+            Preference(
+                icon = Icons.Outlined.Translate,
+                title = stringRes(R.string.settings__translation__title),
+                onClick = { navController.navigate(Routes.Settings.Translation) },
+            )
+            Preference(
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.ext__home__title),
+                onClick = { navController.navigate(Routes.Ext.Home) },
+            )
+            Preference(
+                icon = Icons.Outlined.Build,
+                title = stringRes(R.string.settings__other__title),
+                onClick = { navController.navigate(Routes.Settings.Other) },
+            )
+        }
         // The user guide (Dictate): every feature and setting explained with pictures, on the GitHub wiki.
         // The screens themselves carry labels only, so this is where the explanations live.
         Preference(

@@ -69,6 +69,7 @@ fun QuickActionsRow(
     val secondActions by prefs.smartbar.actionSecondActions.collectAsState()
     val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
     val promptsLayout by prefs.dictate.promptsLayout.collectAsState()
+    val userCount by prefs.smartbar.visibleActionsCount.collectAsState()
 
     val dynamicActions = remember(smartbarLayout, actionArrangement, promptsLayout) {
         val dynamic = actionArrangement.dynamicActions.filterDictateHidden(promptsLayout)
@@ -87,11 +88,22 @@ fun QuickActionsRow(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val width = constraints.maxWidth.toDp()
         val height = constraints.maxHeight.toDp()
-        val numActionsToShow = ((width / height).toInt() - (if (showOverflowAction) 1 else 0)).coerceAtLeast(0)
+        val stickyInRow = smartbarLayout == SmartbarLayout.ACTIONS_ONLY && actionArrangement.stickyAction != null
+        val numActionsThatFit = ((width / height).toInt() - (if (showOverflowAction) 1 else 0)).coerceAtLeast(0)
+        // The user's own "how many" (Keys & buttons) is a ceiling: a narrow screen still shows fewer, and
+        // the rest wait in the ⋯ menu either way. In the actions-only layout the sticky button is part of
+        // this row, so it does not count against the user's number.
+        val numActionsToShow = if (userCount > 0) {
+            numActionsThatFit.coerceAtMost(userCount + (if (stickyInRow) 1 else 0))
+        } else {
+            numActionsThatFit
+        }
         val visibleActions = dynamicActions
             .subList(0, numActionsToShow.coerceAtMost(dynamicActions.size))
 
         SideEffect {
+            keyboardManager.smartbarFittingDynamicActionsCount =
+                (if (stickyInRow) numActionsThatFit - 1 else numActionsThatFit).coerceAtLeast(0)
             keyboardManager.smartbarVisibleDynamicActionsCount =
                 if (smartbarLayout == SmartbarLayout.ACTIONS_ONLY && actionArrangement.stickyAction != null) {
                     numActionsToShow - 1

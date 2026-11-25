@@ -17,9 +17,9 @@
 package dev.patrickgold.florisboard.app.settings.smartbar
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -56,6 +56,16 @@ fun SmartbarScreen() = FlorisScreen {
             title = stringRes(R.string.pref__smartbar__layout__label),
             entries = enumDisplayEntriesOf(SmartbarLayout::class),
             enabledIf = { prefs.smartbar.enabled isEqualTo true },
+        )
+        // TypeBetter: the buttons themselves are chosen on the Keys & buttons screen, which draws the bar
+        // and lets each button be tapped and changed. Before, the only way in was a reorder grid hidden
+        // behind the keyboard's ⋯ menu.
+        Preference(
+            icon = Icons.Default.SportsEsports,
+            title = stringRes(R.string.typebetter__kb_top_bar_entry),
+            summary = stringRes(R.string.typebetter__kb_top_bar_entry_summary),
+            enabledIf = { prefs.smartbar.enabled isEqualTo true },
+            onClick = { navController.navigate(Routes.Settings.TypeBetterKeys) },
         )
         Preference(
             icon = Icons.Default.TouchApp,
@@ -94,19 +104,6 @@ fun SmartbarScreen() = FlorisScreen {
                     prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED ||
                         prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
                 },
-            )
-            // TODO: schedule to remove this preference in the future, but keep it for now so users
-            //  know why the setting is not available anymore. Also force enable it for UI display.
-            SideEffect {
-                // prefs.smartbar.sharedActionsAutoExpandCollapse.set(true)
-            }
-            SwitchPreference(
-                prefs.smartbar.sharedActionsAutoExpandCollapse,
-                modifier = Modifier.settingsSearchAnchor("pref__smartbar__shared_actions_auto_expand_collapse__label"),
-                title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
-                summary = "[Since v0.4.1] Always enabled due to UX issues",
-                enabledIf = { false },
-                visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
             )
             ListPreference(
                 listPref = prefs.smartbar.extendedActionsPlacement,
