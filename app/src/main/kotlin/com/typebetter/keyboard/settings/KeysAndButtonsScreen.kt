@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,7 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
+import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -119,9 +121,17 @@ fun KeysAndButtonsScreen() = FlorisScreen {
         var pendingKeySwap by remember { mutableStateOf<Pair<KeySlot, BottomKeyAction>?>(null) }
         var showMoreInfo by remember { mutableStateOf(false) }
 
-        fun saveArrangement(value: QuickActionArrangement) = prefs.smartbar.actionArrangement.set(value)
-        fun saveCount(value: Int) = prefs.smartbar.visibleActionsCount.set(value.coerceIn(1, TopBarEditor.MAX_COUNT))
-        fun saveRow(value: BottomRow) = prefs.keyboard.bottomRowKeys.set(value.serialize())
+        // Preference writes are suspending; each edit is one short write on the screen's scope.
+        val scope = rememberCoroutineScope()
+        fun saveArrangement(value: QuickActionArrangement) {
+            scope.launch { prefs.smartbar.actionArrangement.set(value) }
+        }
+        fun saveCount(value: Int) {
+            scope.launch { prefs.smartbar.visibleActionsCount.set(value) }
+        }
+        fun saveRow(value: BottomRow?) {
+            scope.launch { prefs.keyboard.bottomRowKeys.set(value?.serialize() ?: "") }
+        }
 
         Text(
             text = stringRes(R.string.typebetter__kb_intro),
@@ -268,7 +278,7 @@ fun KeysAndButtonsScreen() = FlorisScreen {
                 if (count <= 1) {
                     status = Status(R.string.typebetter__kb_count_min)
                 } else {
-                    saveCount(count - 1)
+                    saveCount((count - 1).coerceAtLeast(1))
                     status = Status(R.string.typebetter__kb_status_count, "count" to count - 1)
                 }
             }
@@ -292,7 +302,7 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             TextButton(
                 modifier = Modifier.padding(horizontal = 8.dp),
                 onClick = {
-                    prefs.smartbar.visibleActionsCount.set(0)
+                    saveCount(0)
                     status = Status(R.string.typebetter__kb_status_count, "count" to (fits ?: DEFAULT_FIT_GUESS))
                 },
             ) { Text(stringRes(R.string.typebetter__kb_count_auto_button)) }
@@ -345,12 +355,12 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(modifier = Modifier.weight(1f), onClick = {
-                prefs.keyboard.bottomRowKeys.set("")
+                saveRow(null)
                 status = Status(R.string.typebetter__kb_status_reset_keys)
             }) { Text(stringRes(R.string.typebetter__kb_reset_keys)) }
             OutlinedButton(modifier = Modifier.weight(1f), onClick = {
                 saveArrangement(QuickActionArrangement.Default)
-                prefs.smartbar.visibleActionsCount.set(0)
+                saveCount(0)
                 status = Status(R.string.typebetter__kb_status_reset_top)
             }) { Text(stringRes(R.string.typebetter__kb_reset_top)) }
         }
