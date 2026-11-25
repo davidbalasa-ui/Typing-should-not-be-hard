@@ -36,7 +36,8 @@ private typealias Decision = EvalKeyboard.Decision
  * in opposite directions, and prints what each candidate rule does to both at once:
  *
  *  - **must be fixed** — English words with a deliberate mis-tap;
- *  - **must not be touched** — German words absent from the English dictionary, typed dead-centre.
+ *  - **must not be touched** — German words absent from the English dictionary (and not a known English
+ *    typo, see [EvalKeyboard.ENGLISH_TYPOS]), typed dead-centre.
  *    They stand in for names, foreign words and jargon: correctly typed, and unknown to the dictionary
  *    that is about to judge them. Both files ship in the app, so this needs no network and no corpus.
  *
@@ -134,7 +135,7 @@ class AutocorrectEvalTest {
 
         // Population 2 — must not be touched. German words the English dictionary does not know, plus
         // names, all typed dead-centre.
-        val foreign = de.keys.filter { it !in en && typeable(it) }.sorted()
+        val foreign = de.keys.filter { EvalKeyboard.isForeignStandIn(it, en) && typeable(it) }.sorted()
         val names = listOf(
             "jannis", "sarahs", "pete", "dads", "linus", "mira", "tobi", "nadja", "lars", "svenja",
         ).filter { it !in en }

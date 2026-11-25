@@ -71,6 +71,31 @@ class TypingRulesTest {
     }
 
     @Test
+    fun `my own fix for a word the dictionary knows is still made on Space`() {
+        // "dor" is in the word list, so the keyboard's own autocorrect leaves it alone; a fix the user
+        // typed into My corrections must win anyway: that is the whole point of having one.
+        val rules = PersonalRules().withFix(Fix("dor", "for"))
+        val out = TypingRules(rules, emptyList()).apply(
+            "dor", listOf(Cand("dor"), Cand("door")), { it.text }, { it.auto },
+            isCommonWord = { it == "dor" },
+        )
+        assertEquals("for", out.first().text)
+        assertEquals("for", out.autoWord())
+        assertEquals("For", rules(rules).run("Dor").autoWord())
+    }
+
+    @Test
+    fun `with Auto-correct off my fix is offered first but not made by itself`() {
+        val rules = PersonalRules().withFix(Fix("dor", "for"))
+        val out = TypingRules(rules, emptyList()).apply(
+            "dor", listOf(Cand("door", auto = true)), { it.text }, { it.auto },
+            autoCorrect = false,
+        )
+        assertEquals("for", out.first().text)
+        assertNull(out.autoWord())
+    }
+
+    @Test
     fun `a fix keeps the case the user typed`() {
         val rules = PersonalRules().withFix(Fix("recieve", "receive"))
         assertEquals("Receive", rules(rules).run("Recieve").autoWord())

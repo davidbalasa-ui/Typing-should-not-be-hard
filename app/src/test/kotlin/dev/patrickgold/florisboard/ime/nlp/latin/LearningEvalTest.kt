@@ -136,7 +136,7 @@ class LearningEvalTest {
             "jannis", "sarahs", "pete", "dads", "linus", "mira", "tobi", "nadja", "lars", "svenja",
             "kata", "elif", "yara", "nils", "rune", "vera", "iben", "silke", "malte", "ronja",
         ).filter { it !in en }
-        val unknownToEn = de.keys.filter { it !in en }.sorted()
+        val unknownToEn = de.keys.filter { EvalKeyboard.isForeignStandIn(it, en) }.sorted()
         fun caseOf(word: String, kind: String) =
             Case(word, EvalKeyboard.decide(EvalKeyboard.tapsFor(word), word, index, en), kind)
         // Length is the split that matters. In a 48 k dictionary a four-letter word has dozens of
@@ -343,7 +343,7 @@ class LearningEvalTest {
         val names = listOf(
             "jannis", "sarahs", "pete", "dads", "linus", "mira", "tobi", "nadja", "lars", "svenja",
         ).filter { it !in en }
-        val unknownToEn = de.keys.filter { it !in en }.sorted()
+        val unknownToEn = de.keys.filter { EvalKeyboard.isForeignStandIn(it, en) }.sorted()
         val wanted = (unknownToEn.shuffled(Random(SEED)).take(SAMPLE_SIZE / 2) + names)
             .map { word ->
                 val (taken, refused) = ladderOf(word, noisy = true)

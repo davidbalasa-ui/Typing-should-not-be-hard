@@ -416,7 +416,7 @@ fun MyWordsScreen() = FlorisScreen {
 }
 
 @Composable
-private fun FixDialog(
+internal fun FixDialog(
     fix: Fix,
     existing: (String) -> Fix?,
     onDismiss: () -> Unit,
@@ -794,7 +794,7 @@ private fun WeeklyDialog(
 }
 
 @Composable
-private fun HintText(text: String) {
+internal fun HintText(text: String) {
     Text(
         modifier = Modifier.padding(top = 8.dp),
         text = text,
