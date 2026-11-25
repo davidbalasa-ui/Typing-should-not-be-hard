@@ -1299,6 +1299,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private fun handleLanguageSwitch() {
         when (prefs.keyboard.utilityKeyAction.get()) {
             UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
+            UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
             UtilityKeyAction.SWITCH_LANGUAGE -> subtypeManager.switchToNextSubtype()
             // The utility key is explicitly configured to jump to the next keyboard app, so honour that.
             UtilityKeyAction.SWITCH_KEYBOARD_APP -> FlorisImeService.switchToNextInputMethod()
@@ -2507,32 +2508,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         override fun evaluateVisible(data: KeyData): Boolean {
             return when (data.code) {
                 KeyCode.IME_UI_MODE_TEXT,
-                KeyCode.IME_UI_MODE_MEDIA -> {
-                    val tempUtilityKeyAction = when {
-                        prefs.keyboard.utilityKeyEnabled.get() -> prefs.keyboard.utilityKeyAction.get()
-                        else -> UtilityKeyAction.DISABLED
-                    }
-                    when (tempUtilityKeyAction) {
-                        UtilityKeyAction.DISABLED,
-                        UtilityKeyAction.SWITCH_LANGUAGE,
-                        UtilityKeyAction.SWITCH_KEYBOARD_APP -> false
-                        UtilityKeyAction.SWITCH_TO_EMOJIS -> true
-                        UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS -> !shouldShowLanguageSwitch()
-                    }
-                }
-                KeyCode.LANGUAGE_SWITCH -> {
-                    val tempUtilityKeyAction = when {
-                        prefs.keyboard.utilityKeyEnabled.get() -> prefs.keyboard.utilityKeyAction.get()
-                        else -> UtilityKeyAction.DISABLED
-                    }
-                    when (tempUtilityKeyAction) {
-                        UtilityKeyAction.DISABLED,
-                        UtilityKeyAction.SWITCH_TO_EMOJIS -> false
-                        UtilityKeyAction.SWITCH_LANGUAGE,
-                        UtilityKeyAction.SWITCH_KEYBOARD_APP -> true
-                        UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS -> shouldShowLanguageSwitch()
-                    }
-                }
+                KeyCode.IME_UI_MODE_MEDIA -> UtilityKeyAction.showsEmojiKey(
+                    enabled = prefs.keyboard.utilityKeyEnabled.get(),
+                    action = prefs.keyboard.utilityKeyAction.get(),
+                    multipleLanguages = shouldShowLanguageSwitch(),
+                )
+                KeyCode.LANGUAGE_SWITCH -> UtilityKeyAction.showsLanguageKey(
+                    enabled = prefs.keyboard.utilityKeyEnabled.get(),
+                    action = prefs.keyboard.utilityKeyAction.get(),
+                    multipleLanguages = shouldShowLanguageSwitch(),
+                )
                 else -> true
             }
         }

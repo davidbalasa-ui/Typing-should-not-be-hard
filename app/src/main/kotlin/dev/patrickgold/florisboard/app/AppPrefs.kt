@@ -1564,7 +1564,9 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val utilityKeyAction = enum(
             key = "keyboard__utility_key_action",
-            default = UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
+            // TypeBetter: the emoji key stays next to space even with two or more languages, the globe
+            // joins it (docs/decisions/2026-11-25-emoji-key-always-visible.md).
+            default = UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
         )
         val spaceBarMode = enum(
             key = "keyboard__space_bar_display_mode",

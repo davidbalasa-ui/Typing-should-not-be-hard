@@ -24,5 +24,34 @@ enum class UtilityKeyAction {
     SWITCH_LANGUAGE,
     SWITCH_KEYBOARD_APP,
     DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
+    /**
+     * The emoji key always, and the language key beside it when there is more than one language
+     * (TypeBetter default, see docs/decisions/2026-11-25-emoji-key-always-visible.md). The dynamic
+     * mode above swaps the emoji key out for the globe as soon as a second language is added, which
+     * left people with no visible way to reach emojis at all.
+     */
+    EMOJIS_AND_SWITCH_LANGUAGE,
     DISABLED;
+
+    companion object {
+        /** Whether the emoji key next to the space bar is shown. */
+        fun showsEmojiKey(enabled: Boolean, action: UtilityKeyAction, multipleLanguages: Boolean): Boolean {
+            if (!enabled) return false
+            return when (action) {
+                DISABLED, SWITCH_LANGUAGE, SWITCH_KEYBOARD_APP -> false
+                SWITCH_TO_EMOJIS, EMOJIS_AND_SWITCH_LANGUAGE -> true
+                DYNAMIC_SWITCH_LANGUAGE_EMOJIS -> !multipleLanguages
+            }
+        }
+
+        /** Whether the language (globe) key next to the space bar is shown. */
+        fun showsLanguageKey(enabled: Boolean, action: UtilityKeyAction, multipleLanguages: Boolean): Boolean {
+            if (!enabled) return false
+            return when (action) {
+                DISABLED, SWITCH_TO_EMOJIS -> false
+                SWITCH_LANGUAGE, SWITCH_KEYBOARD_APP -> true
+                DYNAMIC_SWITCH_LANGUAGE_EMOJIS, EMOJIS_AND_SWITCH_LANGUAGE -> multipleLanguages
+            }
+        }
+    }
 }
