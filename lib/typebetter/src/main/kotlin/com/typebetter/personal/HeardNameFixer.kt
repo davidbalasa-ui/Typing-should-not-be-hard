@@ -89,13 +89,21 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
     /**
      * A dictation the language detector took for another language would have almost no English words,
      * and almost every one of them would count as "unknown" here. So with [MIN_WORDS_TO_JUDGE] words or
-     * more (not counting the ones that sound like a My word), at least [MIN_ENGLISH_SHARE] of them have
+     * more lower-case words (not counting the ones that sound like a My word), at least [MIN_ENGLISH_SHARE] of them have
      * to be English ones before anything is changed.
      */
     private fun looksEnglish(text: String, frequencyOf: (String) -> Int?): Boolean {
-        // The words that sound like a My word are what is being judged, so they do not vote.
-        val words = TOKEN.findAll(text).map { it.value.lowercase() }
-            .filter { it.length >= 2 && SoundKey.of(it)?.let { key -> key in byKey } != true }
+        // Only lower-case words vote: a capitalised one may be a name (a misheard one, a My word, or a
+        // name nobody listed), and names say nothing about the language. Words that sound like a My word
+        // are what is being judged, so they do not vote either. Curly apostrophes are read as straight
+        // ones, the way the dictionary writes "don't".
+        val words = TOKEN.findAll(text).map { it.value }
+            .filter { w -> w.length >= 2 && w.first().isLowerCase() }
+            .map { w -> w.replace(CURLY_APOSTROPHES, "'") }
+            .filter { w ->
+                val stem = POSSESSIVE.find(w)?.groupValues?.get(1) ?: w
+                keyOf(stem) !in myKeys && SoundKey.of(stem)?.let { key -> key in byKey } != true
+            }
             .toList()
         if (words.size < MIN_WORDS_TO_JUDGE) return true
         val known = words.count { frequencyOf(it) != null }
@@ -131,6 +139,7 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
         const val MAX_LENGTH_DIFFERENCE = 3
 
         private const val APOSTROPHE_CHARS = "'’‘ʼ＇"
+        private val CURLY_APOSTROPHES = Regex("[\u2019\u2018\u02BC\uFF07]")
         private val TOKEN = Regex("[\\p{L}\\p{M}]+(?:['’‘ʼ＇][\\p{L}\\p{M}]+)*")
         private val POSSESSIVE = Regex("^(.+?)(['’‘ʼ＇][sS])$")
         private const val OPENERS = "\"'“‘([{«-–—*"

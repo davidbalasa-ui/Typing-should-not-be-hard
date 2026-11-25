@@ -30,9 +30,10 @@ Niah are written as Naya when I talk."
 3. Never a guess: two My words with the same key are both left out; a Never change entry blocks a pair;
    acronyms (NPC, DM) and keys under three sounds are not matched.
 4. English only: it needs the English keyboard to be active, its dictionary loaded (a probe for "the"),
-   and the dictation language English or "detect". With "detect", a transcript of four or more words
-   must be at least 80 % English dictionary words (not counting the sound-alikes), so a Spanish or German
-   dictation is left alone. A new line or a colon counts as a sentence start. Never in password or
+   and the dictation language English or "detect". Because "detect" can let another language through,
+   a transcript with four or more lower-case words must have at least 80 % of them in the English
+   dictionary (names, curly apostrophes and the sound-alikes themselves do not count against it), so a
+   Spanish or German dictation is left alone. This check runs whatever the dictation language. A new line or a colon counts as a sentence start. Never in password or
    incognito fields (same rule as My fixes).
 5. If a swap is ever wrong, adding the heard spelling to My words stops it: a My word is never
    replaced.

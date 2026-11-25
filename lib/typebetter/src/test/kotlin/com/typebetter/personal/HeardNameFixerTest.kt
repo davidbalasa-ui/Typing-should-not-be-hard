@@ -97,6 +97,13 @@ class HeardNameFixerTest {
     }
 
     @Test
+    fun `names and curly apostrophes do not make English look foreign`() {
+        assertEquals("Niah's sword was in Barovia", fix("Naya's sword was in Barovia"))
+        assertEquals("I don\u2019t think it\u2019s going to work with Niah", fix("I don\u2019t think it\u2019s going to work with Naya"))
+        assertEquals("Zephaniah met Strahd, Kasmyra and Rory at Volgrad", fix("Zephania met Strad, Kasmira and Rory at Volgrad"))
+    }
+
+    @Test
     fun `a new line or a colon counts as a sentence start`() {
         // Nia (160) is under the mid-sentence limit but not the sentence-start one.
         assertEquals("we met\nNia there", fix("we met\nNia there"))

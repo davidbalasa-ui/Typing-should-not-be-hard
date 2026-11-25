@@ -2604,8 +2604,9 @@ object DictateController {
         val outputText = if (isSensitiveDictationField(appContext)) {
             mapped
         } else {
-            val frequencyOf = appContext.englishWordFrequency(prefs.dictate.activeInputLanguage.get())
+            val dictationLanguage = prefs.dictate.activeInputLanguage.get()
             withContext(Dispatchers.Default) {
+                val frequencyOf = appContext.englishWordFrequency(dictationLanguage)
                 com.typebetter.keyboard.PersonalWords.fixTranscript(mapped, frequencyOf)
             }
         }
