@@ -41,6 +41,7 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
     fun apply(input: String, frequencyOf: (String) -> Int?): String {
         if (input.isEmpty() || byKey.isEmpty()) return input
         val text = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFC)
+        if (!looksEnglish(text, frequencyOf)) return text
         val out = StringBuilder(text.length)
         var cursor = 0
         for (match in TOKEN.findAll(text)) {
@@ -48,7 +49,7 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
             // "Naya's" is Niah's; any other apostrophe ("don't") is not a name.
             val possessive = POSSESSIVE.find(token)
             val heard = possessive?.groupValues?.get(1) ?: token
-            if (possessive == null && token.any { it in APOSTROPHE_CHARS }) continue
+            if (heard.any { it in APOSTROPHE_CHARS }) continue
             val replacement = replacementFor(heard, isSentenceStart(text, match.range.first), frequencyOf) ?: continue
             out.append(text, cursor, match.range.first).append(replacement)
             if (possessive != null) out.append(possessive.groupValues[2])
@@ -85,10 +86,28 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
         return letters.any { it.lowercaseChar() in "aeiouy" }
     }
 
+    /**
+     * A dictation the language detector took for another language would have almost no English words,
+     * and almost every one of them would count as "unknown" here. So with [MIN_WORDS_TO_JUDGE] words or
+     * more (not counting the ones that sound like a My word), at least [MIN_ENGLISH_SHARE] of them have
+     * to be English ones before anything is changed.
+     */
+    private fun looksEnglish(text: String, frequencyOf: (String) -> Int?): Boolean {
+        // The words that sound like a My word are what is being judged, so they do not vote.
+        val words = TOKEN.findAll(text).map { it.value.lowercase() }
+            .filter { it.length >= 2 && SoundKey.of(it)?.let { key -> key in byKey } != true }
+            .toList()
+        if (words.size < MIN_WORDS_TO_JUDGE) return true
+        val known = words.count { frequencyOf(it) != null }
+        return known >= words.size * MIN_ENGLISH_SHARE
+    }
+
     private fun isSentenceStart(text: String, at: Int): Boolean {
         var i = at - 1
         while (i >= 0) {
             val ch = text[i]
+            // A new line or a colon starts something new too: the stricter limit applies.
+            if (ch == '\n' || ch == ':') return true
             if (ch.isWhitespace() || ch in OPENERS) {
                 i--
                 continue
@@ -104,6 +123,9 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
 
         /** At a sentence start every word has a capital, so only very rare words count. */
         const val MAX_FREQ_SENTENCE_START = 150
+
+        const val MIN_WORDS_TO_JUDGE = 4
+        const val MIN_ENGLISH_SHARE = 0.8
 
         const val MIN_HEARD_LENGTH = 3
         const val MAX_LENGTH_DIFFERENCE = 3

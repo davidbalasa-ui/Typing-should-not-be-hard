@@ -32,5 +32,8 @@ internal fun Context.englishWordFrequency(dictationLanguage: String): ((String) 
         val f = runCatching { manager.getFrequencyForWord(subtype, word) }.getOrDefault(0.0)
         if (f > 0.0) (f * 255).roundToInt() else null
     }
+    // A dictionary that is not there answers 0 for everything, which would read every word as unknown
+    // and so as safe to replace. "the" is in every English list: no answer for it, no fixing.
+    if (lookup("the") == null) return null
     lookup
 }.getOrNull()

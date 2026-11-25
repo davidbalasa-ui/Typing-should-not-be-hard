@@ -89,6 +89,27 @@ class HeardNameFixerTest {
     }
 
     @Test
+    fun `a dictation in another language is left alone`() {
+        // Spanish, taken for the dictation language by the detector: almost no English words in it.
+        assertEquals("hablé con nyah ayer por la tarde", fix("hablé con nyah ayer por la tarde"))
+        assertEquals("ich habe gestern mit nyah gesprochen", fix("ich habe gestern mit nyah gesprochen"))
+        assertEquals("I spoke with Niah yesterday afternoon", fix("I spoke with nyah yesterday afternoon"))
+    }
+
+    @Test
+    fun `a new line or a colon counts as a sentence start`() {
+        // Nia (160) is under the mid-sentence limit but not the sentence-start one.
+        assertEquals("we met\nNia there", fix("we met\nNia there"))
+        assertEquals("Guests: Nia and Rory", fix("Guests: Nia and Rory"))
+        assertEquals("we met Niah there", fix("we met Nia there"))
+    }
+
+    @Test
+    fun `a name with an apostrophe of its own is not cut`() {
+        assertEquals("O'Nyah's book", HeardNameFixer(listOf("Niah")).apply("O'Nyah's book", frequency))
+    }
+
+    @Test
     fun `nothing changes without My words, or in an empty transcript`() {
         assertEquals("I met Naya", HeardNameFixer(emptyList()).apply("I met Naya", frequency))
         assertEquals("", fix(""))
