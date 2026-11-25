@@ -23,6 +23,12 @@ about ten seconds after he stops talking. The cloud Whisper app he compares it t
   left. Nothing else changes for the user: the WAV is still written, kept in history and resendable. If
   the early decoder fails, hears no speech, or the model or language changed during the recording, the
   dictation takes the old path exactly as before (silence gate and all).
+  It only answers for recordings longer than one decode (28 s for Whisper). Shorter ones were always a
+  single quick pass over the whole clip and stay exactly that, so short dictations transcribe the same as
+  before. Longer ones were already cut at pauses by the old path, so windows change only the speed.
+  Decoding waits until a window's audio has fully arrived, and audio no window can still need is dropped,
+  so memory stays bounded on very long or silent recordings. It also applies to system voice input,
+  which records in the same batch mode.
 - **Pack speech into full windows** (`SpeechWindowPlanner`) on the long-audio path too (resends, picked
   files, the offline fallback): segments are joined, with 0.2 s of padding each side, until a window is
   as full as the model takes (28 s for Whisper). Long pauses shrink to two pads, short pauses stay in.
@@ -34,6 +40,11 @@ about ten seconds after he stops talking. The cloud Whisper app he compares it t
 - **Measurable**: logcat tag `DictateLatency` now has `earlyWindow` (per window: audio length, decode ms,
   whether after the stop), `earlyDecodeFinished` (windows, tail ms after stop), `earlyDecodeCompleted`
   (the controller's wait), `localSinglePass` and `localSegmented`.
+
+Side effects, accepted: the thread rule also applies to every other on-device path (resend, import,
+the offline fallback, batch use of a streaming model); serialised decodes mean two long-form segments no
+longer decode at the same moment on one recognizer (they queue). If a resend in another language runs
+during a recording, the two take turns with the cached recognizer, which can mean a reload; rare.
 
 No setting was added: it is how dictation should work, and David asked for simpler settings, not more.
 Live (streaming) on-device models, long-form mode and cloud providers are untouched.

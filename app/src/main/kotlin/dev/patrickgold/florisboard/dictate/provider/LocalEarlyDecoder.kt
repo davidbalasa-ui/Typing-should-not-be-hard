@@ -29,6 +29,10 @@ import java.util.concurrent.TimeUnit
  * ([SpeechWindowPlanner]) and decodes each window on its own thread the moment it is full. By the stop,
  * everything up to the last window is already text.
  *
+ * Only recordings longer than one decode's worth (28 s for Whisper) are answered from here. A shorter one
+ * was always a single quick pass over the whole clip, and stays exactly that: same transcript as before.
+ * Past that length the old path cut the audio at pauses too, so windows change nothing there but speed.
+ *
  * It sees exactly what goes into the WAV (the recorder hands its sink the same frames it writes, and
  * neither gets the frames of a pause), so its text is a transcript of that file. It never replaces the
  * recording: the WAV is still written, kept for history and resend, and transcribed the normal way
@@ -73,6 +77,14 @@ class LocalEarlyDecoder(
     private var bufOrigin = 0L
     private val text = StringBuilder()
     private var windows = 0
+    /** Windows the planner closed that are not decoded yet, oldest first. */
+    private val pending = ArrayDeque<SpeechWindowPlanner.Window>()
+
+    /** At or below this much audio the normal single pass is used; see [work]. */
+    private val singlePassSamples = maxSegmentSeconds.toLong() * AudioDecode.TARGET_SAMPLE_RATE
+    /** Audio kept while no window is open: one maximal VAD segment, its pads and a margin. */
+    private val retainSamples = (maxSegmentSeconds + 2).toLong() * AudioDecode.TARGET_SAMPLE_RATE +
+        LocalTranscriptionProvider.PAD_SAMPLES
 
     private val worker = Thread({ work(vadFile) }, "stt-early-decoder").apply {
         isDaemon = true
@@ -142,16 +154,25 @@ class LocalEarlyDecoder(
                     if (vadFill == window.size) {
                         vad.acceptWaveform(window)
                         vadFill = 0
-                        LocalTranscriptionProvider.drainSegments(vad) { s, e -> planner.add(s, e).forEach(::decode) }
-                        if (cancelled) return
+                        LocalTranscriptionProvider.drainSegments(vad) { s, e -> pending += planner.add(s, e) }
                     }
                 }
+                // Only a recording past one decode's worth is decoded early: anything shorter takes the
+                // single whole-clip pass after the stop, exactly as before, which is already quick.
+                if (captured > singlePassSamples) decodeReady(final = false)
+                if (cancelled) return
             }
             if (cancelled) return
+            if (captured <= singlePassSamples) {
+                // Short recording: no answer from here. The normal path transcribes it in one pass.
+                done.complete(null)
+                return
+            }
             if (vadFill > 0) vad.acceptWaveform(window.copyOf(vadFill))
             vad.flush()
-            LocalTranscriptionProvider.drainSegments(vad) { s, e -> planner.add(s, e).forEach(::decode) }
-            planner.flush()?.let(::decode)
+            LocalTranscriptionProvider.drainSegments(vad) { s, e -> pending += planner.add(s, e) }
+            planner.flush()?.let { pending += it }
+            decodeReady(final = true)
             if (cancelled) return
             val tailMs = (System.nanoTime() - endedAtNanos) / 1_000_000
             val joined = TranscriptJoin.tighten(text.toString(), tighteningSymbols).trim()
@@ -163,21 +184,46 @@ class LocalEarlyDecoder(
             )
             // No speech found: no answer from here. The normal path runs the silence gate and decides.
             done.complete(if (planner.speechSamples == 0L || joined.isBlank()) null else Result(joined, windows, tailMs))
+        } catch (_: EarlyDecodeCancelled) {
+            // Cancelled mid-window: nothing to report.
         } catch (t: Throwable) {
             Log.w(LocalTranscriptionProvider.LATENCY_TAG, "phase=earlyDecodeFailed", t)
-            done.complete(null)
         } finally {
+            // From here on [feed] drops frames instead of queueing them for a worker that is gone.
+            cancelled = true
             runCatching { vad?.release() }
             queue.clear()
             done.complete(null) // no-op when already answered
         }
     }
 
-    /** Keeps [chunk] until a window has used it. */
+    /** Timeline position just past the last captured sample. */
+    private val captured: Long get() = bufOrigin + bufLen
+
+    /**
+     * Decodes the closed windows whose audio has fully arrived. A window's end pad can reach past what was
+     * captured when the VAD cuts continuous speech at its length limit; decoding it then would skip that
+     * stretch for good, since the next window starts after it. At the end everything has arrived.
+     */
+    private fun decodeReady(final: Boolean) {
+        while (pending.isNotEmpty() && !cancelled) {
+            val w = pending.first()
+            if (!final && w.spans.last().end > captured) return
+            pending.removeFirst()
+            decode(w)
+        }
+    }
+
+    /** Keeps [chunk] until a window has used it, dropping audio no window can still ask for. */
     private fun append(chunk: FloatArray) {
         if (bufLen + chunk.size > buf.size) {
-            // Drop what closed windows have used before growing.
-            val drop = (planner.floor - bufOrigin).coerceIn(0L, bufLen.toLong()).toInt()
+            // The earliest position anything may still read: a window waiting to be decoded, the one being
+            // filled, or else the start of the longest segment the VAD could still report (it caps segments
+            // at the model's limit, and needs a moment of silence to report one), with its lead-in pad.
+            val keepFrom = pending.firstOrNull()?.spans?.first()?.start
+                ?: planner.openStart
+                ?: maxOf(planner.floor, captured - retainSamples)
+            val drop = (keepFrom - bufOrigin).coerceIn(0L, bufLen.toLong()).toInt()
             if (drop > 0) {
                 buf.copyInto(buf, 0, drop, bufLen)
                 bufLen -= drop
@@ -192,7 +238,6 @@ class LocalEarlyDecoder(
     }
 
     private fun decode(w: SpeechWindowPlanner.Window) {
-        if (cancelled) return
         val samples = w.copyFrom(buf, bufOrigin, bufLen)
         if (samples.isEmpty()) return
         val startedNanos = System.nanoTime()

@@ -1987,6 +1987,7 @@ object DictateController {
 
         if (apiKey.isBlank() && requiresKey(account)) {
             _state.value = missingCredentialError(context, account)
+            early?.cancel()
             logFailureAndDrop()
             return
         }
@@ -2000,6 +2001,7 @@ object DictateController {
                 kind = DictateApiException.Kind.UNKNOWN,
                 action = ErrorAction.OPEN_SETTINGS,
             )
+            early?.cancel()
             logFailureAndDrop()
             return
         }
@@ -2484,6 +2486,9 @@ object DictateController {
                 logLatency(latencyTrace, "terminal:$outcome")
             }
         }
+        // The early decoder ends with this job however it ends, including a cancel before the job ever ran
+        // (which skips its body and so the finish/cancel inside it).
+        early?.let { e -> transcribeJob?.invokeOnCompletion { e.cancel() } }
     }
 
     /**

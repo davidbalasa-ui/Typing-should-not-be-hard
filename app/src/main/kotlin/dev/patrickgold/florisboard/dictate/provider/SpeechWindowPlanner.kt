@@ -89,6 +89,9 @@ internal class SpeechWindowPlanner(
     var floor: Long = 0L
         private set
 
+    /** Where the window being filled starts, or null when none is. */
+    val openStart: Long? get() = open.firstOrNull()?.start
+
     /** Whether a window is being filled. */
     val hasOpenWindow: Boolean get() = open.isNotEmpty()
 
