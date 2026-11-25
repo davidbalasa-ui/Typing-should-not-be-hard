@@ -127,7 +127,18 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             scope.launch { prefs.smartbar.actionArrangement.set(value) }
         }
         fun saveCount(value: Int) {
-            scope.launch { prefs.smartbar.visibleActionsCount.set(value) }
+            // 0 = as many as fit; any other number stays within what the stepper offers.
+            val bounded = if (value == 0) 0 else value.coerceIn(1, TopBarEditor.MAX_COUNT)
+            scope.launch { prefs.smartbar.visibleActionsCount.set(bounded) }
+        }
+        // An edit that moves a button and changes the count writes both in one go, so leaving the
+        // screen in between can never keep one without the other.
+        fun saveArrangementAndCount(value: QuickActionArrangement, newCount: Int) {
+            val bounded = if (newCount == 0) 0 else newCount.coerceIn(1, TopBarEditor.MAX_COUNT)
+            scope.launch {
+                prefs.smartbar.actionArrangement.set(value)
+                prefs.smartbar.visibleActionsCount.set(bounded)
+            }
         }
         fun saveRow(value: BottomRow?) {
             scope.launch { prefs.keyboard.bottomRowKeys.set(value?.serialize() ?: "") }
@@ -321,8 +332,7 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             ActionRow(
                 action = action,
                 onClick = {
-                    saveArrangement(TopBarEditor.bringToBar(arrangement, action, count, isOnBar))
-                    if (count < TopBarEditor.MAX_COUNT) saveCount(count + 1)
+                    saveArrangementAndCount(TopBarEditor.bringToBar(arrangement, action, count, isOnBar), count + 1)
                     status = Status(R.string.typebetter__kb_status_on_bar, "a" to name)
                 },
                 trailingLabel = stringRes(R.string.typebetter__kb_hide),
@@ -359,8 +369,7 @@ fun KeysAndButtonsScreen() = FlorisScreen {
                 status = Status(R.string.typebetter__kb_status_reset_keys)
             }) { Text(stringRes(R.string.typebetter__kb_reset_keys)) }
             OutlinedButton(modifier = Modifier.weight(1f), onClick = {
-                saveArrangement(QuickActionArrangement.Default)
-                saveCount(0)
+                saveArrangementAndCount(QuickActionArrangement.Default, 0)
                 status = Status(R.string.typebetter__kb_status_reset_top)
             }) { Text(stringRes(R.string.typebetter__kb_reset_top)) }
         }
@@ -394,8 +403,10 @@ fun KeysAndButtonsScreen() = FlorisScreen {
                 footer = {
                     TextButton(onClick = {
                         topPicker = null
-                        saveArrangement(TopBarEditor.moveToMore(arrangement, current, count, isOnBar))
-                        if (count > 1) saveCount(count - 1)
+                        saveArrangementAndCount(
+                            TopBarEditor.moveToMore(arrangement, current, count, isOnBar),
+                            (count - 1).coerceAtLeast(1),
+                        )
                         status = Status(R.string.typebetter__kb_status_moved_more, "a" to currentName)
                     }) { Text(stringRes(R.string.typebetter__kb_take_off_bar)) }
                 },
