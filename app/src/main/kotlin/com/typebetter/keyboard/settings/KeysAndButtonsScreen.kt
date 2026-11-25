@@ -332,8 +332,12 @@ fun KeysAndButtonsScreen() = FlorisScreen {
             ActionRow(
                 action = action,
                 onClick = {
-                    saveArrangementAndCount(TopBarEditor.bringToBar(arrangement, action, count, isOnBar), count + 1)
-                    status = Status(R.string.typebetter__kb_status_on_bar, "a" to name)
+                    if (count >= TopBarEditor.MAX_COUNT) {
+                        status = Status(R.string.typebetter__kb_count_max, "count" to TopBarEditor.MAX_COUNT)
+                    } else {
+                        saveArrangementAndCount(TopBarEditor.bringToBar(arrangement, action, count, isOnBar), count + 1)
+                        status = Status(R.string.typebetter__kb_status_on_bar, "a" to name)
+                    }
                 },
                 trailingLabel = stringRes(R.string.typebetter__kb_hide),
                 onTrailing = {
