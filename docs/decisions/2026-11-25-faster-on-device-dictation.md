@@ -25,7 +25,8 @@ about ten seconds after he stops talking. The cloud Whisper app he compares it t
   dictation takes the old path exactly as before (silence gate and all).
   It only answers for recordings longer than one decode (28 s for Whisper). Shorter ones were always a
   single quick pass over the whole clip and stay exactly that, so short dictations transcribe the same as
-  before. Longer ones were already cut at pauses by the old path, so windows change only the speed.
+  before. Longer ones were already cut at pauses by the old path (for every model that ships a VAD file;
+  one without used to lose everything past 30 s, which windows fix), so windows change only the speed.
   Decoding waits until a window's audio has fully arrived, and audio no window can still need is dropped,
   so memory stays bounded on very long or silent recordings. It also applies to system voice input,
   which records in the same batch mode.

@@ -2488,7 +2488,8 @@ object DictateController {
         }
         // The early decoder ends with this job however it ends, including a cancel before the job ever ran
         // (which skips its body and so the finish/cancel inside it).
-        early?.let { e -> transcribeJob?.invokeOnCompletion { e.cancel() } }
+        val launched = transcribeJob
+        if (early != null && launched != null) launched.invokeOnCompletion { early.cancel() }
     }
 
     /**

@@ -83,7 +83,7 @@ class LocalEarlyDecoder(
     /** At or below this much audio the normal single pass is used; see [work]. */
     private val singlePassSamples = maxSegmentSeconds.toLong() * AudioDecode.TARGET_SAMPLE_RATE
     /** Audio kept while no window is open: one maximal VAD segment, its pads and a margin. */
-    private val retainSamples = (maxSegmentSeconds + 2).toLong() * AudioDecode.TARGET_SAMPLE_RATE +
+    private val retainSamples = (maxSegmentSeconds + 5).toLong() * AudioDecode.TARGET_SAMPLE_RATE +
         LocalTranscriptionProvider.PAD_SAMPLES
 
     private val worker = Thread({ work(vadFile) }, "stt-early-decoder").apply {
@@ -238,6 +238,11 @@ class LocalEarlyDecoder(
     }
 
     private fun decode(w: SpeechWindowPlanner.Window) {
+        if (w.spans.first().start < bufOrigin) {
+            // Should not happen (see [retainSamples]); made visible rather than silent if it ever does.
+            Log.w(LocalTranscriptionProvider.LATENCY_TAG, "phase=earlyWindowClipped lostMs=" +
+                "${(bufOrigin - w.spans.first().start) * 1000 / AudioDecode.TARGET_SAMPLE_RATE}")
+        }
         val samples = w.copyFrom(buf, bufOrigin, bufLen)
         if (samples.isEmpty()) return
         val startedNanos = System.nanoTime()
