@@ -1048,6 +1048,7 @@
     <string name="apptour60__art_speed" comment="Playback-speed badge in the illustration showing a recording being shortened. Uses the local decimal separator.">1.5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Credit, Chinese, cheaper dictation</string>
+    <string name="apptour60__intro_title_own">Chinese, new dictionaries, cheaper dictation</string>
     <string name="apptour60__intro_body">This release adds a second way in — buy credit instead of bringing your own API key — along with Pinyin for Chinese, seven languages that gained a dictionary, and recordings that cost less to transcribe.</string>
     <string name="apptour60__intro_body_own">This release brings Pinyin for Chinese, seven languages that gained a dictionary, and recordings that cost less to transcribe.</string>
     <string name="apptour60__cloud_eyebrow">New: Dictate Cloud</string>
@@ -1263,7 +1264,7 @@
     <!-- The two-track choice shown first: buy credit in the app, or bring your own provider key.
          Both are fully supported and the wording must not push either way. -->
     <string name="setup__provider__choose_intro">TypeBetter turns your speech into text with an AI service. Two ways suit most people — and if you\'d rather not use a cloud service at all, there are two more below.</string>
-    <string name="setup__provider__choose_intro_own" comment="Intro of the provider step in setup. TypeBetter offers one headline way (your own AI provider) and two more below (on-device, own server).">TypeBetter turns your speech into text with an AI service. Most people use their own AI provider — and if you'd rather not use a cloud service at all, there are two more ways below.</string>
+    <string name="setup__provider__choose_intro_own" comment="Intro of the provider step in setup. TypeBetter offers one headline way (your own AI provider) and two more below (on-device, own server).">TypeBetter turns your speech into text with an AI service. Most people use their own AI provider — and if you\'d rather not use a cloud service at all, there are two more ways below.</string>
     <string name="setup__provider__choice_cloud_title">Buy credit in the app</string>
     <string name="setup__provider__choice_cloud_body">Dictate Cloud: no account anywhere, no API key. You buy dictation minutes through Google Play and they never expire. The convenient way — and somewhat more expensive than going to a provider directly.</string>
     <string name="setup__provider__choice_cloud_btn">Show credit packs</string>

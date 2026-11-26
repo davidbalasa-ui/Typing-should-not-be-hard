@@ -2067,6 +2067,7 @@
     <string name="apptour60__art_speed">1.5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">クレジット、中国語、より安い音声入力</string>
+    <string name="apptour60__intro_title_own">中国語、より安い音声入力</string>
     <string name="apptour60__intro_body">このバージョンでは2つ目の入口が加わりました。自分のAPIキーを用意する代わりにクレジットを購入できます。さらに中国語のピンイン入力、辞書が増えた7言語、そして費用が下がる録音処理も。</string>
     <string name="apptour60__cloud_eyebrow">新登場: Dictate Cloud</string>
     <string name="apptour60__cloud_title">キーを探す代わりに分数を買う</string>

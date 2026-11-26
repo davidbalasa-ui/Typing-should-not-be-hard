@@ -2134,6 +2134,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Egyenleg, kínai, olcsóbb diktálás</string>
+    <string name="apptour60__intro_title_own">Kínai, olcsóbb diktálás</string>
     <string name="apptour60__intro_body">Ez a verzió egy második utat nyit — egyenleget lehet venni a saját API-kulcs helyett —, mellé pinjin a kínaihoz, hét nyelv új szótárral és felvételek, amelyek kevesebbe kerülnek.</string>
     <string name="apptour60__cloud_eyebrow">Új: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Vegyél perceket kulcskeresés helyett</string>

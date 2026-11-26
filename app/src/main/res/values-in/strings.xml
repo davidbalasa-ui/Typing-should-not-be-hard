@@ -2087,6 +2087,7 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Saldo, bahasa Mandarin, dikte lebih murah</string>
+    <string name="apptour60__intro_title_own">Bahasa Mandarin, dikte lebih murah</string>
     <string name="apptour60__intro_body">Versi ini menambah jalan masuk kedua — membeli saldo alih-alih membawa kunci API sendiri —, ditambah pinyin untuk bahasa Mandarin, tujuh bahasa dengan kamus baru, dan rekaman yang lebih murah.</string>
     <string name="apptour60__cloud_eyebrow">Baru: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Beli menit alih-alih mencari kunci</string>

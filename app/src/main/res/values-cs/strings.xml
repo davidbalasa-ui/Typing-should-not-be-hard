@@ -2160,6 +2160,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Kredit, čínština, levnější diktování</string>
+    <string name="apptour60__intro_title_own">Čínština, levnější diktování</string>
     <string name="apptour60__intro_body">Tato verze přidává druhou cestu dovnitř — koupit kredit místo vlastního klíče API —, k tomu pinyin pro čínštinu, sedm jazyků s novým slovníkem a nahrávky, které stojí méně.</string>
     <string name="apptour60__cloud_eyebrow">Novinka: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Kupte si minuty místo shánění klíče</string>
@@ -2580,7 +2581,7 @@
     <string name="about__credits_donate__summary">Pošli DevEmperor spropitné za práci, na které TypeBetter stojí</string>
     <string name="changelog__donate_credit">Postaveno na Dictate od DevEmperor. Klepnutím sem podpoříš jeho vývojáře ♥</string>
     <string name="apptour51__outro_body_credit">Díky, že používáš TypeBetter! Tyto funkce pocházejí z Dictate, aplikace, na které TypeBetter stojí. Pokud ti každý den pomáhají, malé spropitné jejímu vývojáři DevEmperor udrží tuto práci v chodu. Všechny prohlídky najdeš kdykoli v Nastavení › O aplikaci.</string>
-    <string name="setup__provider__choose_intro_own">TypeBetter převádí řeč na text pomocí služby AI. Většina lidí používá vlastního poskytovatele AI — a pokud nechceš žádnou cloudovou službu, níže jsou ještě dva další způsoby.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter převádí řeč na text pomocí služby AI. Většina lidí používá vlastního poskytovatele AI — a pokud nechcete žádnou cloudovou službu, níže jsou ještě dva další způsoby.</string>
     <string name="apptour60__intro_body_own">Tato verze přináší pinyin pro čínštinu, slovníky pro sedm nových jazyků a nahrávky, jejichž přepis stojí méně.</string>
-    <string name="apptour60__outro_body_own">Ať používáš TypeBetter jakkoli — vlastní klíč, vlastní server nebo model v zařízení — u ostatních způsobů se nic nezměnilo. Každou prohlídku si znovu pustíte v Nastavení › O aplikaci.</string>
+    <string name="apptour60__outro_body_own">Ať používáte TypeBetter jakkoli — vlastní klíč, vlastní server nebo model v zařízení — u ostatních způsobů se nic nezměnilo. Každou prohlídku si znovu pustíte v Nastavení › O aplikaci.</string>
 </resources>

@@ -2006,6 +2006,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Saldo, xinès i dictat més barat</string>
+    <string name="apptour60__intro_title_own">Xinès i dictat més barat</string>
     <string name="apptour60__intro_body">Aquesta versió afegeix una segona porta d\'entrada — comprar saldo en lloc de portar la teva pròpia clau d\'API —, a més de pinyin per al xinès, set llengües amb diccionari nou i enregistraments que costen menys.</string>
     <string name="apptour60__cloud_eyebrow">Nou: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Compra minuts en comptes de buscar una clau</string>

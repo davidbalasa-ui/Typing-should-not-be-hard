@@ -2118,6 +2118,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Kredi, Çince ve daha ucuz dikte</string>
+    <string name="apptour60__intro_title_own">Çince ve daha ucuz dikte</string>
     <string name="apptour60__intro_body">Bu sürüm ikinci bir giriş yolu ekliyor — kendi API anahtarınızı getirmek yerine kredi satın almak —, ayrıca Çince için pinyin, sözlük kazanan yedi dil ve daha az maliyetli kayıtlar.</string>
     <string name="apptour60__cloud_eyebrow">Yeni: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Anahtar aramak yerine dakika satın alın</string>
@@ -2538,7 +2539,7 @@
     <string name="about__credits_donate__summary">TypeBetter\'ın üzerine kurulduğu emek için DevEmperor\'a bahşiş gönder</string>
     <string name="changelog__donate_credit">DevEmperor\'un Dictate\'i üzerine kuruldu. Geliştiricisini desteklemek için buraya dokun ♥</string>
     <string name="apptour51__outro_body_credit">TypeBetter\'ı kullandığın için teşekkürler! Bu özellikler, TypeBetter\'ın üzerine kurulduğu Dictate\'ten gelir. Sana her gün yardım ediyorlarsa, geliştiricisi DevEmperor\'a küçük bir bahşiş bu emeği sürdürür. Bu turları istediğin zaman Ayarlar › Hakkında altında yeniden izleyebilirsin.</string>
-    <string name="setup__provider__choose_intro_own">TypeBetter konuşmanı bir yapay zekâ hizmetiyle metne çevirir. Çoğu kişi kendi yapay zekâ sağlayıcısını kullanır — hiç bulut hizmeti kullanmak istemiyorsan aşağıda iki yol daha var.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter konuşmanızı bir yapay zekâ hizmetiyle metne çevirir. Çoğu kişi kendi yapay zekâ sağlayıcısını kullanır — hiç bulut hizmeti kullanmak istemiyorsanız aşağıda iki yol daha var.</string>
     <string name="apptour60__intro_body_own">Bu sürüm Çince için pinyin, sözlük kazanan yedi dil ve yazıya dökülmesi daha ucuz kayıtlar getiriyor.</string>
-    <string name="apptour60__outro_body_own">TypeBetter\'ı nasıl kullanırsan kullan — kendi anahtarın, kendi sunucun ya da cihazdaki bir model — diğer yollarda hiçbir şey değişmedi. Tüm turları Ayarlar › Hakkında altında yeniden izleyebilirsiniz.</string>
+    <string name="apptour60__outro_body_own">TypeBetter\'i nasıl kullanırsanız kullanın — kendi anahtarınız, kendi sunucunuz ya da cihazdaki bir model — diğer yollarda hiçbir şey değişmedi. Tüm turları Ayarlar › Hakkında altında yeniden izleyebilirsiniz.</string>
 </resources>

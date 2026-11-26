@@ -647,7 +647,7 @@ private val WhatsNewPages60: List<WhatsNewPage> = listOf(
     WhatsNewPage(
         icon = Icons.Filled.AutoAwesome,
         eyebrow = R.string.apptour60__intro_eyebrow,
-        title = R.string.apptour60__intro_title,
+        title = R.string.apptour60__intro_title_own,
         body = R.string.apptour60__intro_body_own,
         cta = R.string.apptour__start,
         route = null,

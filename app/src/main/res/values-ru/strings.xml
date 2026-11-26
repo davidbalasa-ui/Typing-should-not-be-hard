@@ -2150,6 +2150,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Баланс, китайский, дешевле диктовка</string>
+    <string name="apptour60__intro_title_own">Китайский, дешевле диктовка</string>
     <string name="apptour60__intro_body">В этой версии появился второй путь — купить баланс вместо собственного ключа API, — а также пиньинь для китайского, семь языков с новым словарём и записи, которые обходятся дешевле.</string>
     <string name="apptour60__cloud_eyebrow">Новое: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Купить минуты вместо поиска ключа</string>

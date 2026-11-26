@@ -2012,6 +2012,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Crédit, chinois, dictée moins chère</string>
+    <string name="apptour60__intro_title_own">Chinois, dictée moins chère</string>
     <string name="apptour60__intro_body">Cette version ajoute une deuxième porte d\'entrée — acheter du crédit au lieu d\'apporter sa propre clé API —, le pinyin pour le chinois, sept langues dotées d\'un dictionnaire et des enregistrements qui coûtent moins cher.</string>
     <string name="apptour60__cloud_eyebrow">Nouveau : Dictate Cloud</string>
     <string name="apptour60__cloud_title">Acheter des minutes plutôt que chercher une clé</string>
