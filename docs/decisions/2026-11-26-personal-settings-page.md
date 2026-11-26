@@ -27,7 +27,7 @@ deep inside the provider dialog. The app was coloured from the Dictate light-blu
    only, because the try box replaces it.
    - Autocorrect needs suggestions on: turning the switch on turns on both, so it never shows on while
      doing nothing.
-   - My corrections moved from its own home row to the try box's *Add a fix* button. Nothing was removed:
+   - My corrections moved from its own home row to a *My corrections* button on the try box. Nothing was removed:
      every old row is on the page or one tap away, and search finds everything as before.
    - "Hi David" is a plain string: the app is David's own.
 4. **My words is one list** (`MyWordsList.kt`, pure and unit tested): one entry per word with the typos it
@@ -45,3 +45,8 @@ deep inside the provider dialog. The app was coloured from the Dictate light-blu
    Dictate Cloud stays hidden.
 7. Mockup items not built: the weekly "time saved" card in the mockup is the existing real stats card; the
    mockup's sample transcript panel is not shown, since it would be fake data.
+8. Review follow-ups: quick add never replaces a typo that already fixes another word (it says so and
+   leaves it); adding a word that is already in My words says so; the model hint knows when an online
+   service or another on-device model is in use; switches carry their row's name for TalkBack; typo chips
+   are 48 dp tap targets with spoken labels instead of arrow glyphs. Accepted as is: an accent picked as
+   exactly the stock blue also gets the TypeBetter palette.

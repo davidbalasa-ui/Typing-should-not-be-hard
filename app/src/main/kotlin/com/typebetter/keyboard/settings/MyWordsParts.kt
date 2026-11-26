@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -25,6 +26,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -61,7 +65,15 @@ internal fun QuickAddForm(modifier: Modifier = Modifier) {
     var word by rememberSaveable { mutableStateOf("") }
     var typos by rememberSaveable { mutableStateOf("") }
     var auto by rememberSaveable { mutableStateOf(true) }
-    val plan = planQuickAdd(word, typos, if (auto) FixMode.AUTO else FixMode.SUGGEST, now = 0L, PersonalWords::isValidWord)
+    val rules by PersonalWords.rules.collectAsState()
+    val plan = planQuickAdd(
+        word = word,
+        typosText = typos,
+        mode = if (auto) FixMode.AUTO else FixMode.SUGGEST,
+        now = 0L,
+        isValidWord = PersonalWords::isValidWord,
+        existing = { rules.fixFor(it) },
+    )
     val canSave = plan != null && (plan.word != null || plan.fixes.isNotEmpty())
 
     Card(
@@ -127,6 +139,16 @@ internal fun QuickAddForm(modifier: Modifier = Modifier) {
                 lineHeight = 18.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (plan != null && plan.taken.isNotEmpty()) {
+                Text(
+                    text = stringRes(
+                        R.string.typebetter__quick_add_taken,
+                        "fixes" to plan.taken.joinToString(", ") { it.typed + " → " + it.meant },
+                    ),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             if (plan != null && plan.rejected.isNotEmpty()) {
                 Text(
                     text = stringRes(R.string.typebetter__quick_add_rejected, "typos" to plan.rejected.joinToString(", ")),
@@ -138,15 +160,20 @@ internal fun QuickAddForm(modifier: Modifier = Modifier) {
                 onClick = {
                     val p = plan ?: return@Button
                     scope.launch {
+                        val already = p.word != null && withContext(Dispatchers.IO) { PersonalWords.isMyWord(p.word) }
                         val saved = withContext(Dispatchers.IO) {
-                            if (p.word != null) {
-                                if (PersonalWords.addWord(p.word)) 1 else 0
-                            } else {
-                                p.fixes.forEach { PersonalWords.setFix(it) }
-                                p.fixes.size
+                            when {
+                                already -> 0
+                                p.word != null -> if (PersonalWords.addWord(p.word)) 1 else 0
+                                else -> {
+                                    p.fixes.forEach { PersonalWords.setFix(it) }
+                                    p.fixes.size
+                                }
                             }
                         }
-                        if (p.word != null && saved == 0) {
+                        if (already) {
+                            context.showLongToast(R.string.typebetter__quick_add_word_exists, "word" to p.word)
+                        } else if (p.word != null && saved == 0) {
                             context.showLongToast(R.string.typebetter__quick_add_word_failed)
                         } else {
                             word = ""
@@ -204,14 +231,23 @@ internal fun WordEntryRow(
                 if (entry.fixes.isNotEmpty() || entry.blocks.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         entry.fixes.forEach { fix ->
+                            val suggest = fix.mode == FixMode.SUGGEST
                             TypoChip(
-                                text = "← " + fix.typed,
-                                suggestOnly = fix.mode == FixMode.SUGGEST,
+                                text = "← " + fix.typed + if (suggest) " · " + stringRes(R.string.typebetter__entry_suggested) else "",
+                                spoken = stringRes(
+                                    if (suggest) R.string.typebetter__entry_typo_suggest_cd else R.string.typebetter__entry_typo_cd,
+                                    "typo" to fix.typed,
+                                    "word" to entry.word,
+                                ),
                                 onClick = { onFix(fix) },
                             )
                         }
                         entry.blocks.forEach { block ->
-                            TypoChip(text = "↛ " + block.blocked, suggestOnly = false, onClick = { onBlock(block) })
+                            TypoChip(
+                                text = "↛ " + block.blocked,
+                                spoken = stringRes(R.string.typebetter__entry_block_cd, "word" to entry.word, "blocked" to block.blocked),
+                                onClick = { onBlock(block) },
+                            )
                         }
                     }
                 }
@@ -229,13 +265,15 @@ internal fun WordEntryRow(
 }
 
 @Composable
-private fun TypoChip(text: String, suggestOnly: Boolean, onClick: () -> Unit) {
+private fun TypoChip(text: String, spoken: String, onClick: () -> Unit) {
     Text(
-        text = if (suggestOnly) text + " · " + stringRes(R.string.typebetter__entry_suggested) else text,
+        text = text,
         modifier = Modifier
             .clickable(role = Role.Button, onClick = onClick)
-            .heightIn(min = 32.dp)
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .semantics { contentDescription = spoken }
+            .heightIn(min = 48.dp)
+            .wrapContentHeight(Alignment.CenterVertically)
+            .padding(horizontal = 6.dp),
         fontSize = 14.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

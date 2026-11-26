@@ -91,4 +91,16 @@ class MyWordsListTest {
         val entries = buildWordEntries(listOf("Claude"), rules)
         assertEquals(listOf("with", "TwinHaven", "Xylos"), peekEntries(entries).map { it.word })
     }
+
+    @Test
+    fun `quick add never replaces a typo that fixes another word`() {
+        val existing = mapOf("teh" to Fix("teh", "the"), "wotj" to Fix("wotj", "with"))
+        val plan = planQuickAdd("ten", "teh, tne", FixMode.AUTO, 0L, { true }) { existing[it] }!!
+        assertEquals(listOf("tne"), plan.fixes.map { it.typed })
+        assertEquals(listOf("teh"), plan.taken.map { it.typed })
+        // The same typo for the same word is simply saved again (mode may change).
+        val again = planQuickAdd("with", "wotj", FixMode.SUGGEST, 0L, { true }) { existing[it] }!!
+        assertEquals(listOf("wotj"), again.fixes.map { it.typed })
+        assertTrue(again.taken.isEmpty())
+    }
 }

@@ -84,6 +84,8 @@ internal data class QuickAdd(
     val fixes: List<Fix>,
     /** Typos that could not be saved (same as the word, too long, ...), shown back to the user. */
     val rejected: List<String>,
+    /** Typos that already fix another word: kept as they are, never silently replaced. */
+    val taken: List<Fix> = emptyList(),
 )
 
 /**
@@ -96,6 +98,7 @@ internal fun planQuickAdd(
     mode: FixMode,
     now: Long,
     isValidWord: (String) -> Boolean,
+    existing: (String) -> Fix? = { null },
 ): QuickAdd? {
     val w = word.trim()
     if (w.isEmpty()) return null
@@ -104,11 +107,15 @@ internal fun planQuickAdd(
     if (typos.isEmpty()) {
         return if (isValidWord(w)) QuickAdd(word = w, fixes = emptyList(), rejected = emptyList()) else null
     }
-    val (ok, bad) = typos.partition { isUsableFix(it, w) }
-    if (ok.isEmpty()) return QuickAdd(word = null, fixes = emptyList(), rejected = bad)
+    val (usable, bad) = typos.partition { isUsableFix(it, w) }
+    // A typo that already fixes to another word keeps that fix; changing it is a deliberate edit in the list.
+    val taken = usable.mapNotNull { t -> existing(t)?.takeIf { keyOf(it.meant) != keyOf(w) } }
+    val takenKeys = taken.map { it.key }.toSet()
+    val ok = usable.filter { keyOf(it) !in takenKeys }
     return QuickAdd(
         word = null,
         fixes = ok.map { Fix(typed = it, meant = w, mode = mode, addedAt = now) },
         rejected = bad,
+        taken = taken,
     )
 }

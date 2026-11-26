@@ -238,7 +238,6 @@
     <string name="typebetter__home_try_hint">Type {typed} and press space: it becomes {meant}.</string>
     <string name="typebetter__home_try_hint_none">Type a word you often get wrong. If it is not fixed, add it as a fix.</string>
     <string name="typebetter__home_try_words">My words</string>
-    <string name="typebetter__home_try_add_fix">Add a fix</string>
     <string name="typebetter__home_section_words">Words &amp; voice</string>
     <string name="typebetter__home_section_keyboard">Keyboard</string>
     <string name="typebetter__home_section_else">Everything else</string>
@@ -257,9 +256,9 @@
     <string name="typebetter__home_gif_summary">Search GIFs from the emoji panel</string>
     <string name="typebetter__home_about_summary">Built on Dictate and FlorisBoard</string>
 
-    <string name="typebetter__tag_auto">↳ Auto-fix</string>
-    <string name="typebetter__tag_suggest">◇ Suggest only</string>
-    <string name="typebetter__tag_never">▣ Never change</string>
+    <string name="typebetter__tag_auto">Auto-fix</string>
+    <string name="typebetter__tag_suggest">Suggest only</string>
+    <string name="typebetter__tag_never">Never change</string>
     <string name="typebetter__entry_word">Never corrected · dictation hears it</string>
     <string name="typebetter__entry_never">Protected from changes</string>
     <string name="typebetter__entry_suggested">suggested</string>
@@ -305,4 +304,10 @@
     <string name="typebetter__voice_names_summary">From My words, so names like these come out spelled your way.</string>
     <string name="typebetter__voice_names_add">+ Add in My words</string>
     <string name="typebetter__voice_names_more">and {count} more</string>
+    <string name="typebetter__voice_online_hint">Dictation uses an online service now. Pick a model here to dictate offline instead.</string>
+    <string name="typebetter__entry_typo_cd">Typo {typo}, fixed to {word}</string>
+    <string name="typebetter__entry_typo_suggest_cd">Typo {typo}, {word} is suggested</string>
+    <string name="typebetter__entry_block_cd">{word} is never changed to {blocked}</string>
+    <string name="typebetter__quick_add_taken">Already fixes another word, left as it is: {fixes}. Change it in the list below.</string>
+    <string name="typebetter__quick_add_word_exists">{word} is already in My words.</string>
 </resources>

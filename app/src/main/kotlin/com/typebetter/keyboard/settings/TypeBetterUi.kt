@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -143,7 +144,14 @@ internal fun TbSwitchRow(
         summary = summary,
         icon = icon,
         onClick = onOpen ?: { onCheckedChange(!checked) },
-        trailing = { Switch(checked = checked, onCheckedChange = onCheckedChange) },
+        // The switch is its own focus stop for TalkBack, so it carries the row's name.
+        trailing = {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.semantics { contentDescription = title },
+            )
+        },
     )
 }
 
@@ -167,9 +175,15 @@ internal fun TbWordTag(tag: WordTag, modifier: Modifier = Modifier) {
             (if (dark) scheme.surfaceVariant to scheme.onSurface else Color(0xFFE6E9F1) to Color(0xFF1E2A4A))
         WordTag.NONE -> return
     }
+    val glyph = when (tag) {
+        WordTag.AUTO_FIX -> "↳ "
+        WordTag.SUGGEST_ONLY -> "◇ "
+        else -> "▣ "
+    }
     Text(
-        text = label,
+        text = glyph + label,
         modifier = modifier
+            .semantics { contentDescription = label }
             .background(colors.first, RoundedCornerShape(6.dp))
             .padding(horizontal = 7.dp, vertical = 4.dp),
         fontFamily = FontFamily.Monospace,

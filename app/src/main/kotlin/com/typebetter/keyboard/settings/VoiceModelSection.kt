@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -145,8 +146,12 @@ internal fun VoiceModelSection(onOpenWords: () -> Unit) {
                 else -> stringRes(R.string.dictate__setup_failed_other)
             }
             activeDownload != null -> stringRes(R.string.typebetter__voice_downloading_hint)
-            activeId == null || activeId !in installed -> stringRes(R.string.typebetter__voice_pick_hint)
-            else -> stringRes(R.string.typebetter__voice_offline_hint)
+            // An online service is in use: dictation works, these models are the offline alternative.
+            providerId != ProviderRegistry.LOCAL.id -> stringRes(R.string.typebetter__voice_online_hint)
+            // Another on-device model (picked under Providers) counts as ready too.
+            (activeId != null && activeId in installed) || (!activeId.isNullOrBlank() && activeId !in pickerIds) ->
+                stringRes(R.string.typebetter__voice_offline_hint)
+            else -> stringRes(R.string.typebetter__voice_pick_hint)
         }
         Text(message, fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -257,8 +262,9 @@ private fun NamesItListensFor(onOpenWords: () -> Unit) {
                     .clip(RoundedCornerShape(18.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp))
                     .clickable(role = Role.Button, onClick = onOpenWords)
-                    .heightIn(min = 36.dp)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .heightIn(min = 48.dp)
+                    .wrapContentHeight(Alignment.CenterVertically)
+                    .padding(horizontal = 12.dp),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,

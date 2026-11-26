@@ -93,7 +93,7 @@ internal fun TryKeyboardCard(
             )
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 TextButton(onClick = onOpenWords) { Text(stringRes(R.string.typebetter__home_try_words)) }
-                TextButton(onClick = onAddFix) { Text(stringRes(R.string.typebetter__home_try_add_fix)) }
+                TextButton(onClick = onAddFix) { Text(stringRes(R.string.typebetter__corrections_title)) }
             }
         }
     }
