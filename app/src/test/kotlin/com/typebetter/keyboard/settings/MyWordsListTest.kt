@@ -60,7 +60,7 @@ class MyWordsListTest {
 
     @Test
     fun `quick add with typos saves fixes only`() {
-        val plan = planQuickAdd(" with ", "wotj, wiht  with", FixMode.AUTO, now = 5L) { true }!!
+        val plan = planQuickAdd(" with ", "wotj, wiht  with", FixMode.AUTO, now = 5L, isValidWord = { true })!!
         assertNull(plan.word)
         assertEquals(listOf("wotj", "wiht"), plan.fixes.map { it.typed })
         assertTrue(plan.fixes.all { it.meant == "with" && it.mode == FixMode.AUTO && it.addedAt == 5L })
@@ -69,14 +69,14 @@ class MyWordsListTest {
 
     @Test
     fun `quick add without typos adds the word`() {
-        assertEquals("Niah", planQuickAdd("Niah", "", FixMode.AUTO, 0L) { true }!!.word)
-        assertNull(planQuickAdd("two words", "", FixMode.AUTO, 0L) { !it.contains(' ') })
-        assertNull(planQuickAdd("   ", "teh", FixMode.AUTO, 0L) { true })
+        assertEquals("Niah", planQuickAdd("Niah", "", FixMode.AUTO, 0L, isValidWord = { true })!!.word)
+        assertNull(planQuickAdd("two words", "", FixMode.AUTO, 0L, isValidWord = { !it.contains(' ') }))
+        assertNull(planQuickAdd("   ", "teh", FixMode.AUTO, 0L, isValidWord = { true }))
     }
 
     @Test
     fun `suggest-only mode is kept`() {
-        val plan = planQuickAdd("Xylos", "silos", FixMode.SUGGEST, 0L) { true }!!
+        val plan = planQuickAdd("Xylos", "silos", FixMode.SUGGEST, 0L, isValidWord = { true })!!
         assertEquals(FixMode.SUGGEST, plan.fixes.single().mode)
     }
 
