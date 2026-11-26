@@ -23,6 +23,9 @@
     <string name="prefs__media__gif_setup__title" comment="Preference title, opens a setup walkthrough">GIF search setup</string>
     <string name="prefs__media__gif_setup__summary_set" comment="Preference summary when a key is saved">KLIPY API key saved</string>
     <string name="prefs__media__gif_setup__summary_unset" comment="Preference summary when no key is set">Tap to add your free KLIPY API key</string>
+    <string name="prefs__media__gif_setup__summary_built_in" comment="Preference summary when the user has no key of their own but the app has one built in">Ready to use, no key needed</string>
+    <string name="prefs__media__gif_setup__built_in_intro" comment="Setup dialog intro when the app has a KLIPY key built in">GIF search works out of the box, so there is nothing to set up. GIFs come from KLIPY, a free service. If you\'d rather use your own free KLIPY key, follow these steps; your key replaces the built-in one, and clearing the field switches back.</string>
+    <string name="prefs__media__gif_setup__key_label_optional" comment="Text field label when the app has a KLIPY key built in">Your own KLIPY API key (optional)</string>
     <string name="prefs__media__gif_setup__intro" comment="Walkthrough intro">GIFs are provided by KLIPY, a free service. You just need your own free key — it only takes a minute:</string>
     <string name="prefs__media__gif_setup__step1" comment="Walkthrough step">Open the KLIPY Partner Panel — you\'ll be prompted to create a free account if you don\'t have one.</string>
     <string name="prefs__media__gif_setup__step2" comment="Walkthrough step">On the API Keys page, create an API key.</string>

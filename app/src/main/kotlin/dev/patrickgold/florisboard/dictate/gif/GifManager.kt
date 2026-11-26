@@ -34,9 +34,10 @@ object GifManager {
     private val prefs by FlorisPreferenceStore
 
     /** The active provider. Reads the API key / customer id lazily on each call, so it stays valid
-     *  even after the user changes their key in settings. */
+     *  even after the user changes their key in settings. The user's key wins; without one, the key
+     *  built into release builds is used ([GifApiKey]). */
     val provider: GifProvider = KlipyGifProvider(
-        apiKeyProvider = { prefs.gif.klipyApiKey.get() },
+        apiKeyProvider = { GifApiKey.effective(prefs.gif.klipyApiKey.get()) },
         customerIdProvider = { prefs.gif.customerId.get() },
         contentFilterProvider = { prefs.gif.contentFilter.get() },
     )

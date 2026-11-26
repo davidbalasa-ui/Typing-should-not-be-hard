@@ -228,6 +228,9 @@ jobs:
       - name: Build release APK and Play bundle
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
+          # Built-in KLIPY key, so GIF search works with no setup (docs/decisions/2026-11-26-built-in-gif-key.md).
+          # Like the release key, only main's push or manual builds get it; branches build with none.
+          KLIPY_API_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && secrets.KLIPY_API_KEY || '' }}
         run: |
           # Upstream Dictate's versionCode is 142; ours counts on from 142000 so every build is an update.
           TB_VERSION_CODE=$((142000 + GITHUB_RUN_NUMBER))
