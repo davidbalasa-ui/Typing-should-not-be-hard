@@ -12,7 +12,8 @@ Date: 2026-11-26. Asked by David: "Can you automate getting the API key" (the GI
   with no setup, and the setup dialog says the user's own key is optional.
 - Without the secret (branch builds, local builds, or before David adds it) the built-in key is empty
   and the app behaves exactly as before.
-- Only `[A-Za-z0-9_-]` is accepted from the secret, so it cannot break the generated Java source.
+- Only `[A-Za-z0-9_-]` is accepted from the secret, so it cannot break the generated Java source; any
+  other value fails the build (the value is never printed) rather than shipping GIFs switched off.
 
 ## Why not fetch a key automatically
 

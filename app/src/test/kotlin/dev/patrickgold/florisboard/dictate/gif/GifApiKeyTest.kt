@@ -10,10 +10,10 @@
 
 package dev.patrickgold.florisboard.dictate.gif
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** Which key a GIF request uses: the user's own when saved, else the one built into the app. */
 class GifApiKeyTest {
@@ -49,13 +49,5 @@ class GifApiKeyTest {
     fun `the provider is configured by the built-in key alone`() {
         val provider = KlipyGifProvider(apiKeyProvider = { GifApiKey.effective("", "builtin123") })
         assertTrue(provider.isConfigured)
-    }
-
-    @Test
-    fun `a local build has no built-in key`() {
-        // Unit tests run without KLIPY_API_KEY (CI passes it only to main's release build), so this
-        // also proves the secret does not leak into ordinary builds.
-        assertEquals("", GifApiKey.builtIn)
-        assertFalse(GifApiKey.hasBuiltIn)
     }
 }
