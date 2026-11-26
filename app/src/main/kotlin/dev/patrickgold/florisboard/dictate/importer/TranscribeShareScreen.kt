@@ -948,7 +948,7 @@ private fun openProviderSettings(context: Context) {
 
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-    clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text))
+    clipboard.setPrimaryClip(ClipData.newPlainText("TypeBetter", text))
 }
 
 private fun shareText(context: Context, text: String) {

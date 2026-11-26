@@ -410,15 +410,15 @@
     <string name="backup_and_restore__restore__success">Datumoj sukcese restaŭritaj!</string>
     <string name="backup_and_restore__restore__failure">Fiaskis restaŭri datumojn: {error_message}</string>
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">Erarojn raporto de Dictate</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">Pardonu la ĝeno, Dictate kraŝis kaŭze de neatendita eraro.</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">Erarojn raporto de TypeBetter</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">Pardonu la ĝeno, TypeBetter kraŝis kaŭze de neatendita eraro.</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Kopii al sistema tondujo</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">Kopiita al sistema tondujo</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">Fermi</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Erarojn raportoj de Dictate</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Dictate ĉesis funkcii…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Erarojn raportoj de TypeBetter</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">TypeBetter ĉesis funkcii…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Tuŝu tie por vidi detalojn de la eraro</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Dictate ŝajnas ĉesi funkcii ripete…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">TypeBetter ŝajnas ĉesi funkcii ripete…</string>
     <!-- Clipboard strings -->
     <string name="clipboard__header_title">Tondujo</string>
     <string name="clipboard__disabled__title">Tonduja historio estas nun malŝaltita</string>

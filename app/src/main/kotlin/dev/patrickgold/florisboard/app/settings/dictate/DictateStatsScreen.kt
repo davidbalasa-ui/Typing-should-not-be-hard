@@ -149,7 +149,7 @@ fun DictateStatsScreen() = FlorisScreen {
             val shareBody = stringRes(R.string.dictate__stats_share_text)
                 .format(savedText, formatCount(dictations), formatCount(words))
             FilledTonalButton(
-                onClick = { shareStats(context, "$shareBody\n\n$PLAY_STORE_URL") },
+                onClick = { shareStats(context, "$shareBody\n\n${context.getString(R.string.florisboard__repo_url)}") },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -353,7 +353,6 @@ private fun EmptyState() {
 
 // --- helpers --------------------------------------------------------------------------------------
 
-private const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=net.devemperor.dictate"
 private val BAR_MAX_HEIGHT = 64.dp
 
 private fun shareStats(context: android.content.Context, text: String) {

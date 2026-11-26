@@ -323,8 +323,8 @@ object ProviderRegistry {
         // Attribution headers recommended by OpenRouter: both are used for app ranking and some routes
         // reject requests without an HTTP-Referer. The value is a stable identifier, not a real URL.
         extraHeaders = mapOf(
-            "HTTP-Referer" to "https://github.com/DevEmperor/Dictate",
-            "X-Title" to "Dictate",
+            "HTTP-Referer" to "https://github.com/davidbalasa-ui/Typing-should-not-be-hard",
+            "X-Title" to "TypeBetter",
         ),
         // Data residency (#403): the EU entry point decrypts in the EU and routes only to in-region
         // provider endpoints, failing a request outright rather than letting it leave the region. Same

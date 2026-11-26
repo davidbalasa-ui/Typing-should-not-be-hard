@@ -125,9 +125,9 @@
     <string name="settings__home__title" comment="Title of the Home screen">{app_name}へようこそ</string>
     <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when Dictate Keyboard is not enabled in the system">{app_name}がシステムで有効になっていないため、入力方法として使用できません。この問題を解決するには、ここをタップしてください。</string>
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when Dictate Keyboard is not selected as the default keyboard">{app_name}は、デフォルトの入力方法として選択されていません。この問題を解決するには、ここをタップしてください。</string>
-    <string name="dictate__settings_unreadable_card">設定を読み込めなかったため、Dictate は初期設定で起動しました。ここをタップすると元に戻せます。</string>
+    <string name="dictate__settings_unreadable_card">設定を読み込めなかったため、TypeBetter は初期設定で起動しました。ここをタップすると元に戻せます。</string>
     <string name="dictate__settings_unreadable_title">設定を復元しますか？</string>
-    <string name="dictate__settings_unreadable_message">起動時に Dictate は設定ファイルを読み込めませんでした。ファイルはそのまま保管し、初期設定で起動しています。「復元」でプロバイダー、キー、プロンプト、設定を元どおりに戻せます。「削除」で古いファイルを削除します。</string>
+    <string name="dictate__settings_unreadable_message">起動時に TypeBetter は設定ファイルを読み込めませんでした。ファイルはそのまま保管し、初期設定で起動しています。「復元」でプロバイダー、キー、プロンプト、設定を元どおりに戻せます。「削除」で古いファイルを削除します。</string>
     <string name="dictate__settings_restore_failed">古い設定はまだ読み込めません。</string>
     <string name="settings__search__title" comment="Title of the settings search screen">設定を検索</string>
     <string name="settings__search__placeholder" comment="Placeholder in the settings search field">設定を検索…</string>
@@ -642,7 +642,7 @@
     <string name="setup__select_ime__description">{app_name}はシステムで有効になりました。アクティブに使用するには、入力セレクターダイアログで{app_name}を選択して切り替えてください！</string>
     <string name="setup__select_ime__switch_keyboard_btn">キーボードを切り替える</string>
     <string name="setup__grant_notification_permission__title">通知を許可</string>
-    <string name="setup__grant_notification_permission__description">Android 13 以降、アプリは通知を表示する前に許可を求める必要があります。Dictate Keyboard は、フローティングボタンの録音中、音声モデルのダウンロード中、ウォッチがスマートフォン経由で音声入力しているときに通知を表示し、アプリがクラッシュした場合はクラッシュレポートを開きます。この設定はシステム設定でいつでも変更できます。</string>
+    <string name="setup__grant_notification_permission__description">Android 13 以降、アプリは通知を表示する前に許可を求める必要があります。TypeBetter Keyboard は、フローティングボタンの録音中、音声モデルのダウンロード中、ウォッチがスマートフォン経由で音声入力しているときに通知を表示し、アプリがクラッシュした場合はクラッシュレポートを開きます。この設定はシステム設定でいつでも変更できます。</string>
     <string name="setup__grant_notification_permission__btn">許可を与える</string>
     <string name="setup__finish_up__title">完了</string>
     <string name="setup__finish_up__description_p1">{app_name}はシステムで有効になり、カスタマイズの準備ができました。</string>
@@ -673,7 +673,7 @@
     <string name="backup_and_restore__restore__encrypted">このバックアップアーカイブはパスワードで保護されています。内容を表示するにはパスワードを入力してください。</string>
     <string name="backup_and_restore__restore__unlock">ロック解除</string>
     <string name="backup_and_restore__restore__wrong_password">パスワードが違います</string>
-    <string name="backup_and_restore__restore__encrypted_unreadable">このアーカイブを開けません。破損しているか、新しいバージョンの Dictate で作成されています。</string>
+    <string name="backup_and_restore__restore__encrypted_unreadable">このアーカイブを開けません。破損しているか、新しいバージョンの TypeBetter で作成されています。</string>
     <string name="backup_and_restore__back_up__files_ime_keyboard">キーボード拡張機能</string>
     <string name="backup_and_restore__back_up__files_ime_spelling">スペル拡張機能 / 辞書</string>
     <string name="backup_and_restore__back_up__files_ime_theme">テーマ拡張機能</string>
@@ -698,18 +698,18 @@
     <string name="backup_and_restore__restore__success">データの復元に成功しました！</string>
     <string name="backup_and_restore__restore__failure">データの復元に失敗しました: {error_message}</string>
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">Dictateエラーレポート</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">ご不便をおかけして申し訳ありませんが、予期しないエラーによりDictateがクラッシュしました。</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">このエラーを報告する場合、まずGitHubの課題トラッカーでクラッシュがまだ報告されていないか確認してください。\n報告されていない場合は、生成されたクラッシュログをコピーして新しい課題を開き、「%s」テンプレートを使用して説明と再現手順を入力し、最後に生成されたクラッシュログを貼り付けてください。これにより、Dictateをより良く、より安定させるのに役立ちます。ご協力ありがとうございます！</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">TypeBetterエラーレポート</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">ご不便をおかけして申し訳ありませんが、予期しないエラーによりTypeBetterがクラッシュしました。</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">このエラーを報告する場合、まずGitHubの課題トラッカーでクラッシュがまだ報告されていないか確認してください。\n報告されていない場合は、生成されたクラッシュログをコピーして新しい課題を開き、「%s」テンプレートを使用して説明と再現手順を入力し、最後に生成されたクラッシュログを貼り付けてください。これにより、TypeBetterをより良く、より安定させるのに役立ちます。ご協力ありがとうございます！</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">システムクリップボードにコピー</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">システムクリップボードにコピーしました</string>
     <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">システムクリップボードにコピーできません：クリップボードマネージャーのインスタンスが見つかりません</string>
     <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">課題トラッカーを開く (github.com)</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">閉じる</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Dictateエラーレポート</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Dictateの動作が停止しました…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">TypeBetterエラーレポート</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">TypeBetterの動作が停止しました…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">タップしてエラー詳細を表示</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Dictateが繰り返し動作を停止しているようです…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">TypeBetterが繰り返し動作を停止しているようです…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">無限クラッシュループを停止するため、以前のキーボードにフォールバックしています。タップしてエラー詳細を表示</string>
     <!-- Clipboard strings -->
     <string name="editing__back_to_keyboard">キーボードに戻る</string>
@@ -1133,14 +1133,9 @@
     <string name="quick_action__dictate_prompts">AIプロンプト</string>
     <string name="quick_action__dictate_prompts__tooltip">AIの言い換えプロンプトを開きます</string>
     <string name="about__based_on_floris__title">FlorisBoardベース</string>
-    <string name="about__based_on_floris__summary">Patrick Goldinger 氏と貢献者による FlorisBoard のフォーク、Apache 2.0。タップして開きます。</string>
-    <string name="about__made_by">DevEmperorが❤️を込めて制作\nSoli deo gloria ✝️</string>
     <string name="about__feedback__title">フィードバックとサポート</string>
-    <string name="about__feedback__summary">質問・不具合・アイデアをメールで送信</string>
-    <string name="about__feedback__email">contact@devemperor.net</string>
-    <string name="about__feedback__subject">Dictate Feedback</string>
     <string name="setup__provider__title">文字起こしの方法を選ぶ</string>
-    <string name="setup__provider__choose_intro">Dictate は AI サービスを使って音声を文字にします。ほとんどの方には上の2つの方法が合いますが、クラウドサービスをまったく使いたくない場合は、下にさらに2つあります。</string>
+    <string name="setup__provider__choose_intro">TypeBetter は AI サービスを使って音声を文字にします。ほとんどの方には上の2つの方法が合いますが、クラウドサービスをまったく使いたくない場合は、下にさらに2つあります。</string>
     <string name="setup__provider__choice_cloud_title">アプリ内でクレジットを購入</string>
     <string name="setup__provider__choice_cloud_body">Dictate Cloud：どこにもアカウント不要、API キーも不要。Google Play で音声入力の分数を購入でき、有効期限はありません。手軽な方法ですが、プロバイダーに直接申し込むより少し割高です。</string>
     <string name="setup__provider__choice_cloud_btn">クレジットパックを見る</string>
@@ -1152,15 +1147,15 @@
     <string name="setup__provider__choice_local_title">端末上で、オフライン</string>
     <string name="setup__provider__choice_local_body">音声モデルを一度ダウンロードするだけ。アカウントも費用も不要で、音声が端末から出ることはありません。</string>
     <string name="setup__provider__choice_server_title">自分のサーバー</string>
-    <string name="setup__provider__choice_server_body">自分で動かしている音声サーバー、または OpenAI 互換の任意のエンドポイントに Dictate を向けます。</string>
+    <string name="setup__provider__choice_server_body">自分で動かしている音声サーバー、または OpenAI 互換の任意のエンドポイントに TypeBetter を向けます。</string>
     <string name="setup__provider__local_intro">音声認識は端末上で動きます。どこにも送信されず、接続がなくても使えます。まずはモデルを1つ選んでダウンロードしてください。あとから追加や変更もできます。</string>
     <string name="setup__provider__local_recommended">あなたの言語におすすめ</string>
     <string name="setup__provider__local_bigger">より高精度ですが、ダウンロードはかなり大きくなります</string>
     <string name="setup__provider__local_download_btn">モデルをダウンロード</string>
     <string name="setup__provider__local_use_btn">このモデルを使う</string>
     <string name="setup__provider__local_all_models">すべてのモデルを表示</string>
-    <string name="setup__provider__intro">Dictateは、オンラインのAIサービスを利用して音声をテキストに変換します。利用するには、そのサービスのご自身の個人キーが必要です。</string>
-    <string name="setup__provider__what_is_key">APIキーは、Dictateがあなたに代わってサービスを利用できるようにする個人用パスワードのようなものです。作成は無料で、約2分で済みます。</string>
+    <string name="setup__provider__intro">TypeBetterは、オンラインのAIサービスを利用して音声をテキストに変換します。利用するには、そのサービスのご自身の個人キーが必要です。</string>
+    <string name="setup__provider__what_is_key">APIキーは、TypeBetterがあなたに代わってサービスを利用できるようにする個人用パスワードのようなものです。作成は無料で、約2分で済みます。</string>
     <string name="setup__provider__recommended"><b>Groq</b>をおすすめします。日常の音声入力に高速で無料です。</string>
     <string name="setup__provider__steps_groq">1. 下のボタンをタップしてGroqを開きます。\n2. Googleまたはメールアドレスでサインインします。\n3. 「Create API Key」をタップし、任意の名前を付けて確定します。\n4. キー（「gsk_」で始まります）をコピーします。\n5. ここに戻り、下の「APIキーを貼り付け」をタップします。</string>
     <string name="setup__provider__steps_generic">1. 下のボタンをタップして{provider}を開きます。\n2. アカウントがなければ作成します。\n3. 新しいAPIキーを作成してコピーします。\n4. ここに戻り、下の「APIキーを貼り付け」をタップします。</string>
@@ -1184,9 +1179,9 @@
     <string name="unit__percent__symbol">{v}%</string>
     <string name="unit__display_pixel__symbol">{v} dp</string>
     <string name="unit__display_pixel_per_seconds__symbol">{v} dp/秒</string>
-    <string name="dictate__accessibility_service_label">Dictate のフローティングボタン</string>
+    <string name="dictate__accessibility_service_label">TypeBetter のフローティングボタン</string>
     <string name="dictate__accessibility_service_summary">任意のテキスト欄に音声入力するためのフローティングボタンを表示します。</string>
-    <string name="dictate__accessibility_service_description">Dictate はフローティング音声入力ボタンにこのサービスを使用します。有効にすると、任意のアプリでテキスト欄がフォーカスされたことを検出し（ボタンを表示できるように）、文字起こしした音声をその欄に挿入します。Dictate はカーソル位置にテキストを配置するためにフォーカス中の欄のみを読み取り、その他の画面の内容を収集・保存・共有することはありません。</string>
+    <string name="dictate__accessibility_service_description">TypeBetter はフローティング音声入力ボタンにこのサービスを使用します。有効にすると、任意のアプリでテキスト欄がフォーカスされたことを検出し（ボタンを表示できるように）、文字起こしした音声をその欄に挿入します。TypeBetter はカーソル位置にテキストを配置するためにフォーカス中の欄のみを読み取り、その他の画面の内容を収集・保存・共有することはありません。</string>
     <string name="dictate__overlay_notification_channel">フローティング音声入力ボタン</string>
     <string name="dictate__overlay_notification_recording">録音中 — フローティングボタンをタップして文字起こし</string>
     <string name="dictate__overlay_notification_working">文字起こし中…</string>
@@ -1198,14 +1193,14 @@
     <string name="dictate__floating_button_service_enabled">有効 · タップしてシステム設定を開く</string>
     <string name="dictate__floating_button_service_disabled">まだ有効ではありません · タップして設定</string>
     <string name="dictate__floating_button_disclosure_title">フローティングボタンを有効にする</string>
-    <string name="dictate__floating_button_disclosure_message">フローティングボタンを表示するには、Dictate にユーザー補助サービスが必要です。任意のアプリでテキスト欄がフォーカスされたことを検出し（ボタンを表示できるように）、文字起こしした音声をその欄に挿入します。Dictate はテキストを配置するためにフォーカス中の欄のみを読み取り、その他の画面の内容を収集・保存・共有することはありません。\n\n次の画面で「Dictate のフローティングボタン」を見つけてオンにしてください。</string>
+    <string name="dictate__floating_button_disclosure_message">フローティングボタンを表示するには、TypeBetter にユーザー補助サービスが必要です。任意のアプリでテキスト欄がフォーカスされたことを検出し（ボタンを表示できるように）、文字起こしした音声をその欄に挿入します。TypeBetter はテキストを配置するためにフォーカス中の欄のみを読み取り、その他の画面の内容を収集・保存・共有することはありません。\n\n次の画面で「TypeBetter のフローティングボタン」を見つけてオンにしてください。</string>
     <string name="dictate__floating_button_disclosure_continue">設定を開く</string>
     <string name="dictate__floating_button_mic_title">マイクへのアクセス</string>
     <string name="dictate__floating_button_mic_summary">音声の録音に必要です · タップして許可</string>
     <string name="dictate__floating_button_show_when_title">表示するタイミング</string>
     <string name="dictate__floating_button_show_when_field">テキスト欄を選択したとき</string>
     <string name="dictate__floating_button_show_when_keyboard">キーボード表示中のみ</string>
-    <string name="dictate__floating_button_show_when_dictate_keyboard">Dictate キーボードでも表示</string>
+    <string name="dictate__floating_button_show_when_dictate_keyboard">TypeBetter キーボードでも表示</string>
     <string name="dictate__action_continue_recording">録音を続ける</string>
     <string name="dictate__a11y_mic_hold_local">端末で文字起こし</string>
     <string name="smartbar__a11y_show_actions">アクションを表示</string>
@@ -1235,12 +1230,12 @@
     <string name="dictate__floating_button_apps_scope_all">すべてのアプリ</string>
     <string name="dictate__floating_button_apps_scope_only">下で選んだアプリのみ</string>
     <string name="dictate__floating_button_apps_scope_except">下で選んだアプリ以外すべて</string>
-    <string name="dictate__floating_button_apps_note">選ばなかったアプリの上にボタンが描画されることはなく、Dictate がそのアプリのテキスト欄を読むこともありません。ユーザー補助サービス自体を拒むアプリには、サービスが有効であること自体は引き続き分かります。</string>
+    <string name="dictate__floating_button_apps_note">選ばなかったアプリの上にボタンが描画されることはなく、TypeBetter がそのアプリのテキスト欄を読むこともありません。ユーザー補助サービス自体を拒むアプリには、サービスが有効であること自体は引き続き分かります。</string>
     <string name="dictate__floating_button_apps_list_title">アプリ</string>
     <string name="dictate__floating_button_apps_search">アプリを検索</string>
     <string name="dictate__floating_button_apps_none">「{search_term}」に一致するアプリはありません</string>
     <string name="dictate__floating_button_design_title">ボタンのスタイル</string>
-    <string name="dictate__floating_button_no_prompts">言い換えプロンプトがまだありません。Dictate の設定で追加してください。</string>
+    <string name="dictate__floating_button_no_prompts">言い換えプロンプトがまだありません。TypeBetter の設定で追加してください。</string>
     <string name="dictate__floating_button_remember_position_summary_off">すべてのアプリで共通の位置。</string>
     <string name="dictate__floating_button_remember_position_summary_on">アプリごとにボタンの位置を保持します。</string>
     <string name="dictate__floating_button_remember_position_title">アプリごとに位置を記憶</string>
@@ -1268,7 +1263,7 @@
     <string name="setup__floating_button__skip_btn">スキップ — キーボードを使います</string>
     <string name="dictate__floating_button_badge_new">新着</string>
     <string name="dictate__panel_title">AIプロンプト</string>
-    <string name="dictate__panel_no_prompts">まだプロンプトがありません。Dictate設定の「言い換え」で追加してください。</string>
+    <string name="dictate__panel_no_prompts">まだプロンプトがありません。TypeBetter設定の「言い換え」で追加してください。</string>
     <string name="dictate__prompts_layout_title">プロンプトのレイアウト</string>
     <string name="dictate__prompts_layout_panel_label">別パネル</string>
     <string name="dictate__prompts_layout_panel_description">魔法の杖ボタンから専用パネルでプロンプトを開きます。</string>
@@ -1286,8 +1281,8 @@
     <string name="dictate__voice_input_transcribing">文字起こし中…</string>
     <string name="dictate__voice_input_stop">完了</string>
     <string name="dictate__voice_input_hint">タップで送信</string>
-    <string name="dictate__voice_ime_label">Dictate 音声入力</string>
-    <string name="dictate__error_no_api_key">APIキーが設定されていません – Dictate設定で構成してください。</string>
+    <string name="dictate__voice_ime_label">TypeBetter 音声入力</string>
+    <string name="dictate__error_no_api_key">APIキーが設定されていません – TypeBetter設定で構成してください。</string>
     <string name="dictate__error_transcription_failed">文字起こしに失敗しました。</string>
     <string name="dictate__error_unknown">文字起こし中に不明なエラーが発生しました。</string>
     <string name="dictate__error_rewording_failed">言い換えに失敗しました。</string>
@@ -1319,11 +1314,7 @@
     <string name="dictate__action_dismiss">閉じる</string>
     <string name="dictate__action_yes">はい</string>
     <string name="dictate__action_no">いいえ、結構です</string>
-    <string name="dictate__promo_rate_message">Dictateはいかがですか？</string>
-    <string name="dictate__promo_donate_message">Dictateを応援しませんか？</string>
-    <string name="dictate__promo_rate_action">評価する</string>
-    <string name="dictate__promo_donate_action">寄付する</string>
-    <string name="dictate__promo_changelog_message">Dictateが更新されました</string>
+    <string name="dictate__promo_changelog_message">TypeBetterが更新されました</string>
     <string name="dictate__promo_changelog_action">詳細</string>
     <string name="dictate__title">Dictate</string>
     <string name="dictate__provider_title">文字起こしプロバイダー</string>
@@ -1570,7 +1561,7 @@
     <string name="dictate__command_word_summary">「{word}」で始まる音声入力は音声指示として実行されます</string>
     <string name="dictate__command_word_placeholder">ジャービス</string>
     <string name="dictate__command_word_info_title">コマンドワードについて</string>
-    <string name="dictate__command_word_info_description">Dictate は通常、話した内容をそのまま書き取ります。コマンドワードを設定すると、その語で始まる音声入力は指示として扱われます。語は取り除かれ、残りが（選択中のテキストがあればそれと一緒に）AI へ送られます。\n\n「ジャービス、もっと丁寧にして」は選択範囲を書き換えます。「ジャービス、日本の首都はどこ」は答えを入力欄に書き込みます。つまり、タップする代わりに名前を呼んで使う音声指示ボタンです。\n\nこの語は音声入力のいちばん最初にあるときだけ、しかも単独の語としてのみ有効です。文の書き出しにめったに使わない語を選んでください。</string>
+    <string name="dictate__command_word_info_description">TypeBetter は通常、話した内容をそのまま書き取ります。コマンドワードを設定すると、その語で始まる音声入力は指示として扱われます。語は取り除かれ、残りが（選択中のテキストがあればそれと一緒に）AI へ送られます。\n\n「ジャービス、もっと丁寧にして」は選択範囲を書き換えます。「ジャービス、日本の首都はどこ」は答えを入力欄に書き込みます。つまり、タップする代わりに名前を呼んで使う音声指示ボタンです。\n\nこの語は音声入力のいちばん最初にあるときだけ、しかも単独の語としてのみ有効です。文の書き出しにめったに使わない語を選んでください。</string>
     <string name="dictate__auto_formatting_title">自動書式設定</string>
     <string name="dictate__auto_formatting_summary">話した書式の指示をMarkdown（見出し、リストなど）に変換します</string>
     <string name="dictate__system_prompt_title">言い換えの指示</string>
@@ -1683,18 +1674,17 @@
     <string name="dictate__import_not_audio">このファイルには音声が含まれていません。</string>
     <string name="dictate__import_only_first">最初のファイルのみ文字起こしします。他の {count} 件は対象外です。</string>
     <string name="dictate__setup_description">マイクで音声入力を始められるように、AIプロバイダーとAPIキーを設定してください。</string>
-    <string name="dictate__setup_configure_btn">Dictateを設定</string>
+    <string name="dictate__setup_configure_btn">TypeBetterを設定</string>
     <string name="setup__grant_mic_permission__title">マイクへのアクセス</string>
-    <string name="setup__grant_mic_permission__description">Dictateは、文字起こしのために音声を録音するマイクへのアクセスが必要です。</string>
+    <string name="setup__grant_mic_permission__description">TypeBetterは、文字起こしのために音声を録音するマイクへのアクセスが必要です。</string>
     <string name="setup__grant_mic_permission__btn">マイクの権限を許可</string>
     <string name="changelog__dialog_title">新着情報</string>
     <string name="changelog__view_all">すべての変更を表示</string>
-    <string name="changelog__intro">Dictateが更新されました。新着情報はこちら:</string>
+    <string name="changelog__intro">TypeBetterが更新されました。新着情報はこちら:</string>
     <string name="changelog__version_header">バージョン{version}</string>
-    <string name="changelog__donate">Dictateはいかがですか？ ここをタップして開発を応援してください ♥</string>
-    <string name="changelog__current">• まったく新しいキーボード: Dictateは、音声パネルを開く専用マイクキーを備えた本格的な多言語レイアウトキーボードとして提供されるようになりました。\n• 自分のAIを使用: OpenAI互換の任意のプロバイダーを選び、設定 → DictateでAPIキーを入力します。\n• 選択したモデルによるスマートな書式設定と言い換え。\n• 以前のDictateアプリの設定が自動的にインポートされます。</string>
+    <string name="changelog__current">• まったく新しいキーボード: TypeBetterは、音声パネルを開く専用マイクキーを備えた本格的な多言語レイアウトキーボードとして提供されるようになりました。\n• 自分のAIを使用: OpenAI互換の任意のプロバイダーを選び、設定 → DictateでAPIキーを入力します。\n• 選択したモデルによるスマートな書式設定と言い換え。\n• 以前のTypeBetterアプリの設定が自動的にインポートされます。</string>
     <string name="changelog__v4_1_0">• 新機能: キーボードから直接絵文字を検索できます。\n• 新しい文字起こしプロバイダー: Soniox。\n• 直前のディクテーションを再挿入し、キーボードを閉じたときに中断された録音を復元できます。\n• プロンプトバーがライブ更新されるようになりました。プロンプトを長押しすると編集できます。\n• AIプロバイダー画面に、有効な文字起こしプロバイダーと言い換えプロバイダーの両方が表示されるようになりました。\n• 録音ボタンが大きくなり、タップしやすくなりました。\n• 修正: 一部の言語でサポートの案内が固まってバーを覆ってしまう問題を修正しました。プロンプト・キーボード・テーマを選択した状態でバックアップが失敗しなくなりました。保存したAPIキーがアップデート後も保持されます。</string>
-    <string name="changelog__v4_1_1">• 修正: 一部の端末でアクセントカラーが緑色に表示されることがありました。キーやボタンが本来のDictateブルーに戻りました。</string>
+    <string name="changelog__v4_1_1">• 修正: 一部の端末でアクセントカラーが緑色に表示されることがありました。キーやボタンが本来のTypeBetterブルーに戻りました。</string>
     <!-- Dictate on-device (offline) models -->
     <string name="dictate__local_models_header">端末上で動作します — 音声は送信されません。開始するにはモデルをダウンロードしてください。</string>
     <string name="dictate__local_models_live_header">ライブ（ストリーミング）</string>
@@ -1732,7 +1722,7 @@
     <string name="dictate__floating_button_copy_to_clipboard_summary_on">各口述はクリップボードにもコピーされ、挿入が失敗しても手動で貼り付けられます。一部の端末ではクリップボードの通知が表示される場合があります。</string>
     <string name="dictate__floating_button_copy_to_clipboard_summary_off">口述は挿入されるだけで、クリップボードにはコピーされません。</string>
     <string name="dictate__floating_button_menu_group">長押しメニュー</string>
-    <string name="dictate__floating_button_menu_settings_title">Dictate の設定</string>
+    <string name="dictate__floating_button_menu_settings_title">TypeBetter の設定</string>
     <string name="dictate__floating_button_side_buttons_title">追加のボタン</string>
     <string name="dictate__mappings_add">マッピングを追加</string>
     <string name="dictate__mappings_editor_title">マッピング</string>
@@ -1781,8 +1771,6 @@
     <string name="dictate__providers_rewording_single_call_note">現在は使用されていません。文字起こしプロバイダーがシングルコール内で書き換えを行います。</string>
     <string name="dictate__wear_title">Wear OS</string>
     <string name="dictate__wear_summary">ペアリングした時計から音声入力するためのオプション</string>
-    <string name="dictate__wear_install_title">時計に Dictate をインストール</string>
-    <string name="dictate__wear_install_summary">Play Store を開きます — ペアリングした Wear OS 3+ の時計で、時計をインストール先に選びます。</string>
     <string name="dictate__wear_auto_rewording_title">時計の音声入力を自動で書き換える</string>
     <string name="dictate__wear_auto_rewording_summary">時計からの音声入力を、スマートフォンと同じように書き換えます。</string>
     <string name="quick_action__system_prev_input_method">キーボード切替</string>
@@ -1844,7 +1832,7 @@
     <string name="dictate__history_export_all_result">{written} 件を書き出し、{skipped} 件は既存、{failed} 件が失敗</string>
     <string name="dictate__history_export_last_failure">{when}に書き出しが失敗しました。「すべて今すぐ書き出す」で不足分を補えます。</string>
     <string name="dictate__history_export_warning_title">そこに入るもの</string>
-    <string name="dictate__history_export_warning_message">このフォルダーには、これ以降のすべての音声入力の文字が保存されます。設定すれば録音も保存されます。クラウドクライアント、バックアップツール、他のアプリなど、このフォルダーを同期するものはすべて、その文字起こしを端末の外へ持ち出します。\n\n接続を解除するまで Dictate は書き出しを続け、フォルダーから削除することはありません。履歴から消えた項目もフォルダーには残ります。パスワード欄とシークレット入力は記録されないため、書き出されることもありません。</string>
+    <string name="dictate__history_export_warning_message">このフォルダーには、これ以降のすべての音声入力の文字が保存されます。設定すれば録音も保存されます。クラウドクライアント、バックアップツール、他のアプリなど、このフォルダーを同期するものはすべて、その文字起こしを端末の外へ持ち出します。\n\n接続を解除するまで TypeBetter は書き出しを続け、フォルダーから削除することはありません。履歴から消えた項目もフォルダーには残ります。パスワード欄とシークレット入力は記録されないため、書き出されることもありません。</string>
     <string name="dictate__history_export_needs_history">フォルダーへの書き出しは履歴に記録された内容を書き出すため、履歴をオンにする必要があります。</string>
     <string name="dictate__history_export_enable_history">履歴をオンにする</string>
     <string name="dictate__history_export_pick_failed">そのフォルダーへの書き込み権限を取得できませんでした</string>
@@ -1867,15 +1855,15 @@
     <string name="dictate__stats_reset_confirm_title">統計をリセットしますか？</string>
     <string name="dictate__stats_reset_confirm_msg">音声入力の統計をすべて完全に削除します。取り消せません。</string>
     <string name="dictate__stats_share">共有</string>
-    <string name="dictate__stats_share_text">Dictate で %1$s 節約しました — %2$s 回、%3$s 語。🎤</string>
+    <string name="dictate__stats_share_text">TypeBetter で %1$s 節約しました — %2$s 回、%3$s 語。🎤</string>
     <string name="dictate__stats_view">統計を見る</string>
     <string name="dictate__stats_milestones_title">マイルストーンのお祝い</string>
     <string name="dictate__stats_milestones_summary">節約時間や回数のマイルストーン到達時に一度お祝い</string>
     <string name="dictate__stats_milestone_title">マイルストーン達成 🎉</string>
-    <string name="dictate__stats_milestone_time">Dictate で %s 節約しました — お見事!</string>
-    <string name="dictate__stats_milestone_count">Dictate で %s 回の音声入力に到達！</string>
-    <string name="dictate__promo_milestone_time">Dictate で %s 節約! 🎉</string>
-    <string name="dictate__promo_milestone_count">Dictate で %s 回! 🎉</string>
+    <string name="dictate__stats_milestone_time">TypeBetter で %s 節約しました — お見事!</string>
+    <string name="dictate__stats_milestone_count">TypeBetter で %s 回の音声入力に到達！</string>
+    <string name="dictate__promo_milestone_time">TypeBetter で %s 節約! 🎉</string>
+    <string name="dictate__promo_milestone_count">TypeBetter で %s 回! 🎉</string>
     <string name="dictate__promo_milestone_action">統計</string>
     <string name="dictate__reasoning_effort_title">推論の労力</string>
     <string name="dictate__reasoning_effort_off">プロバイダーの既定</string>
@@ -1894,7 +1882,7 @@
     <string name="dictate__reasoning_effort_high_summary">最も思考、低速</string>
     <string name="dictate__reasoning_effort_custom">カスタム</string>
     <string name="dictate__action_save_audio">音声を保存</string>
-    <string name="dictate__audio_saved">音声を Downloads/Dictate に保存しました: %s</string>
+    <string name="dictate__audio_saved">音声を Downloads/TypeBetter に保存しました: %s</string>
     <string name="dictate__audio_save_failed">音声を保存できませんでした</string>
     <string name="dictate__instant_recording_mode_off">オフ</string>
     <string name="dictate__instant_recording_mode_always">キーボードを開くたびに</string>
@@ -1954,14 +1942,14 @@
     <string name="apptour__badge_highlight">★ 注目</string>
     <string name="apptour__intro_eyebrow">Version 5.0</string>
     <string name="apptour__intro_title">かんたんツアー</string>
-    <string name="apptour__intro_body">Dictate 5.0 の新機能をご紹介します。要点を 1 分以内で。どのページでも「試す」をタップすれば、その設定に直接ジャンプできます。</string>
+    <string name="apptour__intro_body">TypeBetter 5.0 の新機能をご紹介します。要点を 1 分以内で。どのページでも「試す」をタップすれば、その設定に直接ジャンプできます。</string>
     <string name="apptour__glide_eyebrow">キーボード</string>
     <string name="apptour__glide_title">スワイプで入力</string>
-    <string name="apptour__glide_body">指をキーからキーへ滑らせると、Dictate がその軌跡を単語全体に変換します。言語ごとに専用の辞書があり、必要に応じてダウンロードされます。ジェスチャーからオンにしてください。</string>
+    <string name="apptour__glide_body">指をキーからキーへ滑らせると、TypeBetter がその軌跡を単語全体に変換します。言語ごとに専用の辞書があり、必要に応じてダウンロードされます。ジェスチャーからオンにしてください。</string>
     <string name="apptour__glide_cta">グライド入力を設定</string>
     <string name="apptour__suggestions_eyebrow">キーボード</string>
     <string name="apptour__suggestions_title">自動修正と候補</string>
-    <string name="apptour__suggestions_body">入力中、Dictate は適切な単語を提案し、打ち間違いをさりげなく直します。実際に入力した単語は候補バーに残るので、ワンタップでどんな修正も取り消せます。</string>
+    <string name="apptour__suggestions_body">入力中、TypeBetter は適切な単語を提案し、打ち間違いをさりげなく直します。実際に入力した単語は候補バーに残るので、ワンタップでどんな修正も取り消せます。</string>
     <string name="apptour__suggestions_cta">候補を調整</string>
     <string name="apptour__realtime_eyebrow">文字起こし</string>
     <string name="apptour__realtime_title">リアルタイム文字起こし</string>
@@ -1994,16 +1982,16 @@
     <string name="apptour51__continue_to">{version} へ進む</string>
     <string name="apptour51__intro_eyebrow">バージョン 5.1</string>
     <string name="apptour51__intro_title">5.1 の新機能</string>
-    <string name="apptour51__intro_body">Dictate は 5.0 から大きく成長しました。ここでは 5.1 の要点をご紹介します。どのページでも「試す」をタップすれば、その機能に直接ジャンプできます。</string>
+    <string name="apptour51__intro_body">TypeBetter は 5.0 から大きく成長しました。ここでは 5.1 の要点をご紹介します。どのページでも「試す」をタップすれば、その機能に直接ジャンプできます。</string>
     <string name="apptour51__history_eyebrow">文字起こし</string>
     <string name="apptour51__history_title">文字起こし履歴</string>
     <string name="apptour51__history_body">すべての音声入力が、検索可能な履歴に保存されるようになりました。過去の文字起こしをワンタップで再挿入したり、元の音声を再生したり、再度文字起こししたり、よく使うものをピン留めしたりできます。専用画面ですべてを管理でき、音声録音を保持する期間も設定できます。</string>
     <string name="apptour51__longform_eyebrow">文字起こし</string>
     <string name="apptour51__longform_title">長文の音声入力</string>
-    <string name="apptour51__longform_body">好きなだけ話してください。長い録音は自動的にセグメントに分割され、話し続けている間にバックグラウンドで文字起こしされます。だからテキストがより早く手に入り、長さの制限にぶつかることもありません。自分でセグメントを区切ることも、Dictate に自然な区切りを検出させることもできます。</string>
+    <string name="apptour51__longform_body">好きなだけ話してください。長い録音は自動的にセグメントに分割され、話し続けている間にバックグラウンドで文字起こしされます。だからテキストがより早く手に入り、長さの制限にぶつかることもありません。自分でセグメントを区切ることも、TypeBetter に自然な区切りを検出させることもできます。</string>
     <string name="apptour51__gif_eyebrow">キーボード</string>
     <string name="apptour51__gif_title">GIF 検索</string>
-    <string name="apptour51__gif_body">Dictate を離れることなく GIF を見つけて送信できます。GIF パネルを開き、何でも検索して、そのままチャットに挿入できます。Gboard 風の高速なピッカーが組み込まれています。</string>
+    <string name="apptour51__gif_body">TypeBetter を離れることなく GIF を見つけて送信できます。GIF パネルを開き、何でも検索して、そのままチャットに挿入できます。Gboard 風の高速なピッカーが組み込まれています。</string>
     <string name="apptour51__classic_eyebrow">クラシックレイアウト</string>
     <string name="apptour51__classic_title">クラシックレイアウトを刷新</string>
     <string name="apptour51__classic_body">キーボードなしの音声入力画面が大きく進化しました：ドラッグ＆ドロップで自由に配置できるアクション行、長文録音のコントロール、1 行または 2 行のプロンプト、常に使えるバックスペース、Enter キーの文字ポップアップ、そして片手でも使いやすい任意の 2 つ目の「キーボード切り替え」ボタン。</string>
@@ -2018,14 +2006,13 @@
     <string name="apptour51__more_body">小さな改良もたくさんあります：設定で使用する文字起こしの言語を選べる、停止ボタンが実行中のリクエストを本当にキャンセルするようになった、API キーの表示/非表示切り替え、言語をまたぐ自動修正のない多言語入力 — さらにクラシックレイアウトや数字パッドなど、さまざまな修正も。</string>
     <string name="apptour51__outro_eyebrow">これが 5.1</string>
     <string name="apptour51__outro_title">アップデートをお楽しみください</string>
-    <string name="apptour51__outro_body">Dictate をご利用いただきありがとうございます！ 毎日役立っているなら、少しの寄付がこのプロジェクトを支えます。これらのツアーはいつでも「設定 › アプリについて」から見直せます。</string>
     <string name="apptour52__cta_try">試す</string>
-    <string name="apptour52__intro_eyebrow">Dictate 5.2</string>
+    <string name="apptour52__intro_eyebrow">TypeBetter 5.2</string>
     <string name="apptour52__intro_title">どこでも音声入力</string>
-    <string name="apptour52__intro_body">今回のリリースで Dictate は自前のキーボードを超えます。スマホの音声入力として、どこからでも話しかける指示として、そして長い音声入力を整えるために。新機能はこちらです。</string>
+    <string name="apptour52__intro_body">今回のリリースで TypeBetter は自前のキーボードを超えます。スマホの音声入力として、どこからでも話しかける指示として、そして長い音声入力を整えるために。新機能はこちらです。</string>
     <string name="apptour52__voiceinput_eyebrow">システム全体の音声入力</string>
-    <string name="apptour52__voiceinput_title">どのキーボードからでも Dictate</string>
-    <string name="apptour52__voiceinput_body">Dictate がシステムの音声入力として登録されるようになりました。他のキーボードやアプリのマイクボタンが Dictate 経由で文字起こしします — あなたのプロバイダー、プロンプト、端末内モデルで。キーボード一覧で「Dictate 音声入力」を有効にし、音声入力方式として選んでください。（Gboard はマイクを Google に固定しているため、システム設定に従うキーボードをお使いください。）</string>
+    <string name="apptour52__voiceinput_title">どのキーボードからでも TypeBetter</string>
+    <string name="apptour52__voiceinput_body">TypeBetter がシステムの音声入力として登録されるようになりました。他のキーボードやアプリのマイクボタンが TypeBetter 経由で文字起こしします — あなたのプロバイダー、プロンプト、端末内モデルで。キーボード一覧で「TypeBetter 音声入力」を有効にし、音声入力方式として選んでください。（Gboard はマイクを Google に固定しているため、システム設定に従うキーボードをお使いください。）</string>
     <string name="apptour52__liveprompt_eyebrow">自由な音声コマンド</string>
     <string name="apptour52__liveprompt_title">AI にやることを伝える — どこでも</string>
     <string name="apptour52__liveprompt_body">フローティングボタンを長押しでメニューを開き、「Live prompt」をタップして話すだけ。「明日の打ち合わせを丁寧に断る文を書いて」「上のテキストをスペイン語に訳して」。選択中のテキストは文脈として使われ、未選択なら AI がゼロから書きます。</string>
@@ -2037,7 +2024,7 @@
     <string name="apptour52__trim_body">文の途中で考え込みましたか？ 数秒を超える無音は送信前にカットされます — 話した言葉はすべて残り、無駄な時間だけが消えます。アップロードが短くなるので待ち時間もコストも減ります。</string>
     <string name="apptour52__paragraphs_eyebrow">読みやすい長文</string>
     <string name="apptour52__paragraphs_title">自動で段落分け</string>
-    <string name="apptour52__paragraphs_body">長い音声入力が一続きの文章の壁になりません。語数を設定すると、Dictate は次の文末で新しい段落を始めます — 決定論的で、素の文字起こしのみに適用され、AI が整形したテキストには手を加えません。</string>
+    <string name="apptour52__paragraphs_body">長い音声入力が一続きの文章の壁になりません。語数を設定すると、TypeBetter は次の文末で新しい段落を始めます — 決定論的で、素の文字起こしのみに適用され、AI が整形したテキストには手を加えません。</string>
     <string name="apptour52__smartturn_eyebrow">より賢い長文モード</string>
     <string name="apptour52__smartturn_title">考えがまとまった所で区切る</string>
     <string name="apptour52__smartturn_body">長文モードで端末内の Smart Turn v3 モデルを使い、単なる無音ではなく「本当に話し終えたか」で区切れるようになりました。任意で、必要なときにダウンロードされます。</string>
@@ -2048,12 +2035,12 @@
     <string name="apptour52__outro_title">よい音声入力を</string>
     <string name="apptour52__outro_body">さらに内部も改善：音声入力中は画面が消えず、端末内モデルはアイドル時にメモリを解放し、ウォッチからの音声入力は接続断でも失われず、ドイツ語の自動修正がウムラウトに対応しました。各ツアーは設定 › このアプリについて から見直せます。</string>
     <string name="apptour53__cta_try">試す</string>
-    <string name="apptour53__intro_eyebrow">Dictate 5.3</string>
+    <string name="apptour53__intro_eyebrow">TypeBetter 5.3</string>
     <string name="apptour53__intro_title">押して、話して、完了</string>
     <string name="apptour53__intro_body">今回は、いちばんよく使う 2 つ ― スマホに話すことと、スマホで打つこと ― が主役です。どちらも速くなり、どちらも前より邪魔をしなくなりました。</string>
     <string name="apptour53__pushtotalk_eyebrow">押して話す</string>
     <string name="apptour53__pushtotalk_title">マイクを押さえて、離すと送信</string>
-    <string name="apptour53__pushtotalk_body">ボイスメッセージのように、マイクキーを押さえたまま話し、離すと送信されます。左へスワイプすれば録音を破棄、上へドラッグすれば固定されて手が自由になります。短いタップはこれまでどおりです。Dictate の設定でオンにできます。</string>
+    <string name="apptour53__pushtotalk_body">ボイスメッセージのように、マイクキーを押さえたまま話し、離すと送信されます。左へスワイプすれば録音を破棄、上へドラッグすれば固定されて手が自由になります。短いタップはこれまでどおりです。TypeBetter の設定でオンにできます。</string>
     <string name="apptour53__autocorrect_eyebrow">作り直した自動修正</string>
     <string name="apptour53__autocorrect_title">打ち間違いではなく、指の動きを読みます</string>
     <string name="apptour53__autocorrect_body">修正は、打ち終えた単語からの推測ではなく、実際にキーのどこに触れたかを起点に、入力しながら候補語を探索して決まるようになりました。当社のテストセットでは正解率が 88 % から 98 % へ。速く雑に打つときほど差が出ます。</string>
@@ -2071,7 +2058,7 @@
     <string name="apptour53__prediction_body">候補バーが、あなたの書き方から学んだ「次に来やすい語」を出すようになりました。どの語も長押しで辞書に追加できるので、固有名詞や専門用語が勝手に直されることもなくなります。</string>
     <string name="apptour53__ownserver_eyebrow">自分のサーバー</string>
     <string name="apptour53__ownserver_title">セルフホストでもリアルタイムに</string>
-    <string name="apptour53__ownserver_body">OpenAI の realtime プロトコルを話すなら、自分のサーバーでもリアルタイム文字起こしができます。その先に休止中のマシンがあるなら、Dictate が早めに起こすので、最初のリクエストが起動を待たされません。</string>
+    <string name="apptour53__ownserver_body">OpenAI の realtime プロトコルを話すなら、自分のサーバーでもリアルタイム文字起こしができます。その先に休止中のマシンがあるなら、TypeBetter が早めに起こすので、最初のリクエストが起動を待たされません。</string>
     <string name="apptour53__outro_eyebrow">以上が 5.3 です</string>
     <string name="apptour53__outro_title">よい音声入力を</string>
     <string name="apptour53__outro_body">ほかにも細かな改善が多数：各プロバイダーに固有のロゴ、録音インジケーターは静止・脈動・音声反応から選択可、プロンプト出力は元の文字起こしを併記可能、段落は略語の後で切れなくなりました。各ツアーは設定 › このアプリについて から見直せます。</string>
@@ -2079,7 +2066,7 @@
     <string name="apptour60__cta_try">試してみる</string>
     <string name="apptour60__art_minutes">分</string>
     <string name="apptour60__art_speed">1.5×</string>
-    <string name="apptour60__intro_eyebrow">Dictate 6.0</string>
+    <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">クレジット、中国語、より安い音声入力</string>
     <string name="apptour60__intro_body">このバージョンでは2つ目の入口が加わりました。自分のAPIキーを用意する代わりにクレジットを購入できます。さらに中国語のピンイン入力、辞書が増えた7言語、そして費用が下がる録音処理も。</string>
     <string name="apptour60__cloud_eyebrow">新登場: Dictate Cloud</string>
@@ -2102,21 +2089,21 @@
     <string name="apptour60__more_body">停止ボタンの長押しで、止まったままの文字起こしを取り消せます。フローティングボタンは確認できていない成功をもう報告せず、画面と一緒に消えます。グライド入力が自分で追加した単語を認識するようになりました。更新直後のクラッシュも修正済みです。</string>
     <string name="apptour60__outro_eyebrow">以上が6.0です</string>
     <string name="apptour60__outro_title">どうぞお楽しみください</string>
-    <string name="apptour60__outro_body">Dictateをどう使っていても — 自分のキー、自分のサーバー、端末内モデル、クレジットのどれでも — ほかの方法に変更はありません。各ツアーは設定 › このアプリについて から見直せます。</string>
+    <string name="apptour60__outro_body">TypeBetterをどう使っていても — 自分のキー、自分のサーバー、端末内モデル、クレジットのどれでも — ほかの方法に変更はありません。各ツアーは設定 › このアプリについて から見直せます。</string>
     <string name="apptour61__cta_try">試す</string>
     <string name="apptour61__art_folder">ステッカー</string>
     <string name="apptour61__art_share">共有先</string>
     <string name="apptour61__art_typed">こんにちわ</string>
     <string name="apptour61__art_fixed">こんにちは</string>
-    <string name="apptour61__intro_eyebrow">Dictate 6.1</string>
+    <string name="apptour61__intro_eyebrow">TypeBetter 6.1</string>
     <string name="apptour61__intro_title">ステッカー、音声メッセージ、そしてついに打ち間違いを見つける自動修正</string>
-    <string name="apptour61__intro_body">自分のステッカーが入ったフォルダをキーボードに教え、音声メッセージを Dictate に直接共有して内容を確かめ、見逃すように作られていた間違いをついに見つける自動修正を使えます。</string>
+    <string name="apptour61__intro_body">自分のステッカーが入ったフォルダをキーボードに教え、音声メッセージを TypeBetter に直接共有して内容を確かめ、見逃すように作られていた間違いをついに見つける自動修正を使えます。</string>
     <string name="apptour61__stickers_eyebrow">新機能: 自分のステッカー</string>
     <string name="apptour61__stickers_title">スマホのフォルダを、キーボードに</string>
-    <string name="apptour61__stickers_body">Dictate に任意のフォルダを教えると、その中の画像がステッカーになります。サブフォルダはタブになり、お気に入りと履歴もそれぞれ持ちます。どのアプリからでも共有メニューで追加でき、キーボードを離れずに削除できます。チャットアプリが実際に受け取るものは、受け取ると称しているものとは違います。だから各ステッカーは取り込み時に一度だけ整えられ、あとはそこから送られるだけです。</string>
-    <string name="apptour61__share_eyebrow">新機能: Dictate に共有</string>
+    <string name="apptour61__stickers_body">TypeBetter に任意のフォルダを教えると、その中の画像がステッカーになります。サブフォルダはタブになり、お気に入りと履歴もそれぞれ持ちます。どのアプリからでも共有メニューで追加でき、キーボードを離れずに削除できます。チャットアプリが実際に受け取るものは、受け取ると称しているものとは違います。だから各ステッカーは取り込み時に一度だけ整えられ、あとはそこから送られるだけです。</string>
+    <string name="apptour61__share_eyebrow">新機能: TypeBetter に共有</string>
     <string name="apptour61__share_title">その音声メッセージの内容を知る</string>
-    <string name="apptour61__share_body">Dictate が音声と動画の共有メニューに並ぶようになりました。音声メッセージを共有すると画面が開き、自動で文字起こしを始めます。入力欄を探す必要も、ボタンを押す必要もありません。文字起こしは検索でき、長い録音は断られる代わりに分割して処理されます。</string>
+    <string name="apptour61__share_body">TypeBetter が音声と動画の共有メニューに並ぶようになりました。音声メッセージを共有すると画面が開き、自動で文字起こしを始めます。入力欄を探す必要も、ボタンを押す必要もありません。文字起こしは検索でき、長い録音は断られる代わりに分割して処理されます。</string>
     <string name="apptour61__autocorrect_eyebrow">自動修正</string>
     <string name="apptour61__autocorrect_title">見えないように作られていた打ち間違い</string>
     <string name="apptour61__autocorrect_body">単語を修正してよいか決める規則は、隣のキーの手前まで滑った指は通すのに、隣のキーにきちんと着地した指は決して通しませんでした。ところが普通の打ち間違いはまさにそれです。これを直し、どれくらい積極的に直すかを自分で設定できるようにしました。スペースキーが選ぼうとしている語はアクセントカラーで示され、その直後のバックスペースは入力した通りの文字を返します。</string>
@@ -2137,7 +2124,7 @@
     <string name="apptour62__art_word">ゾーヤ</string>
     <string name="apptour62__art_emoji_word">ケーキ</string>
     <string name="apptour62__art_emoji">🍰</string>
-    <string name="apptour62__intro_eyebrow">Dictate 6.2</string>
+    <string name="apptour62__intro_eyebrow">TypeBetter 6.2</string>
     <string name="apptour62__intro_title">あなたの言葉を覚え、5つの新しい装いに</string>
     <string name="apptour62__intro_body">どの辞書も知らない語をキーボードが覚えられるようになり、キーの向こうにアプリを透かせるようになり、左右の親指がそれぞれの半分を持てるようになりました。さらに、毎日の作業を助ける小さな機能をいくつか。</string>
     <string name="apptour62__learning_eyebrow">新機能: 入力しながら覚える</string>
@@ -2145,7 +2132,7 @@
     <string name="apptour62__learning_body">名前や専門用語を何度か入力すると、キーボードがそれを覚え、誤りとして印を付けるのをやめて候補に出すようになります。この更新で、以前オフにしていた方も含め、全員で有効になります。シークレットモード、パスワード欄、キーを一つずつ打っていないものからは何も覚えません。すべてこの端末の中だけに残り、下のボタンから一覧と切り替えスイッチを開けます。</string>
     <string name="apptour62__themes_eyebrow">5つの新しいテーマ</string>
     <string name="apptour62__themes_title">Glass、Sand、Deep、そして暗い E-Ink</string>
-    <string name="apptour62__themes_body">Dictate Glass はキーとキーのすき間からアプリを透かせつつ、キー自体は文字が読める程度の不透明さを保ちます。Glass Clear はさらに透かし、見た目は上ですが、キーボードの背後まで描くアプリではその文字が透けてしまいます。Sand は暖かい明るいテーマ、Deep は落ち着いた暗いテーマ、そして E-Ink にようやく夜版ができました。自動切り替えが暗くなってから白いキーボードを出すことはもうありません。</string>
+    <string name="apptour62__themes_body">TypeBetter Glass はキーとキーのすき間からアプリを透かせつつ、キー自体は文字が読める程度の不透明さを保ちます。Glass Clear はさらに透かし、見た目は上ですが、キーボードの背後まで描くアプリではその文字が透けてしまいます。Sand は暖かい明るいテーマ、Deep は落ち着いた暗いテーマ、そして E-Ink にようやく夜版ができました。自動切り替えが暗くなってから白いキーボードを出すことはもうありません。</string>
     <string name="apptour62__split_eyebrow">新機能: 分割キーボード</string>
     <string name="apptour62__split_title">手を伸ばさずに、両方の親指で</string>
     <string name="apptour62__split_body">片手モードやフローティングの隣に加わった新しいクイック操作が、各行を左右に引き離し、それぞれの親指が自分の側だけで済むようにします。QWERTY だけでなくすべての配列が分割されます。継ぎ目はキーの幅から計算されるので、配列ごとに書き込む必要がないからです。横向きでは、両方に余裕があるかぎりアプリが見えたままになります。</string>
@@ -2166,7 +2153,7 @@
     <string name="apptour62__gestures_body">記号キーを押したまま目当ての文字へ滑らせて離すと、その文字が入り、文字キーはもう戻っています。行き来の切り替えは要りません。スペースキーの上方向のスワイプは、直前の単語ではなく一つ上の行に届くようになりました。キーどうしの間隔も、違いがはっきり見える幅で調節できます。</string>
     <string name="apptour62__export_eyebrow">新機能: 口述をファイルに</string>
     <string name="apptour62__export_title">すべての口述を、選んだフォルダーへ</string>
-    <string name="apptour62__export_body">フォルダーを一度選んでおけば、終わった口述はその瞬間に、プレーンテキストのファイルとしてそこにも書き出されます。そのフォルダーを見ているもの——メモアプリ、同期ツール、バックアップ——が、Dictate がその言葉を覚えなくてもあなたの文章を受け取れます。</string>
+    <string name="apptour62__export_body">フォルダーを一度選んでおけば、終わった口述はその瞬間に、プレーンテキストのファイルとしてそこにも書き出されます。そのフォルダーを見ているもの——メモアプリ、同期ツール、バックアップ——が、TypeBetter がその言葉を覚えなくてもあなたの文章を受け取れます。</string>
     <string name="apptour62__more_eyebrow">さらに</string>
     <string name="apptour62__more_title">細かな改善がたくさん</string>
     <string name="apptour62__more_body">候補は英語だけでなくどの言語でも、カーソルの前の2語を見るようになりました。バックアップは API キーを含めずに作れるので、そのまま渡せます。Azure 自身の文字起こしモデルに届くようになり、オフライン用のモデルを選ぶとオフラインエンジンにも切り替わり、どの要求にも待ち時間に見合った制限時間が付きました。口述は送信した時点で履歴に現れ、取り込みは今どの段階かを示し、途中で中止できます。これまで扱いにくかったアプリにも、文字がより確実に届きます。</string>
@@ -2174,7 +2161,7 @@
     <string name="apptour62__outro_title">同じキーボード、より自分のものに</string>
     <string name="apptour62__outro_body">口述のやり方は何も変わりません。自分の鍵でも、自分のサーバーでも、端末上のモデルでも同じです。すべてのツアーは 設定 › このアプリについて から読み直せます。</string>
     <string name="apptour63__cta_try">試してみる</string>
-    <string name="apptour63__intro_eyebrow">Dictate 6.3</string>
+    <string name="apptour63__intro_eyebrow">TypeBetter 6.3</string>
     <string name="apptour63__intro_title">キーボードから出ずに、できることを増やす</string>
     <string name="apptour63__intro_body">印刷された文字にカメラを向ければ、そのまま入力欄に入ります。カーソル・選択・クリップボードは、ようやくひとつのパネルにまとまりました。スマートバーのどのボタンも、長押しで二つ目の操作を持てます。オフライン音声入力にも、本当にスマートフォンに収まるモデルが揃いました。</string>
     <string name="apptour63__scan_eyebrow">新機能: テキストをスキャン</string>
@@ -2200,7 +2187,7 @@
     <string name="apptour63__outro_body">口述のやり方は何も変わりません。自分の鍵でも、自分のサーバーでも、端末上のモデルでも同じです。すべてのツアーは 設定 › このアプリについて から読み直せます。</string>
     <string name="apptour64__cta_languages">言語を選ぶ</string>
     <string name="apptour64__cta_providers">プロバイダーを見る</string>
-    <string name="apptour64__intro_eyebrow">Dictate 6.4</string>
+    <string name="apptour64__intro_eyebrow">TypeBetter 6.4</string>
     <string name="apptour64__intro_title">翻訳はスマートフォンの中で、記号は自分好みに</string>
     <string name="apptour64__intro_body">ある言語で入力すると、入力欄には別の言語で入ります。翻訳はこの端末の中で行われます。二つの記号ページには、自分で選んだキーを置けるようになりました。さらに、新しいプロバイダーと格段に良くなったオフラインモデル、音声入力を指示に変える一語、そしてアプリ全体のプライバシーとセキュリティの点検も加わりました。</string>
     <string name="apptour64__translate_eyebrow">新機能: 翻訳</string>
@@ -2217,7 +2204,7 @@
     <string name="apptour64__command_body">「言い換え」で一語を選びます。たとえば「ジャービス」。その語で始まる音声入力は、音声指示として実行されます。テキストが選択されていればそのテキストに対して、何も選択されていなければ質問として。有効なのは最初の一語だけなので、その語に触れただけの文はいつもどおり書き取られます。自動プロンプトも本来の動きになりました。対象の音声入力を必ず受け取り、[角かっこ内のテキスト] だけのプロンプトはモデルに送られず、書かれたとおり末尾に追加されます。</string>
     <string name="apptour64__privacy_eyebrow">プライバシーとセキュリティ</string>
     <string name="apptour64__privacy_title">アプリ全体を点検しました</string>
-    <string name="apptour64__privacy_body">Dictate のあらゆる部分をプライバシーとセキュリティの観点から見直し、見つかった問題は修正しました。パスワードや PIN の入力欄への音声入力は履歴に残りません。フローティングボタン経由でも同様になりました。Android のクラウドバックアップに API キーが含まれるのは、エンドツーエンドで暗号化される場合だけです。また「ユーザー証明書を信頼」は、すべてまとめてではなく、プロバイダーのアカウントごとに設定するようになりました。</string>
+    <string name="apptour64__privacy_body">TypeBetter のあらゆる部分をプライバシーとセキュリティの観点から見直し、見つかった問題は修正しました。パスワードや PIN の入力欄への音声入力は履歴に残りません。フローティングボタン経由でも同様になりました。Android のクラウドバックアップに API キーが含まれるのは、エンドツーエンドで暗号化される場合だけです。また「ユーザー証明書を信頼」は、すべてまとめてではなく、プロバイダーのアカウントごとに設定するようになりました。</string>
     <string name="apptour64__more_eyebrow">さらに</string>
     <string name="apptour64__more_title">6.4 のその他の変更</string>
     <string name="apptour64__more_body">細かな変更点を、詳しく知りたい方のために。興味がなければ読み飛ばしてください。</string>
@@ -2246,7 +2233,7 @@
     <string name="apptour64__outro_eyebrow">これが 6.4 です</string>
     <string name="apptour64__outro_title">もっとスマートフォンの中で、もっと自分好みに</string>
     <string name="apptour64__outro_body">翻訳と新しいオフラインモデルは接続なしで動き、それ以外もすべて、設定したとおりに動き続けます。自分の鍵でも、自分のサーバーでも、端末上のモデルでも。すべてのツアーは 設定 › このアプリについて から読み直せます。</string>
-    <string name="changelog__v5_0_0">• 新機能: グライド入力 — キーの上をスワイプして単語をまるごと入力。必要に応じてダウンロードされる言語別辞書付き。 👆\n• 新機能: 単語候補と自動修正 — 入力ミスは自動的に直り、入力した単語はワンタップで戻せます。 ✨\n• 新機能: リアルタイム文字起こし — 話しながら単語が現れる様子を確認。OpenAI、Deepgram、Soniox、AssemblyAI、ElevenLabsに対応。 ⚡\n• 新機能: さらに3つの文字起こしプロバイダー — ElevenLabs Scribe、Deepgram、AssemblyAI。 ☁️\n• 新機能: クラシック音声入力レイアウト — Dictate 3のキーボードなし音声画面が復活。固定またはスワイプ一つで。 🎙️\n• 新機能: コミュニティのプロンプトライブラリ — 言い換えプロンプトを閲覧・共有。 📚\n• 新機能: マイルストーン付きの音声入力統計。 📊\n• 新機能: オフラインモデルNVIDIA Parakeet、加えて空の録音をスキップする無音フィルター。 📴\n• その他: より安定したフローティングボタン、推論の強度の調整、触覚フィードバック、新しいE-Readerテーマ、そして数十件の修正。 🛠️</string>
+    <string name="changelog__v5_0_0">• 新機能: グライド入力 — キーの上をスワイプして単語をまるごと入力。必要に応じてダウンロードされる言語別辞書付き。 👆\n• 新機能: 単語候補と自動修正 — 入力ミスは自動的に直り、入力した単語はワンタップで戻せます。 ✨\n• 新機能: リアルタイム文字起こし — 話しながら単語が現れる様子を確認。OpenAI、Deepgram、Soniox、AssemblyAI、ElevenLabsに対応。 ⚡\n• 新機能: さらに3つの文字起こしプロバイダー — ElevenLabs Scribe、Deepgram、AssemblyAI。 ☁️\n• 新機能: クラシック音声入力レイアウト — TypeBetter 3のキーボードなし音声画面が復活。固定またはスワイプ一つで。 🎙️\n• 新機能: コミュニティのプロンプトライブラリ — 言い換えプロンプトを閲覧・共有。 📚\n• 新機能: マイルストーン付きの音声入力統計。 📊\n• 新機能: オフラインモデルNVIDIA Parakeet、加えて空の録音をスキップする無音フィルター。 📴\n• その他: より安定したフローティングボタン、推論の強度の調整、触覚フィードバック、新しいE-Readerテーマ、そして数十件の修正。 🛠️</string>
     <string name="media__tab__gifs">GIF</string>
     <string name="prefs__media__gif__title">GIF</string>
     <string name="prefs__media__gif_enabled">GIF 検索を有効にする</string>
@@ -2306,13 +2293,12 @@
     <string name="dictate__legacy_prompt_rows_title">プロンプトの行数</string>
     <string name="dictate__legacy_prompt_rows_one">1行</string>
     <string name="dictate__legacy_prompt_rows_two">2行</string>
-    <string name="about__website__title">ウェブサイト</string>
     <string name="dictate__cloud_title">Dictate Cloud</string>
     <string name="dictate__cloud_row_summary_none">音声入力クレジットを購入 — API キー不要</string>
     <string name="dictate__cloud_row_summary_balance">残り {minutes} 分</string>
     <string name="dictate__cloud_intro_title">API キーなしで音声入力</string>
     <string name="dictate__cloud_intro_body">音声入力のクレジットをこのアプリ内で購入できます。AI プロバイダーのアカウントも、API キーも、サブスクリプションも不要です。クレジットに有効期限はなく、実際に使ったときだけ減ります。音声入力 1 分は 1 分ぶん、言い換えは約 2 秒ぶんです。</string>
-    <string name="dictate__cloud_intro_alternative">これは完全に任意です。Dictate はお好きなプロバイダーのご自身のキーでも同じように動きます（無料のものもいくつかあります）。その場合はご自身のアカウントのまま、プロバイダーの料金で直接支払います。</string>
+    <string name="dictate__cloud_intro_alternative">これは完全に任意です。TypeBetter はお好きなプロバイダーのご自身のキーでも同じように動きます（無料のものもいくつかあります）。その場合はご自身のアカウントのまま、プロバイダーの料金で直接支払います。</string>
     <string name="dictate__cloud_use_own_provider_btn">自分のプロバイダーを使う</string>
     <string name="dictate__cloud_balance_label">残りのクレジット</string>
     <string name="dictate__cloud_balance_minutes">{minutes} 分</string>
@@ -2372,25 +2358,6 @@
     <string name="dictate__action_top_up">クレジットをチャージ</string>
     <string name="dictate__promo_low_credit_message">クレジット残りわずか。</string>
     <string name="dictate__promo_low_credit_action">チャージ</string>
-    <string name="dictate__promo_sayova_message">新アプリ：ウォッチでAIと会話</string>
-    <string name="dictate__promo_sayova_action">見てみる</string>
-    <string name="about__more_apps__title">その他のアプリ</string>
-    <string name="about__more_apps__summary">ウォッチ向けの SayOVA と TunerToGo</string>
-    <string name="about__more_apps__tunertogo_tagline">Wear OS 向けチューナー</string>
-    <string name="about__more_apps__tunertogo_description">いつも手首にある正確なチューナー。楽器を手に取ったらすぐに使えます。</string>
-    <string name="about__more_apps__tunertogo_feature_instruments">ギター、ベース、ウクレレ、バイオリンなどに対応。弦は自動で判別</string>
-    <string name="about__more_apps__tunertogo_feature_chromatic">そのほかの楽器や声にはクロマチックモード</string>
-    <string name="about__more_apps__tunertogo_feature_vibration">弦が合うと短く振動。視線をペグから離さずに済みます</string>
-    <string name="about__more_apps__tunertogo_feature_privacy">インターネット接続なし、広告なし。音はウォッチ上で解析され、保存されません</string>
-    <string name="about__more_apps__tunertogo_requirements">マイク付きの Wear OS 3 以降のウォッチが必要です。スマートフォンのアプリは不要です。</string>
-    <string name="about__more_apps__intro">Dictate の開発者 DevEmperor のアプリ：</string>
-    <string name="about__more_apps__sayova_tagline">Wear OS 向け AI 音声アシスタント</string>
-    <string name="about__more_apps__sayova_description">ウォッチから Google Gemini や OpenAI と直接話せます。自然に話しかけ、好きなときに遮り、回答を聞きながら文字でも追えます。</string>
-    <string name="about__more_apps__sayova_feature_interpreter">21 言語の通訳。双方の発言を文字でも表示</string>
-    <string name="about__more_apps__sayova_feature_tasks">タイマーやアラームの設定、メモの保存、ウェブ検索</string>
-    <string name="about__more_apps__sayova_feature_phone">メッセージ・予定・ルートをスマートフォンに用意。送信はご自身で</string>
-    <string name="about__more_apps__sayova_feature_privacy">ご自身の API キー：アカウント不要、トラッキングなし、オープンソース</string>
-    <string name="about__more_apps__sayova_requirements">マイク付きの Wear OS 3 以降のウォッチと、Google Gemini または OpenAI の API キーが必要です。利用料金はプロバイダから請求されます。</string>
     <string name="prefs__media__sticker__title">ステッカー</string>
     <string name="prefs__media__sticker_folder__title">ステッカーのフォルダ</string>
     <string name="prefs__media__sticker_folder__summary_unset">自分の画像が入ったフォルダを選択</string>
@@ -2429,9 +2396,9 @@
     <string name="quick_action__ime_ui_mode_sticker">ステッカー</string>
     <string name="quick_action__ime_ui_mode_sticker__tooltip">自分のステッカーを挿入</string>
     <string name="prefs__media__sticker_add">ステッカーを追加</string>
-    <string name="prefs__media__sticker_add__summary">画像をフォルダにコピーします。どのアプリからでも画像を Dictate に共有できます。</string>
+    <string name="prefs__media__sticker_add__summary">画像をフォルダにコピーします。どのアプリからでも画像を TypeBetter に共有できます。</string>
     <string name="prefs__media__sticker_import_whatsapp">WhatsApp から取り込む</string>
-    <string name="prefs__media__sticker_import_whatsapp__summary">WhatsApp のステッカーフォルダでファイル選択を開きます。Samsung のキーボードなどは他のアプリが読めない場所にステッカーを保存しているため、そちらは Dictate に共有してください。</string>
+    <string name="prefs__media__sticker_import_whatsapp__summary">WhatsApp のステッカーフォルダでファイル選択を開きます。Samsung のキーボードなどは他のアプリが読めない場所にステッカーを保存しているため、そちらは TypeBetter に共有してください。</string>
     <string name="sticker__import_share_label">ステッカーとして保存</string>
     <string name="sticker__import_added">{n} 件追加</string>
     <string name="sticker__import_duplicate">{n} 件は既存</string>
@@ -2455,7 +2422,7 @@
     <string name="sticker__source_downloads">ダウンロード</string>
     <string name="sticker__source_pictures">画像</string>
     <string name="sticker__source_dcim">カメラ</string>
-    <string name="sticker__source_hint">これは出発点であって保証ではありません — フォルダがなければ、選択画面はいつもの場所で開きます。Samsung のキーボードのようにステッカーを外に出さないアプリは、Dictate に共有するしかありません。</string>
+    <string name="sticker__source_hint">これは出発点であって保証ではありません — フォルダがなければ、選択画面はいつもの場所で開きます。Samsung のキーボードのようにステッカーを外に出さないアプリは、TypeBetter に共有するしかありません。</string>
     <string name="sticker__import_progress">コピー中 {done} / {total}</string>
     <string name="sticker__import_cancel">タップで停止します。コピー済みのものは残ります。</string>
     <string name="sticker__refused_declares_nothing">このアプリはキーボードからの画像を受け付けません — クリップボードにコピーしました。長押しで貼り付けられます</string>

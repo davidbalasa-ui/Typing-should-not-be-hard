@@ -53,7 +53,12 @@ fun ProjectLicenseScreen() = FlorisScreen {
                     .florisVerticalScroll()
                     .florisHorizontalScroll(),
             ) {
-                val licenseText = FlorisRef.assets("license/project_license.txt").loadTextAsset(
+                // The NOTICE file first: Apache 2.0 section 4(d) asks a derivative to show the attribution
+                // notices of the work it builds on (Dictate and FlorisBoard), then the license itself.
+                val noticeText = FlorisRef.assets("license/notice.txt").loadTextAsset(context).getOrElse {
+                    stringRes(R.string.about__project_license__error_license_text_failed, "error_message" to (it.message ?: ""))
+                }
+                val licenseText = noticeText + "\n\n" + FlorisRef.assets("license/project_license.txt").loadTextAsset(
                     context
                 ).getOrElse {
                     stringRes(R.string.about__project_license__error_license_text_failed, "error_message" to (it.message ?: ""))
