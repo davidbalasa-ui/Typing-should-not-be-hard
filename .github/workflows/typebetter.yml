@@ -232,13 +232,15 @@ jobs:
         run: |
           # One trending request with the key, so a wrong or dead key shows up here rather than on the phone.
           # Only the HTTP status is printed, never the key (GitHub also masks secrets in logs).
-          key=$(printf '%s' "$KLIPY_API_KEY" | tr -d '[:space:]')
+          # Trim the ends only, as app/build.gradle.kts does, so this check sees the same key the app gets.
+          key=$(printf '%s' "$KLIPY_API_KEY" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
           if [ -z "$key" ]; then
             echo "No built-in GIF key for this build (work branches never get one)."
             exit 0
           fi
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
-            "https://api.klipy.com/api/v1/$key/gifs/trending?page=1&per_page=1" || echo "000")
+            "https://api.klipy.com/api/v1/$key/gifs/trending?page=1&per_page=1" || true)
+          code=${code:-000}
           if [ "$code" = "200" ]; then
             echo "::notice::Built-in GIF key works (KLIPY answered HTTP 200)."
           else
