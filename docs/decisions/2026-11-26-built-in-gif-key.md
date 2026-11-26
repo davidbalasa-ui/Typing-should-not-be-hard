@@ -5,8 +5,10 @@ Date: 2026-11-26. Asked by David: "Can you automate getting the API key" (the GI
 
 ## Decision
 
-- Release builds from `main` carry one KLIPY key, taken from the repository secret `KLIPY_API_KEY`
-  (Settings > Secrets and variables > Actions). It is compiled in as `BuildConfig.KLIPY_BUILT_IN_API_KEY`.
+- Release builds from `main` carry one KLIPY key, taken from the repository secret `TYPEBETTER`
+  (David saved it as "TypeBetter" on 2026-11-26), or `KLIPY_API_KEY` if that exists
+  (Settings > Secrets and variables > Actions). Each main build checks the key with one KLIPY request
+  and notes the HTTP status in the build log. It is compiled in as `BuildConfig.KLIPY_BUILT_IN_API_KEY`.
 - `GifApiKey.effective()` picks the key per request: the user's saved key if any, else the built-in one.
   The GIF panel, the provider and the Settings row all use it, so a fresh install shows trending GIFs
   with no setup, and the setup dialog says the user's own key is optional.
