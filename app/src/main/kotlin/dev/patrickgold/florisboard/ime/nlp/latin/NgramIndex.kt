@@ -143,6 +143,23 @@ class NgramIndex private constructor(
         }
     }
 
+    /**
+     * How often anything at all was seen after [prefix]: the sum of every count whose key begins with
+     * `"$prefix "`. With [countOf] it gives how likely one word is after another, not just how often the
+     * pair was seen (`to such` is common only because `to` is).
+     */
+    fun totalAfter(prefix: String): Long {
+        if (size == 0) return 0L
+        val needle = "$prefix ".toByteArray(Charsets.UTF_8)
+        var i = lowerBound(needle)
+        var total = 0L
+        while (i < size && startsWith(i, needle)) {
+            total += counts[i]
+            i++
+        }
+        return total
+    }
+
     /** Index of [needle], or -1. */
     private fun search(needle: ByteArray, len: Int): Int {
         var lo = 0

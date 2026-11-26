@@ -54,6 +54,15 @@ class NgramIndexTest {
      * in the direction that still looks plausible on screen.
      */
     @Test
+    fun `totals everything seen after a word, and only after that word`() {
+        val index = NgramIndex.parse(table("in the\t900", "in a\t100", "into it\t400", "of the\t1200"))
+        assertEquals(1000L, index.totalAfter("in"))
+        assertEquals(1200L, index.totalAfter("of"))
+        assertEquals(0L, index.totalAfter("at"))
+        assertEquals(0L, NgramIndex.EMPTY.totalAfter("in"))
+    }
+
+    @Test
     fun `a prefix ends at a word boundary`() {
         val index = NgramIndex.parse(table("in the end\t300", "in theory it\t900", "into the end\t400"))
         assertEquals(listOf("end"), index.topContinuations("in the", 3))
