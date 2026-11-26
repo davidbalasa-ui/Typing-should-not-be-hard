@@ -94,7 +94,7 @@ class ContextSlipEvalTest {
         if (c.leadFreq < AutoCommitGate.MIN_FREQ) return false
         if (AutoCommitGate.allows(cost, c.typed.length, strength)) return true
         return contextRule && AutoCommitGate.allowsInContext(
-            cost, c.typed.length, strength, c.leadFreq, c.context, c.total, c.margin, rule,
+            cost, c.typed.length, strength, c.leadFreq, { c.context }, { c.total }, c.margin, rule,
         )
     }
 

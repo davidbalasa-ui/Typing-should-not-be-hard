@@ -2062,36 +2062,37 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 // the `hadCandidatesBefore` gate, which suppressed 2.7 % of otherwise correct fixes merely
                 // because the typo prefixed some dictionary word — while a bare "a correction exists" rule
                 // would rewrite 30 % of correctly typed names.
-                topTouchCost != null -> {
-                    val strength = prefs.correction.autoCorrectStrength.get()
-                    AutoCommitGate.allows(topTouchCost, word.length, strength) ||
-                        // Over the tap budget (two slips, `wotj`), but the previous word says which word was
-                        // meant (`words wotj` → `with`). Measured on English only, in `ContextSlipEvalTest`.
-                        (index.lang == ContextualFixes.LANG && prevWord != null &&
-                            touchCorrections.words.isNotEmpty() && run {
-                            val lead = index.fold(touchCorrections.words.first())
-                            AutoCommitGate.allowsInContext(
-                                totalCost = topTouchCost,
-                                tapCount = word.length,
-                                strength = strength,
-                                leadFreq = index.freq[lead] ?: 0,
-                                contextCount = bigrams.countOf("$prevWord $lead"),
-                                contextTotal = bigrams.totalAfter(prevWord),
-                                margin = touchCorrections.topMargin,
-                            )
-                        })
-                }
+                topTouchCost != null ->
+                    AutoCommitGate.allows(topTouchCost, word.length, prefs.correction.autoCorrectStrength.get())
                 // A dropped or doubled letter: the beam cannot see it and the taps say nothing either way,
                 // so keep the conservative classic rule.
                 touchCorrections != null -> !hadCandidatesBefore
                 else -> !hadCandidatesBefore && !distance1Empty
             }
+            // Over the tap budget (two slips, `wotj`), but the previous word says which word was meant
+            // (`words wotj` → `with`). Measured on English only, in `ContextSlipEvalTest`. The evidence is
+            // about the dictionary lead alone, so it never makes a personal or learned fix eligible, and a
+            // capitalised word after another word is most likely a name, so it is only offered.
+            val contextBacked = !allowAutoCommit && autoCorrectOn && !slotClaimed && topTouchCost != null &&
+                index.lang == ContextualFixes.LANG && prevWord != null && !wantCapitalized &&
+                touchCorrections != null && touchCorrections.words.isNotEmpty() && run {
+                    val lead = index.fold(touchCorrections.words.first())
+                    AutoCommitGate.allowsInContext(
+                        totalCost = topTouchCost,
+                        tapCount = word.length,
+                        strength = prefs.correction.autoCorrectStrength.get(),
+                        leadFreq = index.freq[lead] ?: 0,
+                        contextCount = { bigrams.countOf("$prevWord $lead") },
+                        contextTotal = { bigrams.totalAfter(prevWord) },
+                        margin = touchCorrections.topMargin,
+                    )
+                }
             // Keep the exact typed word tappable, left-most, to bypass the auto-correction (issue #150) —
             // and also when nothing will be auto-committed but the word is clearly finished rather than
             // half-typed (no dictionary word extends it). Otherwise a word like "Dads", which is left alone
             // precisely because it looks deliberate, never appears in the strip at all, so there is nothing
             // to long-press to teach it (issue #241).
-            if (corrections.isNotEmpty() && (allowAutoCommit || !hadCandidatesBefore)) {
+            if (corrections.isNotEmpty() && (allowAutoCommit || contextBacked || !hadCandidatesBefore)) {
                 out.putIfAbsent(
                     word.lowercase(),
                     WordSuggestionCandidate(
@@ -2127,7 +2128,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                         confidence = freq / 255.0,
                         // Only when nothing of the user's own already took the auto-commit slot: two bold
                         // candidates would be a lie about which one space is going to take.
-                        isEligibleForAutoCommit = allowAutoCommit && correction == lead &&
+                        isEligibleForAutoCommit = (allowAutoCommit || contextBacked) && correction == lead &&
                             personalFixes.isEmpty() && freq >= AUTOCORRECT_MIN_FREQ,
                         sourceProvider = this,
                     ),

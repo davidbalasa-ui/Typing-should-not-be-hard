@@ -9,9 +9,12 @@ At Balanced (the default) all of these must hold:
   tap (two whole-key slips in a four-letter word is 0.50);
 - it is an everyday word (frequency 230+ on en.json's scale);
 - the bigram table saw it after the previous word 20+ times, **and** that is at least 0.5 % of everything
-  seen after the previous word (`words with` is 35 of about 1,700; `to such` is 149 of far more, so the
+  seen after the previous word (`words with` is 35 of 1,040, 3.4 %; `to such` is 149 of 481,822, so the
   German `dich` after `to` is left alone);
-- its score (taps, frequency and context together) is at least 0.5 ahead of the runner-up.
+- its score (taps, frequency and context together) is at least 0.5 ahead of the runner-up;
+- the typed word is not capitalised after another word (most likely a name; it is only offered).
+
+The context backs the dictionary lead only: a personal or learned fix is never made eligible by it.
 
 Aggressive: 0.90 per tap, frequency 200+, 12+ times, 0.3 % share, 0.3 ahead. Cautious: off.
 
@@ -36,10 +39,9 @@ The one-slip gain is mostly short words: one whole-key slip in a three-letter wo
 tap, which the 0.30 budget never allowed.
 
 **Not covered.** "see jack flu" → "fly": "flu" is a common real word (frequency 200), and the bigram table
-has neither "jack fly" nor "jack flu", so nothing in the shipped data says "fly" was meant. Fixing that
-needs a grammar-aware model, not more key geometry. "Jack" is also a common word, so it is not capitalised
-as a name; the sentence-start capital and the full stop are the existing auto-capitalisation and
-double-space rules.
+has neither "jack fly" nor "jack flu", so nothing in the shipped data says "fly" was meant ("fly", 229, is
+also just under this rule's Balanced floor of 230). Fixing that needs a grammar-aware model, not more key
+geometry. "jack" is a common word too (231), so it is not capitalised as a name.
 
 **What changed.** `AutoCommitGate.kt` (rule and thresholds), `CorrectionReaders.kt` (score margin over the
 runner-up; context weight moved here so the test scores exactly like the app), `NgramIndex.totalAfter`,

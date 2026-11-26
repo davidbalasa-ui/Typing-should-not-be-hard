@@ -131,8 +131,9 @@ object AutoCommitGate {
      * True when a reading over the per-tap budget of [allows] may still be swapped in silently because the
      * previous word backs it: `words wotj` → `with` (two neighbouring keys, o for i and j for h).
      *
-     * [contextCount] is the bigram count of the previous word followed by the replacement, [contextTotal]
-     * the count of everything seen after the previous word ([NgramIndex.totalAfter]), and [margin]
+     * [contextCount] gives the bigram count of the previous word followed by the replacement, [contextTotal]
+     * the count of everything seen after the previous word ([NgramIndex.totalAfter]); both are only asked
+     * once the cheap checks pass. [margin] is
      * the replacement's score lead over the runner-up ([CorrectionReaders.TouchReading.topMargin]; null
      * when there was no runner-up). Measured in `ContextSlipEvalTest`.
      */
@@ -141,16 +142,19 @@ object AutoCommitGate {
         tapCount: Int,
         strength: AutoCorrectStrength,
         leadFreq: Int,
-        contextCount: Long,
-        contextTotal: Long,
+        contextCount: () -> Long,
+        contextTotal: () -> Long,
         margin: Double?,
         rule: ContextRule? = contextRule(strength),
     ): Boolean {
         if (rule == null || tapCount <= 0) return false
-        return totalCost <= rule.budgetPerTap * tapCount &&
-            leadFreq >= rule.minFreq &&
-            contextCount >= rule.minContext &&
-            contextTotal > 0 && contextCount >= rule.minShare * contextTotal &&
-            (margin == null || margin >= rule.minMargin)
+        // Cheapest first: the bigram lookups run on the typing path, and the total walks every pair that
+        // starts with the previous word (thousands for `the`).
+        if (totalCost > rule.budgetPerTap * tapCount || leadFreq < rule.minFreq) return false
+        if (margin != null && margin < rule.minMargin) return false
+        val count = contextCount()
+        if (count < rule.minContext) return false
+        val total = contextTotal()
+        return total > 0 && count >= rule.minShare * total
     }
 }
