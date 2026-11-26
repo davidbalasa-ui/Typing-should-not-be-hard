@@ -33,8 +33,8 @@ class ProviderListingTest {
             .map { it.id }
 
     @Test
-    fun `a fresh install lists the two pinned providers and nothing else`() {
-        assertEquals(listOf(ProviderRegistry.CLOUD.id, ProviderRegistry.LOCAL.id), listed(accountsOf()))
+    fun `a fresh install lists the pinned on-device engine and nothing else`() {
+        assertEquals(listOf(ProviderRegistry.LOCAL.id), listed(accountsOf()))
     }
 
     @Test
@@ -83,14 +83,27 @@ class ProviderListingTest {
         assertTrue(ProviderListing.isPickable(openai, accounts, selectedId = openai.id, nothingInstalled))
     }
 
-    // Pinned is about the providers screen: a picker still offers Dictate Cloud only once there is credit.
+    // TypeBetter (BR-12): Dictate Cloud's credit is sold only on upstream Dictate's Play listing, so it is
+    // offered nowhere — not listed, not in "Add a provider" — unless somebody already has a wallet or has it
+    // active (a restored backup), who must still be able to find it.
     @Test
-    fun `Dictate Cloud is always listed but only pickable with a wallet`() {
+    fun `Dictate Cloud is hidden unless it already has a wallet or is active`() {
         val cloud = ProviderRegistry.CLOUD
-        assertTrue(ProviderListing.isListed(cloud, accountsOf(), emptySet(), nothingInstalled))
+        assertFalse(ProviderListing.isListed(cloud, accountsOf(), emptySet(), nothingInstalled))
+        assertFalse(ProviderListing.isOffered(cloud, accountsOf(), emptySet(), nothingInstalled))
         assertFalse(ProviderListing.isPickable(cloud, accountsOf(), selectedId = "", nothingInstalled))
+        assertTrue(ProviderListing.isListed(cloud, accountsOf(), setOf(cloud.id), nothingInstalled))
         val funded = accountsOf(ProviderAccount(providerId = cloud.id, apiKey = "wallet-token"))
+        assertTrue(ProviderListing.isListed(cloud, funded, emptySet(), nothingInstalled))
         assertTrue(ProviderListing.isPickable(cloud, funded, selectedId = "", nothingInstalled))
+    }
+
+    @Test
+    fun `every other preset is still offered, so Add a provider loses nothing else`() {
+        val offered = ProviderRegistry.presets
+            .filter { ProviderListing.isOffered(it, accountsOf(), emptySet(), nothingInstalled) }
+            .map { it.id }
+        assertEquals(ProviderRegistry.presets.map { it.id } - ProviderRegistry.CLOUD.id, offered)
     }
 
     // Issue #431: the keyboard's picker and the settings dialog offer one and the same list.

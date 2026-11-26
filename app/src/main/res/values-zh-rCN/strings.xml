@@ -2546,4 +2546,7 @@
     <string name="about__credits_donate__summary">为 TypeBetter 所依托的工作给 DevEmperor 打赏</string>
     <string name="changelog__donate_credit">基于 DevEmperor 开发的 Dictate。点按此处支持其开发者 ♥</string>
     <string name="apptour51__outro_body_credit">感谢使用 TypeBetter！这些功能来自 TypeBetter 所依托的应用 Dictate。如果它们每天都在帮助你，给开发者 DevEmperor 一点小小的打赏就能让这项工作继续下去。你可以随时在 设置 › 关于 中重新查看这些导览。</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter 借助 AI 服务把你的语音转成文字。大多数人使用自己的 AI 服务商 — 如果你完全不想使用云服务，下方还有另外两种方式。</string>
+    <string name="apptour60__intro_body_own">此版本带来了中文拼音、七种新增词典的语言，以及转写成本更低的录音。</string>
+    <string name="apptour60__outro_body_own">无论你怎样使用 TypeBetter — 自己的密钥、自己的服务器或设备上的模型 — 其他方式都没有变化。所有导览都可以在 设置 › 关于 中重新查看。</string>
 </resources>

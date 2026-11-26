@@ -87,6 +87,7 @@ fun DictateAddProviderScreen() = FlorisScreen {
         val activeIds = setOf(transcriptionId, rewordingId)
         val shown = ProviderRegistry.presets
             .filterNot { ProviderListing.isListed(it, accounts, activeIds, isInstalled) }
+            .filter { ProviderListing.isOffered(it, accounts, activeIds, isInstalled) }
             .filter { ProviderListing.matches(it, query, filters) }
 
         OutlinedTextField(

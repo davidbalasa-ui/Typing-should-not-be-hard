@@ -2431,4 +2431,7 @@
     <string name="about__credits_donate__summary">أرسل إكرامية إلى DevEmperor مقابل العمل الذي بُني عليه TypeBetter</string>
     <string name="changelog__donate_credit">مبني على Dictate من تطوير DevEmperor. انقر هنا لدعم مطوّره ♥</string>
     <string name="apptour51__outro_body_credit">شكرًا لاستخدامك TypeBetter! هذه الميزات مصدرها Dictate، التطبيق الذي بُني عليه TypeBetter. إن كانت تساعدك كل يوم، فإكرامية صغيرة لمطوّره DevEmperor تُبقي ذلك العمل مستمرًا. يمكنك مشاهدة هذه الجولات مجددًا في أي وقت من الإعدادات › حول.</string>
+    <string name="setup__provider__choose_intro_own">يحوّل TypeBetter كلامك إلى نص عبر خدمة ذكاء اصطناعي. يستخدم معظم الناس مزوّد الذكاء الاصطناعي الخاص بهم — وإن كنت تفضّل عدم استخدام أي خدمة سحابية، فهناك طريقتان أخريان أدناه.</string>
+    <string name="apptour60__intro_body_own">يجلب هذا الإصدار البينيين للصينية، وقواميس لسبع لغات جديدة، وتسجيلات أقل كلفة في التفريغ.</string>
+    <string name="apptour60__outro_body_own">أيًّا كانت طريقة استخدامك لـTypeBetter — مفتاحك الخاص، أو خادمك الخاص، أو نموذج على الجهاز — لم يتغير شيء في الطرق الأخرى. يمكنك مراجعة أي جولة من الإعدادات › حول.</string>
 </resources>

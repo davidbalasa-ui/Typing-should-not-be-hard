@@ -2581,4 +2581,7 @@
     <string name="about__credits_donate__summary">Wyślij DevEmperor napiwek za pracę, na której opiera się TypeBetter</string>
     <string name="changelog__donate_credit">Zbudowane na Dictate autorstwa DevEmperor. Dotknij tutaj, aby wesprzeć twórcę ♥</string>
     <string name="apptour51__outro_body_credit">Dziękujemy za korzystanie z TypeBetter! Te funkcje pochodzą z Dictate, aplikacji, na której opiera się TypeBetter. Jeśli pomagają ci każdego dnia, mały napiwek dla jej twórcy, DevEmperor, podtrzymuje tę pracę. Wszystkie przewodniki znajdziesz w Ustawienia › O aplikacji.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter zamienia mowę na tekst za pomocą usługi AI. Większość osób korzysta z własnego dostawcy AI — a jeśli wolisz nie używać żadnej usługi w chmurze, poniżej są jeszcze dwa sposoby.</string>
+    <string name="apptour60__intro_body_own">Ta wersja przynosi pinyin dla chińskiego, słowniki dla siedmiu nowych języków i nagrania, których transkrypcja kosztuje mniej.</string>
+    <string name="apptour60__outro_body_own">Jakkolwiek używasz TypeBetter — własny klucz, własny serwer czy model na urządzeniu — w pozostałych sposobach nic się nie zmieniło. Każdy przewodnik obejrzysz ponownie w Ustawienia › Informacje.</string>
 </resources>

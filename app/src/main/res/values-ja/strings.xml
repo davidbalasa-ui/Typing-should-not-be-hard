@@ -2487,4 +2487,7 @@
     <string name="about__credits_donate__summary">TypeBetterの土台となった成果に対してDevEmperorにチップを送る</string>
     <string name="changelog__donate_credit">DevEmperorのDictateをもとに作成。ここをタップして開発者を支援 ♥</string>
     <string name="apptour51__outro_body_credit">TypeBetterをご利用いただきありがとうございます！これらの機能は、TypeBetterの土台であるDictateから来ています。毎日役に立っているなら、開発者のDevEmperorへの小さなチップがその活動を支えます。これらのツアーは「設定 › 情報」からいつでも見直せます。</string>
+    <string name="setup__provider__choose_intro_own">TypeBetterはAIサービスを使って音声をテキストにします。多くの人は自分のAIプロバイダーを使います。クラウドサービスを一切使いたくない場合は、下にほかの方法が2つあります。</string>
+    <string name="apptour60__intro_body_own">このリリースでは、中国語のピンイン、辞書が加わった7つの言語、文字起こしのコストが下がる録音が追加されました。</string>
+    <string name="apptour60__outro_body_own">TypeBetterをどう使っていても — 自分のキー、自分のサーバー、端末内モデルのどれでも — ほかの方法に変更はありません。各ツアーは設定 › このアプリについて から見直せます。</string>
 </resources>

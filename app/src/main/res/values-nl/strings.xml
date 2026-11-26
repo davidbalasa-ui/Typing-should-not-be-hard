@@ -2458,4 +2458,7 @@
     <string name="about__credits_donate__summary">Stuur DevEmperor een fooi voor het werk waarop TypeBetter is gebouwd</string>
     <string name="changelog__donate_credit">Gebouwd op Dictate door DevEmperor. Tik hier om de ontwikkelaar te steunen ♥</string>
     <string name="apptour51__outro_body_credit">Bedankt dat je TypeBetter gebruikt! Deze functies komen uit Dictate, de app waarop TypeBetter is gebouwd. Helpen ze je elke dag, dan houdt een kleine fooi aan de ontwikkelaar, DevEmperor, dat werk gaande. Je kunt deze rondleidingen altijd terugzien via Instellingen › Over.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter zet je spraak om in tekst met een AI-dienst. De meeste mensen gebruiken hun eigen AI-aanbieder — en wil je liever helemaal geen clouddienst, dan staan hieronder nog twee manieren.</string>
+    <string name="apptour60__intro_body_own">Deze versie brengt pinyin voor Chinees, zeven talen met een nieuw woordenboek en opnames die goedkoper te transcriberen zijn.</string>
+    <string name="apptour60__outro_body_own">Hoe je TypeBetter ook gebruikt — je eigen sleutel, je eigen server of een model op het toestel — aan de andere manieren is niets veranderd. Elke rondleiding vind je terug onder Instellingen › Over.</string>
 </resources>

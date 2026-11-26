@@ -477,10 +477,6 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             ProviderSetupStep(
                 onSaveKey = ::saveKey,
                 onSkip = onSkipProvider,
-                onOpenCloud = {
-                    DictateCloud.openedFromSetup = true
-                    navController.navigate(Routes.Settings.DictateCloud)
-                },
                 onActivateLocalModel = ::activateLocalModel,
                 onOpenAllModels = { openProviderEditor(ProviderRegistry.LOCAL.id) },
                 onOpenServerEditor = { openProviderEditor(ProviderSetupHandoff.ADD_CUSTOM) },
@@ -559,7 +555,6 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
 private fun FlorisStepLayoutScope.ProviderSetupStep(
     onSaveKey: (providerId: String, key: String) -> Unit,
     onSkip: () -> Unit,
-    onOpenCloud: () -> Unit,
     onActivateLocalModel: (modelId: String) -> Unit,
     onOpenAllModels: () -> Unit,
     onOpenServerEditor: () -> Unit,
@@ -600,7 +595,6 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     when (branch) {
         ProviderBranch.CHOICE -> {
             ProviderChoice(
-                onChooseCloud = onOpenCloud,
                 onChooseOwnKey = { branch = ProviderBranch.OWN_KEY },
                 onChooseOnDevice = { branch = ProviderBranch.ON_DEVICE },
                 onChooseServer = onOpenServerEditor,
@@ -840,10 +834,9 @@ private fun SetupWelcomeWave() {
 /**
  * The fork in the road, shown before anything else in the provider step.
  *
- * The two headline ways get the same space, the same shape and the same tone — including the
- * sentence that credit costs more than going to a provider directly. Someone who finds that out
- * after paying has been steered, and the whole point of Dictate Cloud is that it is a convenience,
- * not a funnel. "Set up later" stays available underneath, as it always was.
+ * Upstream Dictate put two headline ways here, its own Dictate Cloud credit and the user's own key.
+ * TypeBetter keeps only the second (BR-12): Cloud's credit is sold only on Dictate's own Play listing.
+ * "Set up later" stays available underneath, as it always was.
  *
  * Below them, two quieter rows for the ways that need no account anywhere: the on-device engine and
  * a server of the user's own. Both have worked for releases, and both were invisible here — and this
@@ -854,24 +847,16 @@ private fun SetupWelcomeWave() {
  */
 @Composable
 private fun FlorisStepLayoutScope.ProviderChoice(
-    onChooseCloud: () -> Unit,
     onChooseOwnKey: () -> Unit,
     onChooseOnDevice: () -> Unit,
     onChooseServer: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    StepText(stringRes(R.string.setup__provider__choose_intro))
+    StepText(stringRes(R.string.setup__provider__choose_intro_own))
     Spacer(modifier = Modifier.height(16.dp))
 
-    ChoiceCard(
-        title = stringRes(R.string.setup__provider__choice_cloud_title),
-        body = stringRes(R.string.setup__provider__choice_cloud_body),
-        buttonLabel = stringRes(R.string.setup__provider__choice_cloud_btn),
-        onClick = onChooseCloud,
-        // One mark, because this is one service.
-        marks = listOf(ProviderRegistry.CLOUD.id),
-    )
-    Spacer(modifier = Modifier.height(12.dp))
+    // TypeBetter (BR-12): upstream's "Buy credit in the app" card stood here, equal to the one below. Its
+    // credit is sold only on Dictate's own Play listing, so under TypeBetter it led to an empty shop.
     ChoiceCard(
         title = stringRes(R.string.setup__provider__choice_own_title),
         body = stringRes(R.string.setup__provider__choice_own_body),

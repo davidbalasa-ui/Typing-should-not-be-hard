@@ -2554,4 +2554,7 @@
     <string name="about__credits_donate__summary">Küldj borravalót DevEmperornak azért a munkáért, amelyre a TypeBetter épül</string>
     <string name="changelog__donate_credit">A DevEmperor által készített Dictate alapján. Koppints ide a fejlesztő támogatásához ♥</string>
     <string name="apptour51__outro_body_credit">Köszönjük, hogy a TypeBettert használod! Ezek a funkciók a Dictate-ből származnak, arra az alkalmazásra épül a TypeBetter. Ha minden nap segítenek, egy kis borravaló a fejlesztőnek, DevEmperornak, fenntartja ezt a munkát. A bemutatókat bármikor újra megnézheted a Beállítások › Névjegy alatt.</string>
+    <string name="setup__provider__choose_intro_own">A TypeBetter egy MI-szolgáltatással alakítja szöveggé a beszédet. A legtöbben a saját MI-szolgáltatójukat használják — és ha egyáltalán nem szeretnél felhőszolgáltatást, lent van még két másik mód.</string>
+    <string name="apptour60__intro_body_own">Ez a kiadás pinyint hoz a kínaihoz, szótárt hét új nyelvhez, és olcsóbban átírható felvételeket.</string>
+    <string name="apptour60__outro_body_own">Akárhogy használod a TypeBettert — saját kulccsal, saját szerverrel vagy eszközön futó modellel —, a többi módban semmi sem változott. Minden bemutatót újranézhetsz a Beállítások › Névjegy alatt.</string>
 </resources>

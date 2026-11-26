@@ -24,11 +24,29 @@ package dev.patrickgold.florisboard.dictate.provider
 object ProviderListing {
 
     /**
-     * Always on the providers screen, set up or not: the two ways to dictate without an account anywhere
-     * else. Dictate Cloud is bought inside the app and the on-device engine needs only a download, so
-     * hiding them until they were set up would hide them from exactly the people they are for.
+     * Always on the providers screen, set up or not: the on-device engine needs only a download, so
+     * hiding it until it was set up would hide it from exactly the people it is for.
      */
-    val pinnedIds: Set<String> = setOf(ProviderRegistry.LOCAL.id, ProviderRegistry.CLOUD.id)
+    val pinnedIds: Set<String> = setOf(ProviderRegistry.LOCAL.id)
+
+    /**
+     * Presets TypeBetter does not offer (BR-12). Dictate Cloud is upstream Dictate's paid credit service:
+     * its packs are sold only on Dictate's own Play listing, so under TypeBetter's package it cannot sell
+     * anything and every road to it ends at an empty shop. The code stays (upstream merges stay easy);
+     * only the ways in are closed.
+     */
+    val hiddenIds: Set<String> = setOf(ProviderRegistry.CLOUD.id)
+
+    /**
+     * Whether [preset] is offered anywhere: everything except [hiddenIds], and even a hidden one while it
+     * is active or set up, so nobody loses sight of a provider they are using (a restored backup, say).
+     */
+    fun isOffered(
+        preset: ProviderPreset,
+        accounts: ProviderAccounts,
+        activeIds: Set<String>,
+        isModelInstalled: (String) -> Boolean,
+    ): Boolean = preset.id !in hiddenIds || preset.id in activeIds || isSetUp(preset, accounts, isModelInstalled)
 
     /**
      * Whether [preset] can be used right now.
@@ -67,7 +85,8 @@ object ProviderListing {
         accounts: ProviderAccounts,
         activeIds: Set<String>,
         isModelInstalled: (String) -> Boolean,
-    ): Boolean = preset.id in pinnedIds || preset.id in activeIds || isSetUp(preset, accounts, isModelInstalled)
+    ): Boolean = isOffered(preset, accounts, activeIds, isModelInstalled) &&
+        (preset.id in pinnedIds || preset.id in activeIds || isSetUp(preset, accounts, isModelInstalled))
 
     /**
      * Whether an active-provider picker offers [preset]: set up, or already the choice.
