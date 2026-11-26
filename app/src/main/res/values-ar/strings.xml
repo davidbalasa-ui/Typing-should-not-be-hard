@@ -1094,7 +1094,6 @@
     <string name="setup__provider__other_provider">استخدم مزوّد ذكاء اصطناعي آخر</string>
     <string name="setup__provider__other_provider_hint">متقدّم: اختر خدمة أخرى بدلًا من Groq. ستحتاج إلى مفتاح API من ذلك المزوّد.</string>
     <string name="setup__finish_up__add_key_hint">نصيحة: لم تُضِف مفتاح ذكاء اصطناعي بعد. أضِف واحدًا في أي وقت من الإعدادات ← Dictate ← مزوّدو الذكاء الاصطناعي لبدء الإملاء.</string>
-    <string name="crash_dialog__bug_report_template">تقرير الأعطال</string>
     <string name="enum__swipe_action__toggle_compact_layout">تبديل التخطيط المضغوط</string>
     <string name="unit__hours__symbol">{v} س</string>
     <string name="unit__minutes__symbol">{v} د</string>

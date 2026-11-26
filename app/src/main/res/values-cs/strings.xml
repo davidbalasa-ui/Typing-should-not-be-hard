@@ -1251,7 +1251,6 @@
     <string name="setup__provider__other_provider">Použít jiného poskytovatele AI</string>
     <string name="setup__provider__other_provider_hint">Pokročilé: zvolte jinou službu než Groq. Budete potřebovat klíč API od tohoto poskytovatele.</string>
     <string name="setup__finish_up__add_key_hint">Tip: zatím jste nepřidali klíč AI. Přidejte jej kdykoli v Nastavení → Dictate → Poskytovatelé AI a začněte diktovat.</string>
-    <string name="crash_dialog__bug_report_template">Hlášení o pádu</string>
     <string name="enum__swipe_action__toggle_compact_layout">Přepnout kompaktní rozložení</string>
     <string name="unit__hours__symbol">{v} h</string>
     <string name="unit__minutes__symbol">{v} min</string>

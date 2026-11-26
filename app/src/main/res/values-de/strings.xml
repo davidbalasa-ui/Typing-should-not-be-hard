@@ -1172,7 +1172,6 @@
     <string name="setup__provider__other_provider">Einen anderen KI-Anbieter verwenden</string>
     <string name="setup__provider__other_provider_hint">Erweitert: einen anderen Dienst statt Groq wählen. Du brauchst einen API-Schlüssel dieses Anbieters.</string>
     <string name="setup__finish_up__add_key_hint">Tipp: Du hast noch keinen KI-Schlüssel hinzugefügt. Füge jederzeit einen unter Einstellungen → Dictate → KI-Anbieter hinzu, um mit dem Diktieren zu beginnen.</string>
-    <string name="crash_dialog__bug_report_template">Absturzbericht</string>
     <string name="enum__swipe_action__toggle_compact_layout">Kompaktes Layout umschalten</string>
     <string name="unit__hours__symbol">{v} Std.</string>
     <string name="unit__minutes__symbol">{v} Min.</string>
@@ -2461,7 +2460,7 @@
     <string name="translate__failed">Übersetzung fehlgeschlagen</string>
     <string name="translate__unsupported">Übersetzen ist auf diesem Gerät nicht verfügbar</string>
     <string name="about__tagline">Basiert auf Dictate und FlorisBoard</string>
-    <string name="about__feedback__summary_issues">Fehler melden oder eine Idee vorschlagen, auf GitHub</string>
+    <string name="about__feedback__summary_issues">Auf GitHub einen Fehler melden oder eine Idee vorschlagen</string>
     <string name="about__credits__title">Danksagung</string>
     <string name="about__credits_dictate__title">Basiert auf Dictate</string>
     <string name="about__credits_dictate__summary">TypeBetter ist ein Fork von Dictate Keyboard von DevEmperor, Apache 2.0. Spracheingabe, die Tastatur und das meiste, was du hier siehst, stammen aus dieser Arbeit. Danke! Tippen zum Öffnen.</string>

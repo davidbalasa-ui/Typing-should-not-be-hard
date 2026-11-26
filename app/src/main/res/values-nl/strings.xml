@@ -1137,7 +1137,6 @@
     <string name="setup__provider__other_provider">Een andere AI-aanbieder gebruiken</string>
     <string name="setup__provider__other_provider_hint">Geavanceerd: kies een andere dienst dan Groq. Je hebt een API-sleutel van die aanbieder nodig.</string>
     <string name="setup__finish_up__add_key_hint">Tip: je hebt nog geen AI-sleutel toegevoegd. Voeg er op elk moment een toe via Instellingen → Dictate → AI-aanbieders om te beginnen met dicteren.</string>
-    <string name="crash_dialog__bug_report_template">Crashrapport</string>
     <string name="enum__swipe_action__toggle_compact_layout">Compacte lay-out in-/uitschakelen</string>
     <string name="unit__hours__symbol">{v} u</string>
     <string name="unit__minutes__symbol">{v} min</string>

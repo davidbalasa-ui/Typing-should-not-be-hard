@@ -1233,7 +1233,6 @@
     <string name="setup__provider__other_provider">Másik MI-szolgáltató használata</string>
     <string name="setup__provider__other_provider_hint">Haladó: válasszon a Groq helyett másik szolgáltatást. Ehhez a szolgáltatóhoz API-kulcsra lesz szüksége.</string>
     <string name="setup__finish_up__add_key_hint">Tipp: még nem adott hozzá MI-kulcsot. A diktálás megkezdéséhez bármikor hozzáadhat egyet a Beállítások → Dictate → MI-szolgáltatók menüpontban.</string>
-    <string name="crash_dialog__bug_report_template">Összeomlási jelentés</string>
     <string name="enum__swipe_action__toggle_compact_layout">Kompakt elrendezés be/ki</string>
     <string name="unit__hours__symbol">{v} ó</string>
     <string name="unit__minutes__symbol">{v} p</string>

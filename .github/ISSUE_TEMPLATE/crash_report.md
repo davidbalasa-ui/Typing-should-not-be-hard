@@ -14,7 +14,7 @@ labels: bug
 **Phone and Android version:**
 
 
-**Crash log** (tap "Copy to clipboard" on the crash screen, then paste it between the lines):
+**Crash log** (tap "Copy to system clipboard" on the crash screen, then paste it between the lines):
 
 ```
 

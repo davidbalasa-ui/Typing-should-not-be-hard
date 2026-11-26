@@ -1230,7 +1230,6 @@
     <string name="setup__provider__other_provider">使用其他 AI 服务商</string>
     <string name="setup__provider__other_provider_hint">高级：选择 Groq 以外的其他服务。您需要该服务商的 API 密钥。</string>
     <string name="setup__finish_up__add_key_hint">提示：您尚未添加 AI 密钥。可随时在设置 → Dictate → AI 服务商中添加，即可开始听写。</string>
-    <string name="crash_dialog__bug_report_template">崩溃报告</string>
     <string name="enum__swipe_action__toggle_compact_layout">切换紧凑布局</string>
     <string name="unit__hours__symbol">{v} 小时</string>
     <string name="unit__minutes__symbol">{v} 分</string>

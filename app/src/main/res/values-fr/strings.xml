@@ -1113,7 +1113,6 @@
     <string name="setup__provider__other_provider">Utiliser un autre fournisseur d\'IA</string>
     <string name="setup__provider__other_provider_hint">Avancé : choisissez un autre service que Groq. Il vous faudra une clé d\'API de ce fournisseur.</string>
     <string name="setup__finish_up__add_key_hint">Astuce : vous n\'avez pas encore ajouté de clé d\'IA. Ajoutez-en une à tout moment dans Paramètres → Dictate → Fournisseurs d\'IA pour commencer à dicter.</string>
-    <string name="crash_dialog__bug_report_template">Rapport de plantage</string>
     <string name="enum__swipe_action__toggle_compact_layout">Basculer la disposition compacte</string>
     <string name="unit__hours__symbol">{v} h</string>
     <string name="unit__minutes__symbol">{v} min</string>

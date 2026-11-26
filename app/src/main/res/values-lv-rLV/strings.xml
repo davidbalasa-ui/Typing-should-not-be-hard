@@ -1180,7 +1180,6 @@
     <string name="setup__provider__other_provider">Izmantot citu MI pakalpojuma sniedzēju</string>
     <string name="setup__provider__other_provider_hint">Pieredzējušiem lietotājiem: izvēlieties citu pakalpojumu Groq vietā. Jums būs vajadzīga API atslēga no šī pakalpojuma sniedzēja.</string>
     <string name="setup__finish_up__add_key_hint">Padoms: jūs vēl neesat pievienojis MI atslēgu. Pievienojiet to jebkurā laikā sadaļā Iestatījumi → Dictate → MI pakalpojumu sniedzēji, lai sāktu diktēt.</string>
-    <string name="crash_dialog__bug_report_template">Avārijas ziņojums</string>
     <string name="enum__swipe_action__toggle_compact_layout">Pārslēgt kompakto izkārtojumu</string>
     <string name="unit__hours__symbol">{v} st.</string>
     <string name="unit__minutes__symbol">{v} min</string>

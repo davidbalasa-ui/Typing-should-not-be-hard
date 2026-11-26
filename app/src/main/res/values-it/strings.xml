@@ -1021,7 +1021,6 @@
     <string name="setup__provider__other_provider">Usa un altro fornitore IA</string>
     <string name="setup__provider__other_provider_hint">Avanzate: scegli un servizio diverso da Groq. Ti servirà una chiave API di quel fornitore.</string>
     <string name="setup__finish_up__add_key_hint">Suggerimento: non hai ancora aggiunto una chiave IA. Aggiungine una in qualsiasi momento in Impostazioni → Dictate → Fornitori IA per iniziare a dettare.</string>
-    <string name="crash_dialog__bug_report_template">Rapporto di arresto anomalo</string>
     <string name="enum__swipe_action__toggle_compact_layout">Attiva/disattiva layout compatto</string>
     <string name="unit__hours__symbol">{v} h</string>
     <string name="unit__minutes__symbol">{v} min</string>

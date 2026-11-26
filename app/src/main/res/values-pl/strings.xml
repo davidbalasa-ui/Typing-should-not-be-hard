@@ -1252,7 +1252,6 @@
     <string name="setup__provider__other_provider">Użyj innego dostawcy AI</string>
     <string name="setup__provider__other_provider_hint">Zaawansowane: wybierz inną usługę niż Groq. Będziesz potrzebować klucza API od tego dostawcy.</string>
     <string name="setup__finish_up__add_key_hint">Wskazówka: nie dodano jeszcze klucza AI. Dodaj go w dowolnej chwili w Ustawienia → Dictate → Dostawcy AI, aby zacząć dyktować.</string>
-    <string name="crash_dialog__bug_report_template">Raport o awarii</string>
     <string name="enum__swipe_action__toggle_compact_layout">Przełącz układ kompaktowy</string>
     <string name="unit__hours__symbol">{v} godz.</string>
     <string name="unit__minutes__symbol">{v} min</string>

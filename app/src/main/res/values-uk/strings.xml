@@ -1080,7 +1080,6 @@
     <string name="setup__provider__other_provider">Використати іншого постачальника ШІ</string>
     <string name="setup__provider__other_provider_hint">Додатково: виберіть інший сервіс замість Groq. Вам знадобиться ключ API цього постачальника.</string>
     <string name="setup__finish_up__add_key_hint">Порада: ви ще не додали ключ ШІ. Додайте його будь-коли в Налаштування → Dictate → Постачальники ШІ, щоб почати диктувати.</string>
-    <string name="crash_dialog__bug_report_template">Звіт про збій</string>
     <string name="enum__swipe_action__toggle_compact_layout">Перемкнути компактне розкладання</string>
     <string name="unit__hours__symbol">{v} год</string>
     <string name="unit__minutes__symbol">{v} хв</string>

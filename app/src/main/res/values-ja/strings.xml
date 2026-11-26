@@ -1170,7 +1170,6 @@
     <string name="setup__provider__other_provider">別のAIプロバイダーを使用</string>
     <string name="setup__provider__other_provider_hint">詳細設定: Groq以外のサービスを選択します。そのプロバイダーのAPIキーが必要です。</string>
     <string name="setup__finish_up__add_key_hint">ヒント: まだAIキーを追加していません。設定 → Dictate → AIプロバイダーでいつでも追加して、音声入力を始められます。</string>
-    <string name="crash_dialog__bug_report_template">クラッシュレポート</string>
     <string name="enum__swipe_action__toggle_compact_layout">コンパクトレイアウトの切り替え</string>
     <string name="unit__hours__symbol">{v}時間</string>
     <string name="unit__minutes__symbol">{v}分</string>

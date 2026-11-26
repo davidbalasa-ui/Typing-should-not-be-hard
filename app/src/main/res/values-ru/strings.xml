@@ -1241,7 +1241,6 @@
     <string name="setup__provider__other_provider">Использовать другого поставщика ИИ</string>
     <string name="setup__provider__other_provider_hint">Дополнительно: выберите другой сервис вместо Groq. Вам понадобится ключ API этого поставщика.</string>
     <string name="setup__finish_up__add_key_hint">Совет: вы ещё не добавили ключ ИИ. Добавьте его в любой момент в Настройки → Dictate → Поставщики ИИ, чтобы начать диктовать.</string>
-    <string name="crash_dialog__bug_report_template">Отчёт о сбое</string>
     <string name="enum__swipe_action__toggle_compact_layout">Переключить компактную раскладку</string>
     <string name="unit__hours__symbol">{v} ч</string>
     <string name="unit__minutes__symbol">{v} мин</string>

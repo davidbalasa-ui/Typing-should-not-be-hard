@@ -1,5 +1,5 @@
-# Blank issues stay on: this repo has no bug-report form, and taking away the plain
-# "New issue" box would leave people with nowhere to file an ordinary bug.
+# Blank issues stay on: the only form is the crash report (the app's crash screen points at it), and
+# taking away the plain "New issue" box would leave people with nowhere to file an ordinary bug.
 blank_issues_enabled: true
 contact_links:
   - name: 🔒 Report a security vulnerability (private)
