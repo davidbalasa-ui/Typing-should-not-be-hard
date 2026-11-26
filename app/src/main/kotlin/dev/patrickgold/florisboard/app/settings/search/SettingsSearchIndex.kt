@@ -90,6 +90,7 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.about__repository__title, R.string.about__title, Routes.Settings.About, anchor = "about__repository__title"),
         SettingsSearchEntry(R.string.about__credits_dictate__title, R.string.about__title, Routes.Settings.About, anchor = "about__credits_dictate__title"),
         SettingsSearchEntry(R.string.about__based_on_floris__title, R.string.about__title, Routes.Settings.About, anchor = "about__based_on_floris__title"),
+        SettingsSearchEntry(R.string.about__credits_donate__title, R.string.about__title, Routes.Settings.About, anchor = "about__credits_donate__title"),
         SettingsSearchEntry(R.string.about__feedback__title, R.string.about__title, Routes.Settings.About, anchor = "about__feedback__title"),
         SettingsSearchEntry(R.string.about__privacy_policy__title, R.string.about__title, Routes.Settings.About, anchor = "about__privacy_policy__title"),
         SettingsSearchEntry(R.string.about__project_license__title, R.string.about__title, Routes.Settings.About, anchor = "about__project_license__title"),

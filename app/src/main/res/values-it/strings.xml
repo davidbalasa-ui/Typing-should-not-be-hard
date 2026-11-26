@@ -1536,7 +1536,7 @@
     <string name="changelog__view_all">Vedi tutte le modifiche</string>
     <string name="changelog__intro">TypeBetter è stato aggiornato. Ecco le novità:</string>
     <string name="changelog__version_header">Versione {version}</string>
-    <string name="changelog__current">• Tastiera tutta nuova: TypeBetter è ora una tastiera con layout completo e multilingua, con un tasto microfono dedicato che apre il pannello vocale.\n• Usa la tua IA: scegli un qualsiasi fornitore compatibile con OpenAI e inserisci la tua chiave API in Impostazioni → Dictate.\n• Formattazione e riformulazione intelligenti con il modello che preferisci.\n• Le impostazioni della precedente app TypeBetter vengono importate automaticamente.</string>
+    <string name="changelog__current">• Tastiera tutta nuova: Dictate è ora una tastiera con layout completo e multilingua, con un tasto microfono dedicato che apre il pannello vocale.\n• Usa la tua IA: scegli un qualsiasi fornitore compatibile con OpenAI e inserisci la tua chiave API in Impostazioni → Dictate.\n• Formattazione e riformulazione intelligenti con il modello che preferisci.\n• Le impostazioni della precedente app Dictate vengono importate automaticamente.</string>
     <string name="changelog__v4_1_0">• Novità: cerca le emoji direttamente dalla tastiera.\n• Nuovo provider di trascrizione: Soniox.\n• Reinserisci la tua ultima dettatura e recupera le registrazioni interrotte alla chiusura della tastiera.\n• La barra dei prompt ora si aggiorna in tempo reale: tieni premuto un prompt per modificarlo.\n• La schermata dei provider IA ora mostra sia il provider di trascrizione sia quello di riformulazione attivi.\n• Pulsante di registrazione più grande e più facile da premere.\n• Correzioni: un avviso di supporto poteva bloccarsi e coprire la barra in alcune lingue; il backup non fallisce più con prompt, tastiera o tema selezionati; le chiavi API salvate vengono mantenute durante l\'aggiornamento.</string>
     <string name="changelog__v4_1_1">• Correzione: il colore d\'accento poteva apparire verde su alcuni dispositivi; tasti e pulsanti tornano al blu di TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2335,4 +2335,14 @@
     <string name="translate__missing">Non scaricato: {language}</string>
     <string name="translate__failed">Traduzione non riuscita</string>
     <string name="translate__unsupported">La traduzione non è disponibile su questo dispositivo</string>
+    <string name="about__tagline">Basato su Dictate e FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Segnala un bug o proponi un\'idea su GitHub</string>
+    <string name="about__credits__title">Riconoscimenti</string>
+    <string name="about__credits_dictate__title">Basato su Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter è un fork di Dictate Keyboard di DevEmperor, Apache 2.0. La dettatura vocale, la tastiera e quasi tutto ciò che vedi qui vengono da quel lavoro. Grazie! Tocca per aprirlo.</string>
+    <string name="about__credits_floris__summary">Dictate è a sua volta un fork di FlorisBoard di Patrick Goldinger e collaboratori, Apache 2.0. Tocca per aprirlo.</string>
+    <string name="about__credits_donate__title">Sostieni lo sviluppatore di Dictate</string>
+    <string name="about__credits_donate__summary">Manda una mancia a DevEmperor per il lavoro su cui si basa TypeBetter</string>
+    <string name="changelog__donate_credit">Basato su Dictate di DevEmperor. Tocca qui per sostenere il suo sviluppatore ♥</string>
+    <string name="apptour51__outro_body_credit">Grazie per usare TypeBetter! Queste funzioni vengono da Dictate, l\'app su cui si basa TypeBetter. Se ti aiutano ogni giorno, una piccola mancia al suo sviluppatore, DevEmperor, fa andare avanti quel lavoro. Puoi rivedere questi tour quando vuoi in Impostazioni › Informazioni.</string>
 </resources>

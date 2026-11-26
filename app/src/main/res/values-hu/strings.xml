@@ -1748,7 +1748,7 @@
     <string name="changelog__view_all">Összes változás megtekintése</string>
     <string name="changelog__intro">A TypeBetter frissült. Íme az újdonságok:</string>
     <string name="changelog__version_header">{version} verzió</string>
-    <string name="changelog__current">• Vadonatúj billentyűzet: a TypeBetter mostantól teljes értékű, többnyelvű elrendezésű billentyűzetként érkezik, dedikált mikrofongombbal, amely megnyitja a hangpanelt.\n• Hozza a saját MI-jét: válasszon bármilyen OpenAI-kompatibilis szolgáltatót, és adja meg az API-kulcsát a Beállítások → Dictate menüpontban.\n• Intelligens formázás és átfogalmazás az Ön által választott modell segítségével.\n• A korábbi TypeBetter alkalmazás beállításai automatikusan importálódnak.</string>
+    <string name="changelog__current">• Vadonatúj billentyűzet: a Dictate mostantól teljes értékű, többnyelvű elrendezésű billentyűzetként érkezik, dedikált mikrofongombbal, amely megnyitja a hangpanelt.\n• Hozza a saját MI-jét: válasszon bármilyen OpenAI-kompatibilis szolgáltatót, és adja meg az API-kulcsát a Beállítások → Dictate menüpontban.\n• Intelligens formázás és átfogalmazás az Ön által választott modell segítségével.\n• A korábbi Dictate alkalmazás beállításai automatikusan importálódnak.</string>
     <string name="changelog__v4_1_0">• Új: emodzsik keresése közvetlenül a billentyűzetről.\n• Új átírási szolgáltató: Soniox.\n• Szúrd be újra a legutóbbi diktálást, és állítsd vissza a billentyűzet bezárásakor megszakadt felvételeket.\n• A promptsáv mostantól élőben frissül: tartsd nyomva egy promptot a szerkesztéséhez.\n• Az AI-szolgáltatók képernyője mostantól az aktív átírási és átfogalmazási szolgáltatót is megjeleníti.\n• Nagyobb, könnyebben eltalálható felvétel gomb.\n• Javítások: egy támogatási üzenet beragadhatott, és eltakarhatta a sávot néhány nyelven; a biztonsági mentés már nem hiúsul meg, ha promptok, billentyűzet vagy téma van kiválasztva; a mentett API-kulcsok megmaradnak frissítéskor.</string>
     <string name="changelog__v4_1_1">• Javítás: a kiemelőszín egyes eszközökön zöldnek tűnhetett; a billentyűk és gombok ismét a TypeBetter kék színében jelennek meg.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2545,4 +2545,14 @@
     <string name="translate__missing">Nincs letöltve: {language}</string>
     <string name="translate__failed">A fordítás nem sikerült</string>
     <string name="translate__unsupported">A fordítás nem érhető el ezen az eszközön</string>
+    <string name="about__tagline">A Dictate és a FlorisBoard alapján</string>
+    <string name="about__feedback__summary_issues">Hiba bejelentése vagy ötlet javaslása a GitHubon</string>
+    <string name="about__credits__title">Köszönet</string>
+    <string name="about__credits_dictate__title">A Dictate alapján</string>
+    <string name="about__credits_dictate__summary">A TypeBetter a DevEmperor által készített Dictate Keyboard forkja, Apache 2.0. A hangalapú gépelés, a billentyűzet és szinte minden, amit itt látsz, ebből a munkából származik. Köszönjük! Koppints a megnyitáshoz.</string>
+    <string name="about__credits_floris__summary">A Dictate maga is a FlorisBoard forkja, amelyet Patrick Goldinger és a közreműködők készítettek, Apache 2.0. Koppints a megnyitáshoz.</string>
+    <string name="about__credits_donate__title">A Dictate fejlesztőjének támogatása</string>
+    <string name="about__credits_donate__summary">Küldj borravalót DevEmperornak azért a munkáért, amelyre a TypeBetter épül</string>
+    <string name="changelog__donate_credit">A DevEmperor által készített Dictate alapján. Koppints ide a fejlesztő támogatásához ♥</string>
+    <string name="apptour51__outro_body_credit">Köszönjük, hogy a TypeBettert használod! Ezek a funkciók a Dictate-ből származnak, arra az alkalmazásra épül a TypeBetter. Ha minden nap segítenek, egy kis borravaló a fejlesztőnek, DevEmperornak, fenntartja ezt a munkát. A bemutatókat bármikor újra megnézheted a Beállítások › Névjegy alatt.</string>
 </resources>

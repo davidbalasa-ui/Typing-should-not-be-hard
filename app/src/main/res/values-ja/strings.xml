@@ -1682,7 +1682,7 @@
     <string name="changelog__view_all">すべての変更を表示</string>
     <string name="changelog__intro">TypeBetterが更新されました。新着情報はこちら:</string>
     <string name="changelog__version_header">バージョン{version}</string>
-    <string name="changelog__current">• まったく新しいキーボード: TypeBetterは、音声パネルを開く専用マイクキーを備えた本格的な多言語レイアウトキーボードとして提供されるようになりました。\n• 自分のAIを使用: OpenAI互換の任意のプロバイダーを選び、設定 → DictateでAPIキーを入力します。\n• 選択したモデルによるスマートな書式設定と言い換え。\n• 以前のTypeBetterアプリの設定が自動的にインポートされます。</string>
+    <string name="changelog__current">• まったく新しいキーボード: Dictateは、音声パネルを開く専用マイクキーを備えた本格的な多言語レイアウトキーボードとして提供されるようになりました。\n• 自分のAIを使用: OpenAI互換の任意のプロバイダーを選び、設定 → DictateでAPIキーを入力します。\n• 選択したモデルによるスマートな書式設定と言い換え。\n• 以前のDictateアプリの設定が自動的にインポートされます。</string>
     <string name="changelog__v4_1_0">• 新機能: キーボードから直接絵文字を検索できます。\n• 新しい文字起こしプロバイダー: Soniox。\n• 直前のディクテーションを再挿入し、キーボードを閉じたときに中断された録音を復元できます。\n• プロンプトバーがライブ更新されるようになりました。プロンプトを長押しすると編集できます。\n• AIプロバイダー画面に、有効な文字起こしプロバイダーと言い換えプロバイダーの両方が表示されるようになりました。\n• 録音ボタンが大きくなり、タップしやすくなりました。\n• 修正: 一部の言語でサポートの案内が固まってバーを覆ってしまう問題を修正しました。プロンプト・キーボード・テーマを選択した状態でバックアップが失敗しなくなりました。保存したAPIキーがアップデート後も保持されます。</string>
     <string name="changelog__v4_1_1">• 修正: 一部の端末でアクセントカラーが緑色に表示されることがありました。キーやボタンが本来のTypeBetterブルーに戻りました。</string>
     <!-- Dictate on-device (offline) models -->
@@ -2478,4 +2478,14 @@
     <string name="translate__missing">{language}はダウンロードされていません</string>
     <string name="translate__failed">翻訳に失敗しました</string>
     <string name="translate__unsupported">この端末では翻訳を利用できません</string>
+    <string name="about__tagline">DictateとFlorisBoardをもとに作成</string>
+    <string name="about__feedback__summary_issues">GitHubでバグを報告したりアイデアを提案したりできます</string>
+    <string name="about__credits__title">クレジット</string>
+    <string name="about__credits_dictate__title">Dictateをもとに作成</string>
+    <string name="about__credits_dictate__summary">TypeBetterは、DevEmperorによるDictate KeyboardのフォークでApache 2.0ライセンスです。音声入力、キーボード、ここにあるほとんどの機能はその成果によるものです。ありがとうございます！タップして開きます。</string>
+    <string name="about__credits_floris__summary">Dictate自体も、Patrick Goldingerと貢献者によるFlorisBoardのフォークでApache 2.0ライセンスです。タップして開きます。</string>
+    <string name="about__credits_donate__title">Dictateの開発者を支援</string>
+    <string name="about__credits_donate__summary">TypeBetterの土台となった成果に対してDevEmperorにチップを送る</string>
+    <string name="changelog__donate_credit">DevEmperorのDictateをもとに作成。ここをタップして開発者を支援 ♥</string>
+    <string name="apptour51__outro_body_credit">TypeBetterをご利用いただきありがとうございます！これらの機能は、TypeBetterの土台であるDictateから来ています。毎日役に立っているなら、開発者のDevEmperorへの小さなチップがその活動を支えます。これらのツアーは「設定 › 情報」からいつでも見直せます。</string>
 </resources>

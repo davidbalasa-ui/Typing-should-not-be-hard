@@ -1762,7 +1762,7 @@
     <string name="changelog__view_all">Посмотреть все изменения</string>
     <string name="changelog__intro">TypeBetter обновлён. Вот что нового:</string>
     <string name="changelog__version_header">Версия {version}</string>
-    <string name="changelog__current">• Совершенно новая клавиатура: TypeBetter теперь полноценная многоязычная клавиатура с раскладкой и отдельной клавишей микрофона, открывающей голосовую панель.\n• Собственный ИИ: выберите любого поставщика, совместимого с OpenAI, и введите ключ API в Настройки → Dictate.\n• Умное форматирование и переформулирование с выбранной вами моделью.\n• Настройки из предыдущего приложения TypeBetter импортируются автоматически.</string>
+    <string name="changelog__current">• Совершенно новая клавиатура: Dictate теперь полноценная многоязычная клавиатура с раскладкой и отдельной клавишей микрофона, открывающей голосовую панель.\n• Собственный ИИ: выберите любого поставщика, совместимого с OpenAI, и введите ключ API в Настройки → Dictate.\n• Умное форматирование и переформулирование с выбранной вами моделью.\n• Настройки из предыдущего приложения Dictate импортируются автоматически.</string>
     <string name="changelog__v4_1_0">• Новое: поиск эмодзи прямо с клавиатуры.\n• Новый провайдер транскрипции: Soniox.\n• Повторно вставляйте последнюю диктовку и восстанавливайте записи, прерванные при закрытии клавиатуры.\n• Панель промптов теперь обновляется в реальном времени: удерживайте промпт, чтобы изменить его.\n• На экране провайдеров ИИ теперь показаны и активный провайдер транскрипции, и провайдер переформулировки.\n• Более крупная кнопка записи, по которой проще попасть.\n• Исправления: подсказка о поддержке могла зависнуть и перекрыть панель на некоторых языках; резервное копирование больше не падает при выбранных промптах, клавиатуре или теме; сохранённые API-ключи сохраняются при обновлении.</string>
     <string name="changelog__v4_1_1">• Исправление: на некоторых устройствах акцентный цвет мог отображаться зелёным — клавиши и кнопки снова синие, как в TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2561,4 +2561,14 @@
     <string name="translate__missing">Не скачано: {language}</string>
     <string name="translate__failed">Не удалось перевести</string>
     <string name="translate__unsupported">Перевод недоступен на этом устройстве</string>
+    <string name="about__tagline">Основано на Dictate и FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Сообщить об ошибке или предложить идею на GitHub</string>
+    <string name="about__credits__title">Благодарности</string>
+    <string name="about__credits_dictate__title">Основано на Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter — форк Dictate Keyboard от DevEmperor, Apache 2.0. Голосовой ввод, клавиатура и почти всё, что вы здесь видите, — результат этой работы. Спасибо! Нажмите, чтобы открыть.</string>
+    <string name="about__credits_floris__summary">Dictate, в свою очередь, — форк FlorisBoard от Патрика Голдингера и участников, Apache 2.0. Нажмите, чтобы открыть.</string>
+    <string name="about__credits_donate__title">Поддержать разработчика Dictate</string>
+    <string name="about__credits_donate__summary">Отправить DevEmperor чаевые за работу, на которой построен TypeBetter</string>
+    <string name="changelog__donate_credit">Основано на Dictate от DevEmperor. Нажмите, чтобы поддержать разработчика ♥</string>
+    <string name="apptour51__outro_body_credit">Спасибо, что пользуетесь TypeBetter! Эти функции пришли из Dictate — приложения, на котором построен TypeBetter. Если они помогают вам каждый день, небольшие чаевые его разработчику, DevEmperor, поддержат эту работу. Все обзоры можно снова открыть в Настройки › О приложении.</string>
 </resources>

@@ -1773,7 +1773,7 @@
     <string name="changelog__view_all">Zobacz wszystkie zmiany</string>
     <string name="changelog__intro">TypeBetter został zaktualizowany. Oto nowości:</string>
     <string name="changelog__version_header">Wersja {version}</string>
-    <string name="changelog__current">• Zupełnie nowa klawiatura: TypeBetter jest teraz pełnoprawną, wielojęzyczną klawiaturą z dedykowanym klawiszem mikrofonu, który otwiera panel głosowy.\n• Własne AI: wybierz dowolnego dostawcę zgodnego z OpenAI i wprowadź klucz API w Ustawienia → Dictate.\n• Inteligentne formatowanie i przeformułowanie dzięki wybranemu modelowi.\n• Ustawienia z poprzedniej aplikacji TypeBetter są importowane automatycznie.</string>
+    <string name="changelog__current">• Zupełnie nowa klawiatura: Dictate jest teraz pełnoprawną, wielojęzyczną klawiaturą z dedykowanym klawiszem mikrofonu, który otwiera panel głosowy.\n• Własne AI: wybierz dowolnego dostawcę zgodnego z OpenAI i wprowadź klucz API w Ustawienia → Dictate.\n• Inteligentne formatowanie i przeformułowanie dzięki wybranemu modelowi.\n• Ustawienia z poprzedniej aplikacji Dictate są importowane automatycznie.</string>
     <string name="changelog__v4_1_0">• Nowość: wyszukuj emoji bezpośrednio z klawiatury.\n• Nowy dostawca transkrypcji: Soniox.\n• Ponownie wstawiaj ostatnie dyktowanie i odzyskuj nagrania przerwane po zamknięciu klawiatury.\n• Pasek promptów odświeża się teraz na żywo: przytrzymaj prompt, aby go edytować.\n• Ekran dostawców AI pokazuje teraz zarówno aktywnego dostawcę transkrypcji, jak i przeredagowywania.\n• Większy przycisk nagrywania, w który łatwiej trafić.\n• Poprawki: komunikat o wsparciu mógł się zaciąć i zasłonić pasek w niektórych językach; kopia zapasowa nie kończy się już błędem przy wybranych promptach, klawiaturze lub motywie; zapisane klucze API są zachowywane przy aktualizacji.</string>
     <string name="changelog__v4_1_1">• Poprawka: kolor akcentu mógł wyglądać na zielony na niektórych urządzeniach; klawisze i przyciski znów mają niebieski kolor TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2572,4 +2572,14 @@
     <string name="translate__missing">Nie pobrano: {language}</string>
     <string name="translate__failed">Tłumaczenie nie powiodło się</string>
     <string name="translate__unsupported">Tłumaczenie nie jest dostępne na tym urządzeniu</string>
+    <string name="about__tagline">Zbudowane na Dictate i FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Zgłoś błąd lub zaproponuj pomysł na GitHubie</string>
+    <string name="about__credits__title">Podziękowania</string>
+    <string name="about__credits_dictate__title">Zbudowane na Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter to fork Dictate Keyboard autorstwa DevEmperor, Apache 2.0. Pisanie głosem, klawiatura i większość tego, co tu widzisz, pochodzą z tej pracy. Dziękujemy! Dotknij, aby otworzyć.</string>
+    <string name="about__credits_floris__summary">Dictate jest z kolei forkiem FlorisBoard autorstwa Patricka Goldingera i współtwórców, Apache 2.0. Dotknij, aby otworzyć.</string>
+    <string name="about__credits_donate__title">Wesprzyj twórcę Dictate</string>
+    <string name="about__credits_donate__summary">Wyślij DevEmperor napiwek za pracę, na której opiera się TypeBetter</string>
+    <string name="changelog__donate_credit">Zbudowane na Dictate autorstwa DevEmperor. Dotknij tutaj, aby wesprzeć twórcę ♥</string>
+    <string name="apptour51__outro_body_credit">Dziękujemy za korzystanie z TypeBetter! Te funkcje pochodzą z Dictate, aplikacji, na której opiera się TypeBetter. Jeśli pomagają ci każdego dnia, mały napiwek dla jej twórcy, DevEmperor, podtrzymuje tę pracę. Wszystkie przewodniki znajdziesz w Ustawienia › O aplikacji.</string>
 </resources>

@@ -1772,7 +1772,7 @@
     <string name="changelog__view_all">Zobrazit všechny změny</string>
     <string name="changelog__intro">TypeBetter byl aktualizován. Co je nového:</string>
     <string name="changelog__version_header">Verze {version}</string>
-    <string name="changelog__current">• Zcela nová klávesnice: TypeBetter je nyní plnohodnotná vícejazyčná klávesnice s vyhrazenou klávesou mikrofonu, která otevírá hlasový panel.\n• Vlastní AI: vyberte libovolného poskytovatele kompatibilního s OpenAI a zadejte klíč API v Nastavení → Dictate.\n• Inteligentní formátování a přeformulování pomocí zvoleného modelu.\n• Nastavení z předchozí aplikace TypeBetter se importují automaticky.</string>
+    <string name="changelog__current">• Zcela nová klávesnice: Dictate je nyní plnohodnotná vícejazyčná klávesnice s vyhrazenou klávesou mikrofonu, která otevírá hlasový panel.\n• Vlastní AI: vyberte libovolného poskytovatele kompatibilního s OpenAI a zadejte klíč API v Nastavení → Dictate.\n• Inteligentní formátování a přeformulování pomocí zvoleného modelu.\n• Nastavení z předchozí aplikace Dictate se importují automaticky.</string>
     <string name="changelog__v4_1_0">• Novinka: vyhledávejte emoji přímo z klávesnice.\n• Nový poskytovatel přepisu: Soniox.\n• Znovu vložte své poslední diktování a obnovte nahrávky přerušené při zavření klávesnice.\n• Lišta promptů se nyní aktualizuje živě: podržením promptu jej upravíte.\n• Obrazovka poskytovatelů AI nyní zobrazuje aktivního poskytovatele přepisu i přeformulování.\n• Větší tlačítko nahrávání, na které se snáze míří.\n• Opravy: výzva k podpoře mohla zůstat viset a zakrýt lištu v některých jazycích; záloha už neselhává při vybraných promptech, klávesnici nebo motivu; uložené klíče API zůstanou zachovány při aktualizaci.</string>
     <string name="changelog__v4_1_1">• Oprava: zvýrazňovací barva se na některých zařízeních mohla zobrazovat zeleně; klávesy a tlačítka jsou opět v modré barvě TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2571,4 +2571,14 @@
     <string name="translate__missing">Není staženo: {language}</string>
     <string name="translate__failed">Překlad se nezdařil</string>
     <string name="translate__unsupported">Překlad není v tomto zařízení k dispozici</string>
+    <string name="about__tagline">Postaveno na Dictate a FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Nahlásit chybu nebo navrhnout nápad na GitHubu</string>
+    <string name="about__credits__title">Poděkování</string>
+    <string name="about__credits_dictate__title">Postaveno na Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter je fork Dictate Keyboard od DevEmperor, Apache 2.0. Hlasové psaní, klávesnice a většina toho, co tu vidíš, pochází z této práce. Děkujeme! Klepnutím otevřeš.</string>
+    <string name="about__credits_floris__summary">Dictate je sám forkem FlorisBoard od Patricka Goldingera a přispěvatelů, Apache 2.0. Klepnutím otevřeš.</string>
+    <string name="about__credits_donate__title">Podpořit vývojáře Dictate</string>
+    <string name="about__credits_donate__summary">Pošli DevEmperor spropitné za práci, na které TypeBetter stojí</string>
+    <string name="changelog__donate_credit">Postaveno na Dictate od DevEmperor. Klepnutím sem podpoříš jeho vývojáře ♥</string>
+    <string name="apptour51__outro_body_credit">Díky, že používáš TypeBetter! Tyto funkce pocházejí z Dictate, aplikace, na které TypeBetter stojí. Pokud ti každý den pomáhají, malé spropitné jejímu vývojáři DevEmperor udrží tuto práci v chodu. Všechny prohlídky najdeš kdykoli v Nastavení › O aplikaci.</string>
 </resources>

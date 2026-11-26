@@ -1752,7 +1752,7 @@
     <string name="changelog__view_all">Виж всички промени</string>
     <string name="changelog__intro">TypeBetter беше обновен. Ето какво е новото:</string>
     <string name="changelog__version_header">Версия {version}</string>
-    <string name="changelog__current">• Чисто нова клавиатура: TypeBetter вече се предлага като пълноценна многоезична клавиатура с подредба и специален микрофонен клавиш, който отваря гласовия панел.\n• Ваш собствен ИИ: изберете всеки съвместим с OpenAI доставчик и въведете API ключа си в Настройки → Dictate.\n• Интелигентно форматиране и преформулиране, задвижвани от избрания от вас модел.\n• Настройките ви от предишното приложение TypeBetter се импортират автоматично.</string>
+    <string name="changelog__current">• Чисто нова клавиатура: Dictate вече се предлага като пълноценна многоезична клавиатура с подредба и специален микрофонен клавиш, който отваря гласовия панел.\n• Ваш собствен ИИ: изберете всеки съвместим с OpenAI доставчик и въведете API ключа си в Настройки → Dictate.\n• Интелигентно форматиране и преформулиране, задвижвани от избрания от вас модел.\n• Настройките ви от предишното приложение Dictate се импортират автоматично.</string>
     <string name="changelog__v4_1_0">• Ново: търсене на емоджита директно от клавиатурата.\n• Нов доставчик на транскрипция: Soniox.\n• Вмъквайте отново последната си диктовка и възстановявайте записи, прекъснати при затваряне на клавиатурата.\n• Лентата с подкани вече се обновява на живо: задръжте подкана, за да я редактирате.\n• Екранът с доставчици на ИИ вече показва както активния доставчик на транскрипция, така и този за преформулиране.\n• По-голям бутон за запис, в който се уцелва по-лесно.\n• Корекции: подкана за поддръжка можеше да заседне и да закрие лентата на някои езици; архивирането вече не се проваля при избрани подкани, клавиатура или тема; запазените API ключове се запазват при обновяване.</string>
     <string name="changelog__v4_1_1">• Корекция: акцентният цвят можеше да изглежда зелен на някои устройства; клавишите и бутоните отново са в синьото на TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2549,4 +2549,14 @@
     <string name="translate__missing">Не е изтеглено: {language}</string>
     <string name="translate__failed">Преводът не бе успешен</string>
     <string name="translate__unsupported">Преводът не е наличен на това устройство</string>
+    <string name="about__tagline">Създадено върху Dictate и FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Съобщете за грешка или предложете идея в GitHub</string>
+    <string name="about__credits__title">Благодарности</string>
+    <string name="about__credits_dictate__title">Създадено върху Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter е форк на Dictate Keyboard от DevEmperor, Apache 2.0. Гласовото въвеждане, клавиатурата и почти всичко, което виждате тук, идват от тази работа. Благодарим! Докоснете, за да го отворите.</string>
+    <string name="about__credits_floris__summary">Самият Dictate е форк на FlorisBoard от Патрик Голдингер и сътрудници, Apache 2.0. Докоснете, за да го отворите.</string>
+    <string name="about__credits_donate__title">Подкрепете разработчика на Dictate</string>
+    <string name="about__credits_donate__summary">Изпратете бакшиш на DevEmperor за работата, върху която е изграден TypeBetter</string>
+    <string name="changelog__donate_credit">Създадено върху Dictate от DevEmperor. Докоснете тук, за да подкрепите разработчика ♥</string>
+    <string name="apptour51__outro_body_credit">Благодарим, че използвате TypeBetter! Тези функции идват от Dictate, приложението, върху което е изграден TypeBetter. Ако ви помагат всеки ден, малък бакшиш за разработчика DevEmperor поддържа тази работа. Можете да прегледате обиколките отново по всяко време в Настройки › Относно.</string>
 </resources>

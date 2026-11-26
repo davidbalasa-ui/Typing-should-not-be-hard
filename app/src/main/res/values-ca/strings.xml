@@ -1620,7 +1620,7 @@
     <string name="changelog__view_all">Mostra tots els canvis</string>
     <string name="changelog__intro">El TypeBetter s\'ha actualitzat. Aquestes són les novetats:</string>
     <string name="changelog__version_header">Versió {version}</string>
-    <string name="changelog__current">• Teclat totalment nou: el TypeBetter ara és un teclat amb disposició completa i multilingüe, amb una tecla de micròfon dedicada que obre el tauler de veu.\n• Usa la teva pròpia IA: tria qualsevol proveïdor compatible amb OpenAI i introdueix la teva clau d\'API a Configuració → Dictate.\n• Formatació i reformulació intel·ligents amb el model que triïs.\n• La configuració de l\'app TypeBetter anterior s\'importa automàticament.</string>
+    <string name="changelog__current">• Teclat totalment nou: el Dictate ara és un teclat amb disposició completa i multilingüe, amb una tecla de micròfon dedicada que obre el tauler de veu.\n• Usa la teva pròpia IA: tria qualsevol proveïdor compatible amb OpenAI i introdueix la teva clau d\'API a Configuració → Dictate.\n• Formatació i reformulació intel·ligents amb el model que triïs.\n• La configuració de l\'app Dictate anterior s\'importa automàticament.</string>
     <string name="changelog__v4_1_0">• Nou: cerca emojis directament des del teclat.\n• Nou proveïdor de transcripció: Soniox.\n• Torna a inserir l\'últim dictat i recupera els enregistraments interromputs en tancar-se el teclat.\n• La barra de prompts ara s\'actualitza en directe: mantén premut un prompt per editar-lo.\n• La pantalla de proveïdors d\'IA ara mostra tant el proveïdor de transcripció com el de reformulació actius.\n• Botó d\'enregistrament més gran i més fàcil de prémer.\n• Correccions: un avís de suport es podia quedar encallat i tapar la barra en alguns idiomes; la còpia de seguretat ja no falla quan hi ha prompts, teclat o tema seleccionats; les claus d\'API desades es conserven en actualitzar.</string>
     <string name="changelog__v4_1_1">• Correcció: el color d\'accent podia aparèixer verd en alguns dispositius; les tecles i els botons tornen a ser del blau de TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2417,4 +2417,14 @@
     <string name="translate__missing">Cal baixar {language}</string>
     <string name="translate__failed">La traducció ha fallat</string>
     <string name="translate__unsupported">La traducció no està disponible en aquest dispositiu</string>
+    <string name="about__tagline">Basat en Dictate i FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Informa d\'un error o proposa una idea a GitHub</string>
+    <string name="about__credits__title">Crèdits</string>
+    <string name="about__credits_dictate__title">Basat en Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter és un fork de Dictate Keyboard de DevEmperor, Apache 2.0. El dictat per veu, el teclat i gairebé tot el que veus aquí venen d\'aquella feina. Gràcies! Toca per obrir-lo.</string>
+    <string name="about__credits_floris__summary">Dictate és alhora un fork de FlorisBoard de Patrick Goldinger i col·laboradors, Apache 2.0. Toca per obrir-lo.</string>
+    <string name="about__credits_donate__title">Dona suport al desenvolupador de Dictate</string>
+    <string name="about__credits_donate__summary">Envia una propina a DevEmperor per la feina en què es basa TypeBetter</string>
+    <string name="changelog__donate_credit">Basat en Dictate de DevEmperor. Toca aquí per donar suport al seu desenvolupador ♥</string>
+    <string name="apptour51__outro_body_credit">Gràcies per fer servir TypeBetter! Aquestes funcions venen de Dictate, l\'aplicació en què es basa TypeBetter. Si t\'ajuden cada dia, una petita propina al seu desenvolupador, DevEmperor, manté viva aquella feina. Pots tornar a veure aquests recorreguts quan vulguis a Configuració › Quant a.</string>
 </resources>

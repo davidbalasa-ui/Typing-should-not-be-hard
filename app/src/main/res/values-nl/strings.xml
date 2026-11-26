@@ -1652,7 +1652,7 @@
     <string name="changelog__view_all">Alle wijzigingen bekijken</string>
     <string name="changelog__intro">TypeBetter is bijgewerkt. Dit is er nieuw:</string>
     <string name="changelog__version_header">Versie {version}</string>
-    <string name="changelog__current">• Gloednieuw toetsenbord: TypeBetter is nu een volwaardig meertalig lay-outtoetsenbord met een eigen microfoontoets die het spraakpaneel opent.\n• Gebruik je eigen AI: kies een willekeurige OpenAI-compatibele aanbieder en voer je API-sleutel in via Instellingen → Dictate.\n• Slimme opmaak en herformulering met het model van jouw keuze.\n• Je instellingen van de vorige TypeBetter-app worden automatisch geïmporteerd.</string>
+    <string name="changelog__current">• Gloednieuw toetsenbord: Dictate is nu een volwaardig meertalig lay-outtoetsenbord met een eigen microfoontoets die het spraakpaneel opent.\n• Gebruik je eigen AI: kies een willekeurige OpenAI-compatibele aanbieder en voer je API-sleutel in via Instellingen → Dictate.\n• Slimme opmaak en herformulering met het model van jouw keuze.\n• Je instellingen van de vorige Dictate-app worden automatisch geïmporteerd.</string>
     <string name="changelog__v4_1_0">• Nieuw: zoek emoji\'s rechtstreeks vanaf het toetsenbord.\n• Nieuwe transcriptieprovider: Soniox.\n• Voeg je laatste dictaat opnieuw in en herstel opnames die werden onderbroken toen het toetsenbord sloot.\n• De promptbalk wordt nu live bijgewerkt: houd een prompt ingedrukt om die te bewerken.\n• Het scherm met AI-providers toont nu zowel je actieve transcriptie- als herformuleringsprovider.\n• Grotere opnameknop die makkelijker te raken is.\n• Oplossingen: een ondersteuningsmelding kon blijven hangen en de balk blokkeren in sommige talen; back-up mislukt niet meer wanneer prompts, toetsenbord of thema zijn geselecteerd; opgeslagen API-sleutels blijven behouden bij het updaten.</string>
     <string name="changelog__v4_1_1">• Oplossing: de accentkleur kon op sommige apparaten groen lijken; toetsen en knoppen zijn weer TypeBetter-blauw.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2449,4 +2449,14 @@
     <string name="translate__missing">Niet gedownload: {language}</string>
     <string name="translate__failed">Vertalen mislukt</string>
     <string name="translate__unsupported">Vertalen is niet beschikbaar op dit apparaat</string>
+    <string name="about__tagline">Gebouwd op Dictate en FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Meld een bug of stel een idee voor op GitHub</string>
+    <string name="about__credits__title">Met dank aan</string>
+    <string name="about__credits_dictate__title">Gebouwd op Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter is een fork van Dictate Keyboard door DevEmperor, Apache 2.0. Spraakinvoer, het toetsenbord en het meeste wat je hier ziet komen uit dat werk. Bedankt! Tik om te openen.</string>
+    <string name="about__credits_floris__summary">Dictate is zelf een fork van FlorisBoard door Patrick Goldinger en bijdragers, Apache 2.0. Tik om te openen.</string>
+    <string name="about__credits_donate__title">Steun de ontwikkelaar van Dictate</string>
+    <string name="about__credits_donate__summary">Stuur DevEmperor een fooi voor het werk waarop TypeBetter is gebouwd</string>
+    <string name="changelog__donate_credit">Gebouwd op Dictate door DevEmperor. Tik hier om de ontwikkelaar te steunen ♥</string>
+    <string name="apptour51__outro_body_credit">Bedankt dat je TypeBetter gebruikt! Deze functies komen uit Dictate, de app waarop TypeBetter is gebouwd. Helpen ze je elke dag, dan houdt een kleine fooi aan de ontwikkelaar, DevEmperor, dat werk gaande. Je kunt deze rondleidingen altijd terugzien via Instellingen › Over.</string>
 </resources>

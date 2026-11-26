@@ -1742,7 +1742,7 @@
     <string name="changelog__view_all">查看所有更改</string>
     <string name="changelog__intro">TypeBetter 已更新。以下是新功能：</string>
     <string name="changelog__version_header">版本 {version}</string>
-    <string name="changelog__current">• 全新键盘：TypeBetter 现在作为完整的多语言布局键盘提供，带有专用麦克风键以打开语音面板。\n• 自带 AI：选择任何兼容 OpenAI 的服务商，并在设置 → Dictate 中输入您的 API 密钥。\n• 由您选择的模型驱动的智能格式化和改写。\n• 您在旧版 TypeBetter 应用中的设置会自动导入。</string>
+    <string name="changelog__current">• 全新键盘：Dictate 现在作为完整的多语言布局键盘提供，带有专用麦克风键以打开语音面板。\n• 自带 AI：选择任何兼容 OpenAI 的服务商，并在设置 → Dictate 中输入您的 API 密钥。\n• 由您选择的模型驱动的智能格式化和改写。\n• 您在旧版 Dictate 应用中的设置会自动导入。</string>
     <string name="changelog__v4_1_0">• 新增：直接从键盘搜索表情符号。\n• 新的转录服务商：Soniox。\n• 重新插入上一次的听写，并恢复键盘关闭时中断的录音。\n• 提示词栏现在会实时刷新：长按某个提示词即可编辑。\n• AI 服务商界面现在会同时显示当前启用的转录服务商和改写服务商。\n• 录音按钮更大，更容易点按。\n• 修复：在某些语言下，支持提示可能卡住并遮挡操作栏；选择了提示词、键盘或主题时备份不再失败；升级后会保留已保存的 API 密钥。</string>
     <string name="changelog__v4_1_1">• 修复：在某些设备上强调色可能显示为绿色；按键和按钮已恢复为 TypeBetter 蓝色。</string>
     <!-- Dictate on-device (offline) models -->
@@ -2537,4 +2537,14 @@
     <string name="translate__missing">{language}尚未下载</string>
     <string name="translate__failed">翻译失败</string>
     <string name="translate__unsupported">此设备不支持翻译</string>
+    <string name="about__tagline">基于 Dictate 和 FlorisBoard</string>
+    <string name="about__feedback__summary_issues">在 GitHub 上报告问题或提出建议</string>
+    <string name="about__credits__title">致谢</string>
+    <string name="about__credits_dictate__title">基于 Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter 是 DevEmperor 开发的 Dictate Keyboard 的分支，采用 Apache 2.0 许可。语音输入、键盘以及你在这里看到的大部分功能都来自这项工作。谢谢！点按即可打开。</string>
+    <string name="about__credits_floris__summary">Dictate 本身是 Patrick Goldinger 及贡献者开发的 FlorisBoard 的分支，采用 Apache 2.0 许可。点按即可打开。</string>
+    <string name="about__credits_donate__title">支持 Dictate 的开发者</string>
+    <string name="about__credits_donate__summary">为 TypeBetter 所依托的工作给 DevEmperor 打赏</string>
+    <string name="changelog__donate_credit">基于 DevEmperor 开发的 Dictate。点按此处支持其开发者 ♥</string>
+    <string name="apptour51__outro_body_credit">感谢使用 TypeBetter！这些功能来自 TypeBetter 所依托的应用 Dictate。如果它们每天都在帮助你，给开发者 DevEmperor 一点小小的打赏就能让这项工作继续下去。你可以随时在 设置 › 关于 中重新查看这些导览。</string>
 </resources>

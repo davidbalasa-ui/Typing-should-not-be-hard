@@ -1732,7 +1732,7 @@
     <string name="changelog__view_all">Tüm değişiklikleri görüntüle</string>
     <string name="changelog__intro">TypeBetter güncellendi. İşte yenilikler:</string>
     <string name="changelog__version_header">Sürüm {version}</string>
-    <string name="changelog__current">• Yepyeni bir klavye: TypeBetter artık, ses panelini açan özel bir mikrofon tuşuna sahip, tam donanımlı çok dilli bir düzen klavyesi olarak geliyor.\n• Kendi yapay zekânızı getirin: OpenAI uyumlu herhangi bir sağlayıcı seçin ve API anahtarınızı Ayarlar → Dictate altında girin.\n• Seçtiğiniz modelle desteklenen akıllı biçimlendirme ve yeniden ifade etme.\n• Önceki TypeBetter uygulamasındaki ayarlarınız otomatik olarak içe aktarılır.</string>
+    <string name="changelog__current">• Yepyeni bir klavye: Dictate artık, ses panelini açan özel bir mikrofon tuşuna sahip, tam donanımlı çok dilli bir düzen klavyesi olarak geliyor.\n• Kendi yapay zekânızı getirin: OpenAI uyumlu herhangi bir sağlayıcı seçin ve API anahtarınızı Ayarlar → Dictate altında girin.\n• Seçtiğiniz modelle desteklenen akıllı biçimlendirme ve yeniden ifade etme.\n• Önceki Dictate uygulamasındaki ayarlarınız otomatik olarak içe aktarılır.</string>
     <string name="changelog__v4_1_0">• Yeni: doğrudan klavyeden emoji arayın.\n• Yeni transkripsiyon sağlayıcısı: Soniox.\n• Son dikte ettiğinizi yeniden ekleyin ve klavye kapandığında kesilen kayıtları geri getirin.\n• İstem çubuğu artık canlı olarak yenileniyor: düzenlemek için bir isteme uzun basın.\n• Yapay zekâ sağlayıcıları ekranı artık hem etkin transkripsiyon hem de yeniden ifade sağlayıcınızı gösteriyor.\n• Daha büyük, daha kolay dokunulan kayıt düğmesi.\n• Düzeltmeler: bir destek bildirimi bazı dillerde takılıp çubuğu kapatabiliyordu; istemler, klavye veya tema seçiliyken yedekleme artık başarısız olmuyor; kaydedilen API anahtarları güncellemede korunuyor.</string>
     <string name="changelog__v4_1_1">• Düzeltme: vurgu rengi bazı cihazlarda yeşil görünebiliyordu; tuşlar ve düğmeler yeniden TypeBetter mavisinde.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2529,4 +2529,14 @@
     <string name="translate__missing">{language} indirilmemiş</string>
     <string name="translate__failed">Çeviri başarısız</string>
     <string name="translate__unsupported">Çeviri bu cihazda kullanılamıyor</string>
+    <string name="about__tagline">Dictate ve FlorisBoard üzerine kuruldu</string>
+    <string name="about__feedback__summary_issues">GitHub\'da hata bildir veya fikir öner</string>
+    <string name="about__credits__title">Teşekkürler</string>
+    <string name="about__credits_dictate__title">Dictate üzerine kuruldu</string>
+    <string name="about__credits_dictate__summary">TypeBetter, DevEmperor\'un Dictate Keyboard uygulamasının bir çatalıdır, Apache 2.0. Sesle yazma, klavye ve burada gördüklerinin çoğu bu emekten gelir. Teşekkürler! Açmak için dokun.</string>
+    <string name="about__credits_floris__summary">Dictate de Patrick Goldinger ve katkıda bulunanların FlorisBoard uygulamasının bir çatalıdır, Apache 2.0. Açmak için dokun.</string>
+    <string name="about__credits_donate__title">Dictate geliştiricisini destekle</string>
+    <string name="about__credits_donate__summary">TypeBetter\'ın üzerine kurulduğu emek için DevEmperor\'a bahşiş gönder</string>
+    <string name="changelog__donate_credit">DevEmperor\'un Dictate\'i üzerine kuruldu. Geliştiricisini desteklemek için buraya dokun ♥</string>
+    <string name="apptour51__outro_body_credit">TypeBetter\'ı kullandığın için teşekkürler! Bu özellikler, TypeBetter\'ın üzerine kurulduğu Dictate\'ten gelir. Sana her gün yardım ediyorlarsa, geliştiricisi DevEmperor\'a küçük bir bahşiş bu emeği sürdürür. Bu turları istediğin zaman Ayarlar › Hakkında altında yeniden izleyebilirsin.</string>
 </resources>

@@ -1093,7 +1093,7 @@
     <string name="setup__provider__skip_btn">الإعداد لاحقًا</string>
     <string name="setup__provider__other_provider">استخدم مزوّد ذكاء اصطناعي آخر</string>
     <string name="setup__provider__other_provider_hint">متقدّم: اختر خدمة أخرى بدلًا من Groq. ستحتاج إلى مفتاح API من ذلك المزوّد.</string>
-    <string name="setup__finish_up__add_key_hint">نصيحة: لم تُضِف مفتاح ذكاء اصطناعي بعد. أضِف واحدًا في أي وقت من الإعدادات ← TypeBetter ← مزوّدو الذكاء الاصطناعي لبدء الإملاء.</string>
+    <string name="setup__finish_up__add_key_hint">نصيحة: لم تُضِف مفتاح ذكاء اصطناعي بعد. أضِف واحدًا في أي وقت من الإعدادات ← Dictate ← مزوّدو الذكاء الاصطناعي لبدء الإملاء.</string>
     <string name="crash_dialog__bug_report_template">تقرير الأعطال</string>
     <string name="enum__swipe_action__toggle_compact_layout">تبديل التخطيط المضغوط</string>
     <string name="unit__hours__symbol">{v} س</string>
@@ -1621,7 +1621,7 @@
     <string name="changelog__view_all">عرض جميع التغييرات</string>
     <string name="changelog__intro">تم تحديث TypeBetter. إليك ما الجديد:</string>
     <string name="changelog__version_header">الإصدار {version}</string>
-    <string name="changelog__current">• لوحة مفاتيح جديدة كليًا: يأتي TypeBetter الآن كلوحة مفاتيح متعددة اللغات كاملة التخطيط مع مفتاح ميكروفون مخصّص يفتح لوحة الصوت.\n• استخدم ذكاءك الاصطناعي الخاص: اختر أي مزوّد متوافق مع OpenAI وأدخِل مفتاح API الخاص بك ضمن الإعدادات ← TypeBetter.\n• تنسيق وإعادة صياغة ذكيان بدعم من النموذج الذي تختاره.\n• تُستورَد إعداداتك من تطبيق TypeBetter السابق تلقائيًا.</string>
+    <string name="changelog__current">• لوحة مفاتيح جديدة كليًا: يأتي Dictate الآن كلوحة مفاتيح متعددة اللغات كاملة التخطيط مع مفتاح ميكروفون مخصّص يفتح لوحة الصوت.\n• استخدم ذكاءك الاصطناعي الخاص: اختر أي مزوّد متوافق مع OpenAI وأدخِل مفتاح API الخاص بك ضمن الإعدادات ← Dictate.\n• تنسيق وإعادة صياغة ذكيان بدعم من النموذج الذي تختاره.\n• تُستورَد إعداداتك من تطبيق Dictate السابق تلقائيًا.</string>
     <string name="changelog__v4_1_0">• جديد: ابحث عن الرموز التعبيرية مباشرة من لوحة المفاتيح.\n• مزوّد تفريغ صوتي جديد: Soniox.\n• أعد إدراج آخر إملاء، واستعد التسجيلات التي انقطعت عند إغلاق لوحة المفاتيح.\n• يتم الآن تحديث شريط المطالبات مباشرةً: اضغط مطوّلاً على مطالبة لتعديلها.\n• تعرض الآن شاشة مزوّدي الذكاء الاصطناعي مزوّد التفريغ الصوتي ومزوّد إعادة الصياغة النشطين معًا.\n• زر تسجيل أكبر وأسهل في الضغط عليه.\n• إصلاحات: كان من الممكن أن يعلق إشعار الدعم ويحجب الشريط في بعض اللغات؛ لم يعد النسخ الاحتياطي يفشل عند تحديد المطالبات أو لوحة المفاتيح أو السمة؛ تُحفظ مفاتيح API المخزّنة عند التحديث.</string>
     <string name="changelog__v4_1_1">• إصلاح: قد يظهر لون التمييز باللون الأخضر على بعض الأجهزة؛ عادت المفاتيح والأزرار إلى الأزرق الخاص بـ TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2422,4 +2422,14 @@
     <string name="translate__missing">لم يتم تنزيل {language}</string>
     <string name="translate__failed">فشلت الترجمة</string>
     <string name="translate__unsupported">الترجمة غير متاحة على هذا الجهاز</string>
+    <string name="about__tagline">مبني على Dictate وFlorisBoard</string>
+    <string name="about__feedback__summary_issues">أبلغ عن خطأ أو اقترح فكرة على GitHub</string>
+    <string name="about__credits__title">شكر وتقدير</string>
+    <string name="about__credits_dictate__title">مبني على Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter نسخة متفرعة من Dictate Keyboard من تطوير DevEmperor، برخصة Apache 2.0. الكتابة الصوتية ولوحة المفاتيح ومعظم ما تراه هنا مصدره ذلك العمل. شكرًا! انقر لفتحه.</string>
+    <string name="about__credits_floris__summary">Dictate نفسه نسخة متفرعة من FlorisBoard من تطوير Patrick Goldinger والمساهمين، برخصة Apache 2.0. انقر لفتحه.</string>
+    <string name="about__credits_donate__title">ادعم مطوّر Dictate</string>
+    <string name="about__credits_donate__summary">أرسل إكرامية إلى DevEmperor مقابل العمل الذي بُني عليه TypeBetter</string>
+    <string name="changelog__donate_credit">مبني على Dictate من تطوير DevEmperor. انقر هنا لدعم مطوّره ♥</string>
+    <string name="apptour51__outro_body_credit">شكرًا لاستخدامك TypeBetter! هذه الميزات مصدرها Dictate، التطبيق الذي بُني عليه TypeBetter. إن كانت تساعدك كل يوم، فإكرامية صغيرة لمطوّره DevEmperor تُبقي ذلك العمل مستمرًا. يمكنك مشاهدة هذه الجولات مجددًا في أي وقت من الإعدادات › حول.</string>
 </resources>

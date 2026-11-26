@@ -1702,7 +1702,7 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="changelog__view_all">Lihat semua perubahan</string>
     <string name="changelog__intro">TypeBetter telah diperbarui. Inilah yang baru:</string>
     <string name="changelog__version_header">Versi {version}</string>
-    <string name="changelog__current">• Papan ketik yang sama sekali baru: TypeBetter kini hadir sebagai papan ketik tata letak multibahasa lengkap dengan tombol mikrofon khusus yang membuka panel suara.\n• Bawa AI Anda sendiri: pilih penyedia apa pun yang kompatibel dengan OpenAI dan masukkan kunci API Anda di Pengaturan → Dictate.\n• Pemformatan dan penyusunan ulang cerdas yang didukung oleh model pilihan Anda.\n• Pengaturan Anda dari aplikasi TypeBetter sebelumnya diimpor secara otomatis.</string>
+    <string name="changelog__current">• Papan ketik yang sama sekali baru: Dictate kini hadir sebagai papan ketik tata letak multibahasa lengkap dengan tombol mikrofon khusus yang membuka panel suara.\n• Bawa AI Anda sendiri: pilih penyedia apa pun yang kompatibel dengan OpenAI dan masukkan kunci API Anda di Pengaturan → Dictate.\n• Pemformatan dan penyusunan ulang cerdas yang didukung oleh model pilihan Anda.\n• Pengaturan Anda dari aplikasi Dictate sebelumnya diimpor secara otomatis.</string>
     <string name="changelog__v4_1_0">• Baru: cari emoji langsung dari keyboard.\n• Penyedia transkripsi baru: Soniox.\n• Sisipkan kembali dikte terakhir Anda, dan pulihkan rekaman yang terputus saat keyboard ditutup.\n• Bilah prompt kini diperbarui secara langsung: tekan lama sebuah prompt untuk mengeditnya.\n• Layar penyedia AI kini menampilkan penyedia transkripsi dan pengubahan kata yang aktif.\n• Tombol rekam lebih besar dan lebih mudah ditekan.\n• Perbaikan: pesan dukungan bisa macet dan menutupi bilah dalam beberapa bahasa; pencadangan tidak lagi gagal saat prompt, keyboard, atau tema dipilih; kunci API yang tersimpan dipertahankan saat memperbarui.</string>
     <string name="changelog__v4_1_1">• Perbaikan: warna aksen bisa tampak hijau di beberapa perangkat; tombol dan tuts kembali ke biru TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
@@ -2498,4 +2498,14 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="translate__missing">{language} belum diunduh</string>
     <string name="translate__failed">Terjemahan gagal</string>
     <string name="translate__unsupported">Terjemahan tidak tersedia di perangkat ini</string>
+    <string name="about__tagline">Dibuat di atas Dictate dan FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Laporkan bug atau usulkan ide di GitHub</string>
+    <string name="about__credits__title">Kredit</string>
+    <string name="about__credits_dictate__title">Dibuat di atas Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter adalah fork dari Dictate Keyboard oleh DevEmperor, Apache 2.0. Pengetikan suara, keyboard, dan sebagian besar yang Anda lihat di sini berasal dari karya itu. Terima kasih! Ketuk untuk membukanya.</string>
+    <string name="about__credits_floris__summary">Dictate sendiri adalah fork dari FlorisBoard oleh Patrick Goldinger dan para kontributor, Apache 2.0. Ketuk untuk membukanya.</string>
+    <string name="about__credits_donate__title">Dukung pengembang Dictate</string>
+    <string name="about__credits_donate__summary">Kirim tip kepada DevEmperor untuk karya yang menjadi dasar TypeBetter</string>
+    <string name="changelog__donate_credit">Dibuat di atas Dictate oleh DevEmperor. Ketuk di sini untuk mendukung pengembangnya ♥</string>
+    <string name="apptour51__outro_body_credit">Terima kasih telah menggunakan TypeBetter! Fitur-fitur ini berasal dari Dictate, aplikasi yang menjadi dasar TypeBetter. Jika fitur ini membantu Anda setiap hari, tip kecil untuk pengembangnya, DevEmperor, menjaga karya itu tetap berjalan. Anda dapat melihat tur ini lagi kapan saja di Setelan › Tentang.</string>
 </resources>

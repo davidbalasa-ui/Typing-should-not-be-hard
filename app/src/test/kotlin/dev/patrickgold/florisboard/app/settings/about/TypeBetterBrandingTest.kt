@@ -91,16 +91,38 @@ class TypeBetterBrandingTest {
     @Test
     fun `English names the app TypeBetter, except Dictate Cloud and the Dictate settings screen`() {
         // Kept on purpose: "Dictate Cloud" is Dictate's own paid service; "Dictate" is also the verb and the
-        // name of the voice settings screen ("Settings → Dictate"); history says "Dictate 3".
-        val allowed = Regex("Dictate Cloud|[→›▸] Dictate|Dictate 3\\b")
+        // name of the voice settings screen ("Settings → Dictate"); history says "Dictate 3"; the 4.0 changelog
+        // describes Dictate's own release.
+        val allowed = Regex("Dictate Cloud|[→›▸←] Dictate|Dictate [←→›▸]|Dictate 3\\b")
         val verbs = setOf(
             "quick_action__ime_ui_mode_dictate", "setup__floating_button__title", "dictate__cloud_intro_title",
-            "apptour52__intro_title", "dictate__title", "dictate__cloud_activate_btn",
+            "apptour52__intro_title", "dictate__title", "dictate__cloud_activate_btn", "changelog__current",
         )
         val credits = Regex("^(about__credits_|about__tagline|apptour51__outro_body_credit|changelog__donate_credit)")
         english.filterKeys { it !in verbs && !credits.containsMatchIn(it) }.forEach { (name, value) ->
             val rest = allowed.replace(value, "")
             assertTrue(!Regex("(?<![A-Za-z])Dictate(?![A-Za-z])").containsMatchIn(rest), "$name: $value")
+        }
+    }
+
+    @Test
+    fun `every full translation carries the credits, so About is not half English`() {
+        val credits = listOf(
+            "about__tagline", "about__credits__title", "about__credits_dictate__title", "about__credits_dictate__summary",
+            "about__credits_floris__summary", "about__credits_donate__title", "about__credits_donate__summary",
+            "changelog__donate_credit", "apptour51__outro_body_credit",
+        )
+        for (locale in listOf("de", "fr", "es", "it", "ru", "ja", "zh-rCN", "ar")) {
+            val values = strings(File(res, "values-$locale/strings.xml"))
+            for (key in credits) {
+                assertTrue(key in values, "values-$locale lacks $key")
+                if (key != "about__credits__title") {
+                    assertTrue(
+                        Regex("Dictate|DevEmperor").containsMatchIn(values.getValue(key)),
+                        "values-$locale/$key names neither Dictate nor DevEmperor",
+                    )
+                }
+            }
         }
     }
 

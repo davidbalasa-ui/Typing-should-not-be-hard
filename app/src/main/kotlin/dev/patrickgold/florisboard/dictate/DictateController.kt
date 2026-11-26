@@ -3838,7 +3838,7 @@ object DictateController {
     }
 
     /**
-     * Copies [src] into Downloads/Dictate via MediaStore (API 29+) or the public dir. Returns the file
+     * Copies [src] into Downloads/TypeBetter via MediaStore (API 29+) or the public dir. Returns the file
      * name, or null on failure.
      *
      * Name and MIME follow what is actually in the file (#322). This used to say `.wav` and `audio/wav`
@@ -4299,7 +4299,7 @@ object DictateController {
         )
     }
 
-    /** Exports a history entry's retained audio to Downloads/Dictate (issue #140), toasting the result. */
+    /** Exports a history entry's retained audio to Downloads/TypeBetter (issue #140), toasting the result. */
     fun exportHistoryAudio(context: Context, entry: DictateHistoryEntry) {
         val path = entry.audioPath ?: return
         val src = File(path)
