@@ -40,6 +40,21 @@ fun getColorScheme(
     val prefs by FlorisPreferenceStore
     val accentColor by prefs.other.accentColor.collectAsState()
 
+    // TypeBetter: the icon's palette while the accent is left at its default.
+    if (accentColor == TypeBetterColors.StockAccent) {
+        val dark = when (theme) {
+            AppTheme.AUTO, AppTheme.AUTO_AMOLED -> isSystemInDarkTheme()
+            AppTheme.LIGHT -> false
+            AppTheme.DARK, AppTheme.AMOLED_DARK -> true
+        }
+        val amoled = theme == AppTheme.AMOLED_DARK || (theme == AppTheme.AUTO_AMOLED && dark)
+        return when {
+            !dark -> TypeBetterColors.light
+            amoled -> TypeBetterColors.dark.amoled()
+            else -> TypeBetterColors.dark
+        }
+    }
+
     val seedColor = systemAccentOrDefault(accentColor)
 
     return when (theme) {

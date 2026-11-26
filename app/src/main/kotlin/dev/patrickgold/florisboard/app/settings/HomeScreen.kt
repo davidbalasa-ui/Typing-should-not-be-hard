@@ -17,6 +17,29 @@
 package dev.patrickgold.florisboard.app.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.outlined.Gif
+import androidx.compose.material.icons.automirrored.filled.ShortText
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import com.typebetter.keyboard.PersonalWords
+import com.typebetter.keyboard.settings.TbDisplayTitle
+import com.typebetter.keyboard.settings.TbIntro
+import com.typebetter.keyboard.settings.TbRow
+import com.typebetter.keyboard.settings.TbSectionLabel
+import com.typebetter.keyboard.settings.TbSwitchRow
+import com.typebetter.keyboard.settings.TryKeyboardCard
+import com.typebetter.keyboard.settings.WordPeek
+import com.typebetter.keyboard.settings.buildWordEntries
+import com.typebetter.keyboard.settings.exampleFix
+import com.typebetter.keyboard.settings.peekEntries
+import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
+import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
+import dev.patrickgold.florisboard.dictate.ui.rememberDictationNeedsSetup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,7 +57,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
@@ -52,7 +74,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +98,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material3.IconButton
 import dev.patrickgold.florisboard.dictate.importer.TranscribeShareActivity
-import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -91,7 +111,8 @@ import org.florisboard.lib.compose.stringRes
 fun HomeScreen() = FlorisScreen {
     title = stringRes(R.string.settings__home__title)
     navigationIconVisible = false
-    previewFieldVisible = true
+    // The "Try your keyboard" card below is the test box here (David, 2026-11-26).
+    previewFieldVisible = false
 
     val navController = LocalNavController.current
     val context = LocalContext.current
@@ -161,6 +182,31 @@ fun HomeScreen() = FlorisScreen {
                 Text(stringRes(R.string.dictate__settings_unreadable_message))
             }
         }
+
+        // TypeBetter: the personal home (David, 2026-11-26; docs/decisions/2026-11-26-personal-settings-page.md).
+        // His words and voice first, the keyboard switches next, everything else folded below. Nothing that
+        // was here is gone: each old row is still on this screen or one tap away.
+        val rules by PersonalWords.rules.collectAsState()
+        val wordChanges by PersonalWords.changes.collectAsState()
+        var myWords by remember { mutableStateOf(PersonalWords.myWordsCached()) }
+        LaunchedEffect(wordChanges) {
+            myWords = withContext(Dispatchers.IO) { PersonalWords.myWords() }
+        }
+        val wordEntries = remember(myWords, rules) { buildWordEntries(myWords, rules) }
+
+        TbDisplayTitle(
+            text = stringRes(R.string.typebetter__home_greeting),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+        )
+        TbIntro(
+            text = stringRes(R.string.typebetter__home_intro),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
+        )
+        TryKeyboardCard(
+            example = remember(rules.fixes) { exampleFix(rules.fixes) },
+            onAddFix = { navController.navigate(Routes.Settings.TypeBetterCorrections) },
+            onOpenWords = { navController.navigate(Routes.Settings.TypeBetterWords) },
+        )
 
         // Passive dictation-stats summary (issue #142): appears once the user has dictated, taps through
         // to the full statistics screen. No interruption — just a glanceable "time saved".
@@ -253,16 +299,39 @@ fun HomeScreen() = FlorisScreen {
                 dictateContext.startActivity(TranscribeShareActivity.intentFor(dictateContext, uri))
             }
         }
-        // TypeBetter: "type dor, get for" first, where it is found without looking (David, 2026-11-25).
-        Preference(
-            icon = Icons.Default.Spellcheck,
-            title = stringRes(R.string.typebetter__corrections_title),
-            summary = stringRes(R.string.typebetter__corrections_home_summary),
-            onClick = { navController.navigate(Routes.Settings.TypeBetterCorrections) },
+        TbSectionLabel(stringRes(R.string.typebetter__home_section_words))
+        TbRow(
+            title = stringRes(R.string.typebetter__words_title),
+            summary = stringRes(
+                R.string.typebetter__home_words_summary,
+                "words" to wordEntries.size,
+                "typos" to rules.fixes.size,
+            ),
+            icon = Icons.Default.MenuBook,
+            onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
         )
-        Preference(
-            icon = Icons.Default.Mic,
+        WordPeek(
+            entries = remember(wordEntries) { peekEntries(wordEntries) },
+            onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
+        )
+        val needsVoiceSetup = rememberDictationNeedsSetup()
+        val providerId by prefs.dictate.transcriptionProviderId.collectAsState()
+        val accounts by prefs.dictate.providerAccounts.collectAsState()
+        val localModelName = remember(providerId, accounts) {
+            if (providerId == ProviderRegistry.LOCAL.id) {
+                LocalModelCatalog.byId(accounts.getOrEmpty(ProviderRegistry.LOCAL.id).transcriptionModel)?.displayName
+            } else {
+                null
+            }
+        }
+        TbRow(
             title = stringRes(R.string.dictate__title),
+            summary = when {
+                needsVoiceSetup -> stringRes(R.string.typebetter__home_voice_setup)
+                localModelName != null -> stringRes(R.string.typebetter__home_voice_local, "model" to localModelName)
+                else -> stringRes(R.string.typebetter__home_voice_other)
+            },
+            icon = Icons.Default.Mic,
             onClick = { navController.navigate(Routes.Settings.Dictate) },
             trailing = {
                 IconButton(onClick = { transcribePicker.launch(TranscribeShareActivity.MIME_TYPES) }) {
@@ -273,102 +342,143 @@ fun HomeScreen() = FlorisScreen {
                 }
             },
         )
-        // TypeBetter: the personal word lists, right under Dictate.
-        Preference(
-            icon = Icons.Default.AutoFixHigh,
-            title = stringRes(R.string.typebetter__screen_title),
-            summary = stringRes(R.string.typebetter__home_summary),
-            onClick = { navController.navigate(Routes.Settings.TypeBetterWords) },
+
+        TbSectionLabel(stringRes(R.string.typebetter__home_section_keyboard))
+        val homeScope = rememberCoroutineScope()
+        val suggestionsOn by prefs.suggestion.enabled.collectAsState()
+        val autoCorrectOn by prefs.suggestion.autoCorrect.collectAsState()
+        TbSwitchRow(
+            title = stringRes(R.string.typebetter__home_autocorrect),
+            summary = stringRes(R.string.typebetter__home_autocorrect_summary),
+            icon = Icons.Default.Spellcheck,
+            // Autocorrect needs suggestions on; turning it on here turns on both, so the switch never lies.
+            checked = suggestionsOn && autoCorrectOn,
+            onCheckedChange = { on ->
+                homeScope.launch {
+                    if (on) prefs.suggestion.enabled.set(true)
+                    prefs.suggestion.autoCorrect.set(on)
+                }
+            },
+            onOpen = { navController.navigate(Routes.Settings.Typing) },
         )
-        // TypeBetter: the layout editor, for what the keys and top buttons do.
-        Preference(
-            icon = Icons.Default.SportsEsports,
+        val glideOn by prefs.glide.enabled.collectAsState()
+        TbSwitchRow(
+            title = stringRes(R.string.typebetter__home_glide),
+            summary = stringRes(R.string.typebetter__home_glide_summary),
+            icon = Icons.Default.Gesture,
+            checked = glideOn,
+            onCheckedChange = { on -> homeScope.launch { prefs.glide.enabled.set(on) } },
+            onOpen = { navController.navigate(Routes.Settings.Gestures) },
+        )
+        val nextWordOn by prefs.suggestion.nextWordPrediction.collectAsState()
+        TbSwitchRow(
+            title = stringRes(R.string.typebetter__home_next_word),
+            summary = stringRes(R.string.typebetter__home_next_word_summary),
+            icon = Icons.AutoMirrored.Filled.ShortText,
+            checked = nextWordOn,
+            onCheckedChange = { on -> homeScope.launch { prefs.suggestion.nextWordPrediction.set(on) } },
+            onOpen = { navController.navigate(Routes.Settings.Typing) },
+        )
+        val gifOn by prefs.gif.enabled.collectAsState()
+        TbSwitchRow(
+            title = stringRes(R.string.typebetter__home_gif),
+            summary = stringRes(R.string.typebetter__home_gif_summary),
+            icon = Icons.Outlined.Gif,
+            checked = gifOn,
+            onCheckedChange = { on -> homeScope.launch { prefs.gif.enabled.set(on) } },
+            onOpen = { navController.navigate(Routes.Settings.Media) },
+        )
+        TbRow(
             title = stringRes(R.string.typebetter__kb_title),
             summary = stringRes(R.string.typebetter__kb_home_summary),
+            icon = Icons.Default.SportsEsports,
             onClick = { navController.navigate(Routes.Settings.TypeBetterKeys) },
         )
-        Preference(
-            icon = Icons.Default.Spellcheck,
+
+        TbSectionLabel(stringRes(R.string.typebetter__home_section_else))
+        TbRow(
             title = stringRes(R.string.settings__typing__title),
+            icon = Icons.Default.Spellcheck,
             onClick = { navController.navigate(Routes.Settings.Typing) },
         )
-        Preference(
-            icon = Icons.Default.Gesture,
+        TbRow(
             title = stringRes(R.string.settings__gestures__title),
+            icon = Icons.Default.Gesture,
             onClick = { navController.navigate(Routes.Settings.Gestures) },
         )
-        Preference(
-            icon = Icons.Default.Language,
+        TbRow(
             title = stringRes(R.string.settings__localization__title),
+            icon = Icons.Default.Language,
             onClick = { navController.navigate(Routes.Settings.Localization) },
         )
-        Preference(
-            icon = Icons.Outlined.Palette,
+        TbRow(
             title = stringRes(R.string.settings__theme__title),
+            icon = Icons.Outlined.Palette,
             onClick = { navController.navigate(Routes.Settings.Theme) },
         )
-        // TypeBetter: the everyday screens above, the rest one tap away (docs/decisions/
-        // 2026-11-25-keys-and-buttons-editor.md). Nothing is removed, and the search above still finds
-        // every setting wherever it sits.
+        // The rest one tap away (docs/decisions/2026-11-25-keys-and-buttons-editor.md). Nothing is
+        // removed, and the search above still finds every setting wherever it sits.
         var moreSettingsExpanded by rememberSaveable { mutableStateOf(false) }
-        Preference(
-            icon = if (moreSettingsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+        TbRow(
             title = stringRes(
                 if (moreSettingsExpanded) R.string.typebetter__home_fewer_settings else R.string.typebetter__home_more_settings,
             ),
             summary = if (moreSettingsExpanded) null else stringRes(R.string.typebetter__home_more_settings_summary),
+            icon = if (moreSettingsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
             onClick = { moreSettingsExpanded = !moreSettingsExpanded },
+            trailing = {},
         )
         if (moreSettingsExpanded) {
-            Preference(
-                icon = Icons.Outlined.Keyboard,
+            TbRow(
                 title = stringRes(R.string.settings__keyboard__title),
+                icon = Icons.Outlined.Keyboard,
                 onClick = { navController.navigate(Routes.Settings.Keyboard) },
             )
-            Preference(
-                icon = Icons.Default.SmartButton,
+            TbRow(
                 title = stringRes(R.string.settings__smartbar__title),
+                icon = Icons.Default.SmartButton,
                 onClick = { navController.navigate(Routes.Settings.Smartbar) },
             )
-            Preference(
-                icon = Icons.AutoMirrored.Outlined.Assignment,
+            TbRow(
                 title = stringRes(R.string.settings__clipboard__title),
+                icon = Icons.AutoMirrored.Outlined.Assignment,
                 onClick = { navController.navigate(Routes.Settings.Clipboard) },
             )
-            Preference(
-                icon = Icons.Default.SentimentSatisfiedAlt,
+            TbRow(
                 title = stringRes(R.string.settings__media__title),
+                icon = Icons.Default.SentimentSatisfiedAlt,
                 onClick = { navController.navigate(Routes.Settings.Media) },
             )
             // With the other tools the Smartbar opens (issue #424): it is one, and not a dictation feature.
-            Preference(
-                icon = Icons.Outlined.Translate,
+            TbRow(
                 title = stringRes(R.string.settings__translation__title),
+                icon = Icons.Outlined.Translate,
                 onClick = { navController.navigate(Routes.Settings.Translation) },
             )
-            Preference(
-                icon = Icons.Default.Extension,
+            TbRow(
                 title = stringRes(R.string.ext__home__title),
+                icon = Icons.Default.Extension,
                 onClick = { navController.navigate(Routes.Ext.Home) },
             )
-            Preference(
-                icon = Icons.Outlined.Build,
+            TbRow(
                 title = stringRes(R.string.settings__other__title),
+                icon = Icons.Outlined.Build,
                 onClick = { navController.navigate(Routes.Settings.Other) },
             )
         }
         // The user guide (Dictate): every feature and setting explained with pictures, on the GitHub wiki.
-        // The screens themselves carry labels only, so this is where the explanations live.
-        Preference(
-            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+        TbRow(
             title = stringRes(R.string.settings__help__title),
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
             onClick = { context.launchUrl(R.string.dictate__wiki_url) },
         )
-        Preference(
-            icon = Icons.Outlined.Info,
+        TbRow(
             title = stringRes(R.string.about__title),
+            summary = stringRes(R.string.typebetter__home_about_summary),
+            icon = Icons.Outlined.Info,
             onClick = { navController.navigate(Routes.Settings.About) },
         )
+        Spacer(Modifier.height(24.dp))
     }
 }
 

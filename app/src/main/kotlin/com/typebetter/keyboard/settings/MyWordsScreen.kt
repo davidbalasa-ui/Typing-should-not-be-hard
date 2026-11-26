@@ -6,6 +6,11 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ContentPaste
@@ -63,7 +67,6 @@ import dev.patrickgold.florisboard.lib.compose.SwitchRow
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +107,7 @@ private val NeverChangeSaver = Saver<NeverChange?, List<Any>>(
 
 @Composable
 fun MyWordsScreen() = FlorisScreen {
-    title = stringRes(R.string.typebetter__screen_title)
+    title = stringRes(R.string.typebetter__words_title)
     previewFieldVisible = true
     iconSpaceReserved = true
 
@@ -189,73 +192,105 @@ fun MyWordsScreen() = FlorisScreen {
         }
     }
 
-    // Sorted once per change, not on every recomposition of the screen.
-    val sortedFixes = remember(rules.fixes) { rules.fixes.sortedBy { keyOf(it.typed) } }
-    val sortedNeverChange = remember(rules.neverChange) { rules.neverChange.sortedBy { keyOf(it.typed) } }
-
     content {
-        Preference(
-            icon = Icons.Default.ContentPaste,
-            title = stringRes(R.string.typebetter__learn_title),
-            summary = stringRes(R.string.typebetter__learn_summary),
-            onClick = { learning = true },
+        // One list (David, 2026-11-26): each word with the typos it fixes and what it is protected from.
+        // The data stays where it was (dictionary + personal-rules.json); only the view is merged.
+        val entries = remember(words, rules) { buildWordEntries(words, rules) }
+        var filter by rememberSaveable { mutableStateOf(WordFilter.ALL) }
+        var query by rememberSaveable { mutableStateOf("") }
+        val shown = remember(entries, filter, query) { entries.filter { it.matches(filter) && it.matches(query) } }
+
+        TbIntro(
+            text = stringRes(R.string.typebetter__words_intro),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
+        )
+        QuickAddForm()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            WordFilter.entries.forEach { f ->
+                FilterChip(
+                    selected = filter == f,
+                    onClick = { filter = f },
+                    label = {
+                        Text(
+                            stringRes(
+                                when (f) {
+                                    WordFilter.ALL -> R.string.typebetter__filter_all
+                                    WordFilter.FIXES -> R.string.typebetter__filter_fixes
+                                    WordFilter.SUGGEST -> R.string.typebetter__filter_suggest
+                                    WordFilter.NEVER_CHANGE -> R.string.typebetter__filter_never
+                                },
+                                "count" to entries.count { it.matches(f) },
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            placeholder = { Text(stringRes(R.string.typebetter__words_search)) },
+            singleLine = true,
+            keyboardOptions = VerbatimKeyboardOptions,
         )
 
-        PreferenceGroup(title = stringRes(R.string.typebetter__fixes_group, "count" to rules.fixes.size)) {
-            val auto = stringRes(R.string.typebetter__fix_mode_auto)
-            val suggest = stringRes(R.string.typebetter__fix_mode_suggest)
-            val phrase = stringRes(R.string.typebetter__fix_phrase)
-            sortedFixes.forEach { fix ->
-                Preference(
-                    icon = Icons.Default.AutoFixHigh,
-                    title = "${fix.typed}  →  ${fix.meant}",
-                    summary = listOfNotNull(
-                        if (fix.mode == FixMode.AUTO) auto else suggest,
-                        phrase.takeIf { fix.isPhrase },
-                    ).joinToString(" · "),
-                    onClick = { editingFix = fix },
-                )
-            }
-            Preference(
-                icon = Icons.Default.Add,
-                title = stringRes(R.string.typebetter__fix_add),
-                summary = if (rules.fixes.isEmpty()) stringRes(R.string.typebetter__fixes_empty) else null,
-                onClick = { editingFix = Fix(typed = "", meant = "") },
+        if (shown.isEmpty()) {
+            HintText(
+                stringRes(
+                    if (entries.isEmpty()) R.string.typebetter__words_list_empty else R.string.typebetter__words_no_match,
+                ),
+            )
+        }
+        shown.forEach { entry ->
+            WordEntryRow(
+                entry = entry,
+                onWord = {
+                    when {
+                        entry.isMyWord -> editingWord = entry.word
+                        entry.fixes.isNotEmpty() -> editingFix = entry.fixes.first()
+                        else -> editingBlock = entry.blocks.first()
+                    }
+                },
+                onFix = { editingFix = it },
+                onBlock = { editingBlock = it },
+                onAddTypo = { editingFix = Fix(typed = "", meant = entry.word) },
             )
         }
 
-        PreferenceGroup(title = stringRes(R.string.typebetter__never_group, "count" to rules.neverChange.size)) {
-            sortedNeverChange.forEach { entry ->
-                Preference(
-                    icon = Icons.Default.Block,
-                    title = "${entry.typed}  ↛  ${entry.blocked}",
-                    summary = stringRes(R.string.typebetter__never_summary),
-                    onClick = { editingBlock = entry },
-                )
-            }
-            Preference(
-                icon = Icons.Default.Add,
-                title = stringRes(R.string.typebetter__never_add),
-                summary = if (rules.neverChange.isEmpty()) stringRes(R.string.typebetter__never_empty) else null,
-                onClick = { editingBlock = NeverChange(typed = "", blocked = "") },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.typebetter__words_group, "count" to words.size)) {
-            Preference(
-                icon = Icons.Default.Add,
-                title = stringRes(R.string.typebetter__word_add),
-                summary = if (words.isEmpty()) stringRes(R.string.typebetter__words_empty) else null,
-                onClick = { editingWord = "" },
-            )
-            words.forEach { word ->
-                Preference(
-                    icon = Icons.Default.Star,
-                    title = word,
-                    onClick = { editingWord = word },
-                )
-            }
-        }
+        TbSectionLabel(stringRes(R.string.typebetter__words_more_section))
+        TbRow(
+            title = stringRes(R.string.typebetter__learn_title),
+            summary = stringRes(R.string.typebetter__learn_summary),
+            icon = Icons.Default.ContentPaste,
+            onClick = { learning = true },
+        )
+        TbRow(
+            title = stringRes(R.string.typebetter__word_add),
+            summary = stringRes(R.string.typebetter__word_add_summary),
+            icon = Icons.Default.Star,
+            onClick = { editingWord = "" },
+        )
+        TbRow(
+            title = stringRes(R.string.typebetter__fix_add),
+            summary = stringRes(R.string.typebetter__fix_add_summary),
+            icon = Icons.Default.AutoFixHigh,
+            onClick = { editingFix = Fix(typed = "", meant = "") },
+        )
+        TbRow(
+            title = stringRes(R.string.typebetter__never_add),
+            summary = stringRes(R.string.typebetter__never_add_summary),
+            icon = Icons.Default.Block,
+            onClick = { editingBlock = NeverChange(typed = "", blocked = "") },
+        )
 
         PreferenceGroup(title = stringRes(R.string.typebetter__starter_group)) {
             // With the personal dictionary off the pack's words can be neither added nor removed: the switch
