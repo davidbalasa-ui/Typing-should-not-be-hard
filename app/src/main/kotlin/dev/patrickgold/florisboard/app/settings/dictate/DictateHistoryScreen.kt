@@ -943,7 +943,7 @@ private fun historyRowMeta(entry: DictateHistoryEntry): String {
 
 private fun copyToClipboard(context: Context, text: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    cm.setPrimaryClip(ClipData.newPlainText("Dictate", text))
+    cm.setPrimaryClip(ClipData.newPlainText("TypeBetter", text))
 }
 
 private fun shareText(context: Context, text: String) {

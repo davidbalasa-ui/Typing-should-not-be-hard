@@ -132,9 +132,9 @@
     <string name="settings__home__title" comment="Title of the Home screen">欢迎使用{app_name}</string>
     <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when Dictate Keyboard is not enabled in the system">{app_name}没有在系统中被启用，因此在输入法选择界面中不会出现。点击这里解决这一问题。</string>
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when Dictate Keyboard is not selected as the default keyboard">{app_name}没有被设置为默认输入法。点击这里解决这一问题。</string>
-    <string name="dictate__settings_unreadable_card">无法读取你的设置，因此 Dictate 已使用默认值启动。点按此处即可恢复。</string>
+    <string name="dictate__settings_unreadable_card">无法读取你的设置，因此 TypeBetter 已使用默认值启动。点按此处即可恢复。</string>
     <string name="dictate__settings_unreadable_title">恢复设置？</string>
-    <string name="dictate__settings_unreadable_message">Dictate 启动时无法读取其设置文件。它已原样保留该文件，并使用默认值启动。“还原”会将你的服务商、密钥、提示词和设置恢复原样。“删除”会移除旧文件。</string>
+    <string name="dictate__settings_unreadable_message">TypeBetter 启动时无法读取其设置文件。它已原样保留该文件，并使用默认值启动。“还原”会将你的服务商、密钥、提示词和设置恢复原样。“删除”会移除旧文件。</string>
     <string name="dictate__settings_restore_failed">仍然无法读取旧设置。</string>
     <string name="settings__search__title" comment="Title of the settings search screen">搜索设置</string>
     <string name="settings__search__placeholder" comment="Placeholder in the settings search field">搜索设置…</string>
@@ -670,7 +670,7 @@
     <string name="setup__select_ime__description">{app_name} 现在已在您的系统中启用。要使用它，请在输入法选择对话框中选择{app_name} 来切换到它！</string>
     <string name="setup__select_ime__switch_keyboard_btn">切换键盘</string>
     <string name="setup__grant_notification_permission__title">允许通知</string>
-    <string name="setup__grant_notification_permission__description">从 Android 13 开始，应用在显示通知前必须先请求许可。Dictate Keyboard 会在悬浮按钮录音时、下载语音模型时以及手表通过手机听写时显示通知，并在应用崩溃时打开崩溃报告。你可以随时在系统设置中更改此权限。</string>
+    <string name="setup__grant_notification_permission__description">从 Android 13 开始，应用在显示通知前必须先请求许可。TypeBetter Keyboard 会在悬浮按钮录音时、下载语音模型时以及手表通过手机听写时显示通知，并在应用崩溃时打开崩溃报告。你可以随时在系统设置中更改此权限。</string>
     <string name="setup__grant_notification_permission__btn">授予权限</string>
     <string name="setup__finish_up__title">完成</string>
     <string name="setup__finish_up__description_p1">{app_name} 现在已在系统中启用，可供您自定义。</string>
@@ -706,7 +706,7 @@
     <string name="backup_and_restore__restore__encrypted">该备份归档受密码保护。输入密码即可查看其中的内容。</string>
     <string name="backup_and_restore__restore__unlock">解锁</string>
     <string name="backup_and_restore__restore__wrong_password">密码错误</string>
-    <string name="backup_and_restore__restore__encrypted_unreadable">无法打开该归档。它已损坏，或是由更新版本的 Dictate 创建的。</string>
+    <string name="backup_and_restore__restore__encrypted_unreadable">无法打开该归档。它已损坏，或是由更新版本的 TypeBetter 创建的。</string>
     <string name="backup_and_restore__back_up__files_ime_keyboard">键盘扩展</string>
     <string name="backup_and_restore__back_up__files_ime_spelling">拼写扩展 / 词典</string>
     <string name="backup_and_restore__back_up__files_ime_theme">主题扩展</string>
@@ -731,18 +731,18 @@
     <string name="backup_and_restore__restore__success">成功还原备份！</string>
     <string name="backup_and_restore__restore__failure">还原数据失败：{error_message}</string>
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">Dictate 错误报告</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">很抱歉给您带来不便，但 Dictate 因意外错误而崩溃。</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">如果您希望报告此错误，请先查看 GitHub 上的问题跟踪器（如果尚未报告您的崩溃）。\n如果没有，请复制生成的崩溃日志并打开一个新问题。使用“%s”模板，填写描述、重现崩溃的步骤，最后粘贴生成的崩溃日志。这有助于让 Dictate 对每个用户都更好、更稳定。谢谢！</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">TypeBetter 错误报告</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">很抱歉给您带来不便，但 TypeBetter 因意外错误而崩溃。</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">如果您希望报告此错误，请先查看 GitHub 上的问题跟踪器（如果尚未报告您的崩溃）。\n如果没有，请复制生成的崩溃日志并打开一个新问题。使用“%s”模板，填写描述、重现崩溃的步骤，最后粘贴生成的崩溃日志。这有助于让 TypeBetter 对每个用户都更好、更稳定。谢谢！</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">复制到系统剪贴板</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">已复制到系统剪贴板</string>
     <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">无法复制到系统剪贴板：找不到剪贴板管理器实例</string>
     <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">打开问题跟踪器（github.com）</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">关闭</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Dictate 错误报告</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Dictate 已停止工作…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">TypeBetter 错误报告</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">TypeBetter 已停止工作…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">点击查看错误详情</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Dictate 似乎反复停止工作…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">TypeBetter 似乎反复停止工作…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">回退到上一个键盘以停止无限崩溃循环。点击查看错误详情</string>
     <!-- Clipboard strings -->
     <string name="editing__back_to_keyboard">返回键盘</string>
@@ -1193,14 +1193,9 @@
     <string name="quick_action__dictate_prompts">AI 提示词</string>
     <string name="quick_action__dictate_prompts__tooltip">打开 AI 改写提示词</string>
     <string name="about__based_on_floris__title">基于 FlorisBoard</string>
-    <string name="about__based_on_floris__summary">由 Patrick Goldinger 及贡献者开发的 FlorisBoard 分支，Apache 2.0。点按可打开。</string>
-    <string name="about__made_by">由 DevEmperor 用 ❤️ 制作\nSoli deo gloria ✝️</string>
     <string name="about__feedback__title">反馈与支持</string>
-    <string name="about__feedback__summary">发送电子邮件提出问题、漏洞或建议</string>
-    <string name="about__feedback__email">contact@devemperor.net</string>
-    <string name="about__feedback__subject">Dictate Feedback</string>
-    <string name="setup__provider__title">选择 Dictate 的转写方式</string>
-    <string name="setup__provider__choose_intro">Dictate 借助 AI 服务把语音转成文字。上面两种方式适合大多数人；如果你完全不想用云服务，下面还有两种。</string>
+    <string name="setup__provider__title">选择 TypeBetter 的转写方式</string>
+    <string name="setup__provider__choose_intro">TypeBetter 借助 AI 服务把语音转成文字。上面两种方式适合大多数人；如果你完全不想用云服务，下面还有两种。</string>
     <string name="setup__provider__choice_cloud_title">在应用内购买额度</string>
     <string name="setup__provider__choice_cloud_body">Dictate Cloud：不用在任何地方注册账号，也不用 API 密钥。你通过 Google Play 购买听写分钟数，且永不过期。这是省事的方式——比直接找服务商略贵一些。</string>
     <string name="setup__provider__choice_cloud_btn">查看额度套餐</string>
@@ -1212,15 +1207,15 @@
     <string name="setup__provider__choice_local_title">在你的设备上，离线</string>
     <string name="setup__provider__choice_local_body">只需下载一次语音模型。无需账号、没有费用，音频也不会离开你的手机。</string>
     <string name="setup__provider__choice_server_title">你自己的服务器</string>
-    <string name="setup__provider__choice_server_body">把 Dictate 指向你自己运行的语音服务器，或任何兼容 OpenAI 的端点。</string>
+    <string name="setup__provider__choice_server_body">把 TypeBetter 指向你自己运行的语音服务器，或任何兼容 OpenAI 的端点。</string>
     <string name="setup__provider__local_intro">语音识别随后在你的手机上运行：不会发送到任何地方，没有网络也能用。先选一个模型下载——以后可以随时添加或更换。</string>
     <string name="setup__provider__local_recommended">推荐给你的语言</string>
     <string name="setup__provider__local_bigger">更准确，但下载大得多</string>
     <string name="setup__provider__local_download_btn">下载模型</string>
     <string name="setup__provider__local_use_btn">使用此模型</string>
     <string name="setup__provider__local_all_models">显示全部模型</string>
-    <string name="setup__provider__intro">Dictate 借助在线 AI 服务将您的语音转换为文字。要使用它，您需要拥有该服务的个人密钥。</string>
-    <string name="setup__provider__what_is_key">API 密钥就像一个个人密码，让 Dictate 代您使用该服务。创建它是免费的，大约需要两分钟。</string>
+    <string name="setup__provider__intro">TypeBetter 借助在线 AI 服务将您的语音转换为文字。要使用它，您需要拥有该服务的个人密钥。</string>
+    <string name="setup__provider__what_is_key">API 密钥就像一个个人密码，让 TypeBetter 代您使用该服务。创建它是免费的，大约需要两分钟。</string>
     <string name="setup__provider__recommended">我们推荐 <b>Groq</b>——它快速且对日常听写免费。</string>
     <string name="setup__provider__steps_groq">1. 点按下方按钮打开 Groq。\n2. 使用 Google 或您的电子邮箱登录。\n3. 点按“Create API Key”，任意命名并确认。\n4. 复制密钥（以“gsk_”开头）。\n5. 返回此处，点按下方的“粘贴 API 密钥”。</string>
     <string name="setup__provider__steps_generic">1. 点按下方按钮打开 {provider}。\n2. 如果还没有账户，请先创建。\n3. 创建一个新的 API 密钥并复制。\n4. 返回此处，点按下方的“粘贴 API 密钥”。</string>
@@ -1235,7 +1230,6 @@
     <string name="setup__provider__other_provider">使用其他 AI 服务商</string>
     <string name="setup__provider__other_provider_hint">高级：选择 Groq 以外的其他服务。您需要该服务商的 API 密钥。</string>
     <string name="setup__finish_up__add_key_hint">提示：您尚未添加 AI 密钥。可随时在设置 → Dictate → AI 服务商中添加，即可开始听写。</string>
-    <string name="crash_dialog__bug_report_template">崩溃报告</string>
     <string name="enum__swipe_action__toggle_compact_layout">切换紧凑布局</string>
     <string name="unit__hours__symbol">{v} 小时</string>
     <string name="unit__minutes__symbol">{v} 分</string>
@@ -1244,9 +1238,9 @@
     <string name="unit__percent__symbol">{v}%</string>
     <string name="unit__display_pixel__symbol">{v} dp</string>
     <string name="unit__display_pixel_per_seconds__symbol">{v} dp/秒</string>
-    <string name="dictate__accessibility_service_label">Dictate 悬浮按钮</string>
+    <string name="dictate__accessibility_service_label">TypeBetter 悬浮按钮</string>
     <string name="dictate__accessibility_service_summary">显示一个悬浮按钮，可向任意文本框听写。</string>
-    <string name="dictate__accessibility_service_description">Dictate 使用此服务来提供悬浮听写按钮。启用后，它会检测任意应用中文本框何时获得焦点（以便按钮可以出现），并将转写的语音插入该文本框。Dictate 仅读取获得焦点的文本框，以便将文本放置在光标处；它不会收集、存储或分享任何其他屏幕内容。</string>
+    <string name="dictate__accessibility_service_description">TypeBetter 使用此服务来提供悬浮听写按钮。启用后，它会检测任意应用中文本框何时获得焦点（以便按钮可以出现），并将转写的语音插入该文本框。TypeBetter 仅读取获得焦点的文本框，以便将文本放置在光标处；它不会收集、存储或分享任何其他屏幕内容。</string>
     <string name="dictate__overlay_notification_channel">悬浮听写按钮</string>
     <string name="dictate__overlay_notification_recording">正在录音 — 点按悬浮按钮进行转写</string>
     <string name="dictate__overlay_notification_working">正在转写…</string>
@@ -1258,14 +1252,14 @@
     <string name="dictate__floating_button_service_enabled">已启用 · 点按以打开系统设置</string>
     <string name="dictate__floating_button_service_disabled">尚未启用 · 点按以设置</string>
     <string name="dictate__floating_button_disclosure_title">启用悬浮按钮</string>
-    <string name="dictate__floating_button_disclosure_message">若要显示悬浮按钮，Dictate 需要无障碍服务。它会检测任意应用中文本框何时获得焦点（以便按钮可以出现），并将转写的语音插入该文本框。Dictate 仅读取获得焦点的文本框，以便放置您的文本；它不会收集、存储或分享任何其他屏幕内容。\n\n在下一个屏幕中，找到“Dictate 悬浮按钮”并将其开启。</string>
+    <string name="dictate__floating_button_disclosure_message">若要显示悬浮按钮，TypeBetter 需要无障碍服务。它会检测任意应用中文本框何时获得焦点（以便按钮可以出现），并将转写的语音插入该文本框。TypeBetter 仅读取获得焦点的文本框，以便放置您的文本；它不会收集、存储或分享任何其他屏幕内容。\n\n在下一个屏幕中，找到“TypeBetter 悬浮按钮”并将其开启。</string>
     <string name="dictate__floating_button_disclosure_continue">打开设置</string>
     <string name="dictate__floating_button_mic_title">麦克风权限</string>
     <string name="dictate__floating_button_mic_summary">录制语音所必需 · 点按以授予</string>
     <string name="dictate__floating_button_show_when_title">显示时机</string>
     <string name="dictate__floating_button_show_when_field">选中文本框时</string>
     <string name="dictate__floating_button_show_when_keyboard">仅在键盘打开时</string>
-    <string name="dictate__floating_button_show_when_dictate_keyboard">Dictate 键盘打开时也显示</string>
+    <string name="dictate__floating_button_show_when_dictate_keyboard">TypeBetter 键盘打开时也显示</string>
     <string name="dictate__action_continue_recording">继续录音</string>
     <string name="dictate__a11y_mic_hold_local">在设备上转录</string>
     <string name="smartbar__a11y_show_actions">显示操作</string>
@@ -1295,12 +1289,12 @@
     <string name="dictate__floating_button_apps_scope_all">所有应用</string>
     <string name="dictate__floating_button_apps_scope_only">仅下列应用</string>
     <string name="dictate__floating_button_apps_scope_except">除下列应用外的所有应用</string>
-    <string name="dictate__floating_button_apps_note">被排除的应用上方永远不会绘制按钮，Dictate 也不会读取其中的文本框。但对于本身就抵触无障碍服务的应用，它仍然能看出该服务已开启。</string>
+    <string name="dictate__floating_button_apps_note">被排除的应用上方永远不会绘制按钮，TypeBetter 也不会读取其中的文本框。但对于本身就抵触无障碍服务的应用，它仍然能看出该服务已开启。</string>
     <string name="dictate__floating_button_apps_list_title">应用</string>
     <string name="dictate__floating_button_apps_search">搜索应用</string>
     <string name="dictate__floating_button_apps_none">未找到与“{search_term}”匹配的应用</string>
     <string name="dictate__floating_button_design_title">按钮样式</string>
-    <string name="dictate__floating_button_no_prompts">暂无改写提示词——请在 Dictate 设置中添加。</string>
+    <string name="dictate__floating_button_no_prompts">暂无改写提示词——请在 TypeBetter 设置中添加。</string>
     <string name="dictate__floating_button_remember_position_summary_off">所有应用共用一个位置。</string>
     <string name="dictate__floating_button_remember_position_summary_on">每个应用保留各自的按钮位置。</string>
     <string name="dictate__floating_button_remember_position_title">按应用记住位置</string>
@@ -1328,7 +1322,7 @@
     <string name="setup__floating_button__skip_btn">跳过 — 我用键盘</string>
     <string name="dictate__floating_button_badge_new">新</string>
     <string name="dictate__panel_title">AI 提示词</string>
-    <string name="dictate__panel_no_prompts">暂无提示词。请在 Dictate 设置的“改写”中添加。</string>
+    <string name="dictate__panel_no_prompts">暂无提示词。请在 TypeBetter 设置的“改写”中添加。</string>
     <string name="dictate__prompts_layout_title">提示词布局</string>
     <string name="dictate__prompts_layout_panel_label">独立面板</string>
     <string name="dictate__prompts_layout_panel_description">通过魔杖按钮在独立面板中打开提示词。</string>
@@ -1346,8 +1340,8 @@
     <string name="dictate__voice_input_transcribing">正在转写…</string>
     <string name="dictate__voice_input_stop">完成</string>
     <string name="dictate__voice_input_hint">点按发送</string>
-    <string name="dictate__voice_ime_label">Dictate 语音输入</string>
-    <string name="dictate__error_no_api_key">未设置 API 密钥——请在 Dictate 设置中配置。</string>
+    <string name="dictate__voice_ime_label">TypeBetter 语音输入</string>
+    <string name="dictate__error_no_api_key">未设置 API 密钥——请在 TypeBetter 设置中配置。</string>
     <string name="dictate__error_transcription_failed">转录失败。</string>
     <string name="dictate__error_unknown">转录时发生未知错误。</string>
     <string name="dictate__error_rewording_failed">改写失败。</string>
@@ -1379,11 +1373,7 @@
     <string name="dictate__action_dismiss">关闭</string>
     <string name="dictate__action_yes">是</string>
     <string name="dictate__action_no">不用了，谢谢</string>
-    <string name="dictate__promo_rate_message">喜欢 Dictate 吗？</string>
-    <string name="dictate__promo_donate_message">支持 Dictate？</string>
-    <string name="dictate__promo_rate_action">评分</string>
-    <string name="dictate__promo_donate_action">捐赠</string>
-    <string name="dictate__promo_changelog_message">Dictate 已更新</string>
+    <string name="dictate__promo_changelog_message">TypeBetter 已更新</string>
     <string name="dictate__promo_changelog_action">详情</string>
     <string name="dictate__title">Dictate</string>
     <string name="dictate__provider_title">转录服务商</string>
@@ -1630,7 +1620,7 @@
     <string name="dictate__command_word_summary">以“{word}”开头的听写将作为实时指令执行</string>
     <string name="dictate__command_word_placeholder">贾维斯</string>
     <string name="dictate__command_word_info_title">关于指令唤醒词</string>
-    <string name="dictate__command_word_info_description">Dictate 通常会把你说的话原样写下来。设置唤醒词后，以它开头的听写会改为按指令处理：该词被去掉，其余内容连同选中的文本（如果有）一起发送给 AI。\n\n“贾维斯，把这段改得正式一点”会改写选中的文本；“贾维斯，日本的首都是哪里”会把答案写进输入框。也就是把实时指令按钮从“点一下”变成“叫一声”。\n\n该词只有位于听写最开头、且作为完整词出现时才生效，所以请挑一个你很少用来起头的词。</string>
+    <string name="dictate__command_word_info_description">TypeBetter 通常会把你说的话原样写下来。设置唤醒词后，以它开头的听写会改为按指令处理：该词被去掉，其余内容连同选中的文本（如果有）一起发送给 AI。\n\n“贾维斯，把这段改得正式一点”会改写选中的文本；“贾维斯，日本的首都是哪里”会把答案写进输入框。也就是把实时指令按钮从“点一下”变成“叫一声”。\n\n该词只有位于听写最开头、且作为完整词出现时才生效，所以请挑一个你很少用来起头的词。</string>
     <string name="dictate__auto_formatting_title">自动格式化</string>
     <string name="dictate__auto_formatting_summary">将口述的格式提示转换为 Markdown（标题、列表等）</string>
     <string name="dictate__system_prompt_title">改写指令</string>
@@ -1743,18 +1733,17 @@
     <string name="dictate__import_not_audio">此文件不含音频。</string>
     <string name="dictate__import_only_first">只转写第一个文件，另外 {count} 个已跳过。</string>
     <string name="dictate__setup_description">设置您的 AI 服务商和 API 密钥，即可用麦克风开始听写。</string>
-    <string name="dictate__setup_configure_btn">配置 Dictate</string>
+    <string name="dictate__setup_configure_btn">配置 TypeBetter</string>
     <string name="setup__grant_mic_permission__title">麦克风访问权限</string>
-    <string name="setup__grant_mic_permission__description">Dictate 需要麦克风访问权限来录制您的语音以进行转录。</string>
+    <string name="setup__grant_mic_permission__description">TypeBetter 需要麦克风访问权限来录制您的语音以进行转录。</string>
     <string name="setup__grant_mic_permission__btn">授予麦克风权限</string>
     <string name="changelog__dialog_title">新功能</string>
     <string name="changelog__view_all">查看所有更改</string>
-    <string name="changelog__intro">Dictate 已更新。以下是新功能：</string>
+    <string name="changelog__intro">TypeBetter 已更新。以下是新功能：</string>
     <string name="changelog__version_header">版本 {version}</string>
-    <string name="changelog__donate">喜欢 Dictate 吗？点按此处支持开发 ♥</string>
     <string name="changelog__current">• 全新键盘：Dictate 现在作为完整的多语言布局键盘提供，带有专用麦克风键以打开语音面板。\n• 自带 AI：选择任何兼容 OpenAI 的服务商，并在设置 → Dictate 中输入您的 API 密钥。\n• 由您选择的模型驱动的智能格式化和改写。\n• 您在旧版 Dictate 应用中的设置会自动导入。</string>
     <string name="changelog__v4_1_0">• 新增：直接从键盘搜索表情符号。\n• 新的转录服务商：Soniox。\n• 重新插入上一次的听写，并恢复键盘关闭时中断的录音。\n• 提示词栏现在会实时刷新：长按某个提示词即可编辑。\n• AI 服务商界面现在会同时显示当前启用的转录服务商和改写服务商。\n• 录音按钮更大，更容易点按。\n• 修复：在某些语言下，支持提示可能卡住并遮挡操作栏；选择了提示词、键盘或主题时备份不再失败；升级后会保留已保存的 API 密钥。</string>
-    <string name="changelog__v4_1_1">• 修复：在某些设备上强调色可能显示为绿色；按键和按钮已恢复为 Dictate 蓝色。</string>
+    <string name="changelog__v4_1_1">• 修复：在某些设备上强调色可能显示为绿色；按键和按钮已恢复为 TypeBetter 蓝色。</string>
     <!-- Dictate on-device (offline) models -->
     <string name="dictate__local_models_header">在您的设备上运行 — 不会发送任何音频。下载模型即可开始。</string>
     <string name="dictate__local_models_live_header">实时（流式）</string>
@@ -1792,7 +1781,7 @@
     <string name="dictate__floating_button_copy_to_clipboard_summary_on">每次听写也会复制到剪贴板，这样即使插入失败也能手动粘贴。在某些手机上可能会显示剪贴板提示。</string>
     <string name="dictate__floating_button_copy_to_clipboard_summary_off">听写仅插入，不复制到剪贴板。</string>
     <string name="dictate__floating_button_menu_group">长按菜单</string>
-    <string name="dictate__floating_button_menu_settings_title">Dictate 设置</string>
+    <string name="dictate__floating_button_menu_settings_title">TypeBetter 设置</string>
     <string name="dictate__floating_button_side_buttons_title">额外按钮</string>
     <string name="dictate__mappings_add">添加映射</string>
     <string name="dictate__mappings_editor_title">映射</string>
@@ -1840,8 +1829,6 @@
     <string name="dictate__providers_rewording_single_call_note">当前未使用 — 你的转录服务商在其单次调用中完成改写。</string>
     <string name="dictate__wear_title">Wear OS</string>
     <string name="dictate__wear_summary">从已配对手表听写的选项</string>
-    <string name="dictate__wear_install_title">在手表上安装 Dictate</string>
-    <string name="dictate__wear_install_summary">打开 Play Store——在已配对的 Wear OS 3+ 手表上，选择手表作为安装目标。</string>
     <string name="dictate__wear_auto_rewording_title">自动改写手表听写</string>
     <string name="dictate__wear_auto_rewording_summary">像在手机上一样改写手表听写。</string>
     <string name="quick_action__system_prev_input_method">切换键盘</string>
@@ -1903,7 +1890,7 @@
     <string name="dictate__history_export_all_result">已写入 {written} 条，已存在 {skipped} 条，失败 {failed} 条</string>
     <string name="dictate__history_export_last_failure">{when}有一次写入失败。“立即导出全部”可以补齐缺失的文件。</string>
     <string name="dictate__history_export_warning_title">文件夹里会有什么</string>
-    <string name="dictate__history_export_warning_message">从现在起，该文件夹会保存你每一段听写的文字；如果开启，还会保存录音。任何同步它的工具 — 云端客户端、备份工具或其他应用 — 都会把这些转写带离本设备。\n\n在你断开该文件夹之前，Dictate 会持续写入，并且从不删除其中的文件：从历史记录中移除的条目仍会留在文件夹里。密码字段和无痕输入从不记录，因此也从不导出。</string>
+    <string name="dictate__history_export_warning_message">从现在起，该文件夹会保存你每一段听写的文字；如果开启，还会保存录音。任何同步它的工具 — 云端客户端、备份工具或其他应用 — 都会把这些转写带离本设备。\n\n在你断开该文件夹之前，TypeBetter 会持续写入，并且从不删除其中的文件：从历史记录中移除的条目仍会留在文件夹里。密码字段和无痕输入从不记录，因此也从不导出。</string>
     <string name="dictate__history_export_needs_history">文件夹导出写入的是历史记录所保存的内容，因此需要开启历史记录。</string>
     <string name="dictate__history_export_enable_history">开启历史记录</string>
     <string name="dictate__history_export_pick_failed">无法获得该文件夹的写入权限</string>
@@ -1926,15 +1913,15 @@
     <string name="dictate__stats_reset_confirm_title">重置统计？</string>
     <string name="dictate__stats_reset_confirm_msg">这将永久清除你所有的听写统计，无法撤销。</string>
     <string name="dictate__stats_share">分享</string>
-    <string name="dictate__stats_share_text">我用 Dictate 节省了 %1$s — %2$s 次听写，%3$s 字。🎤</string>
+    <string name="dictate__stats_share_text">我用 TypeBetter 节省了 %1$s — %2$s 次听写，%3$s 字。🎤</string>
     <string name="dictate__stats_view">查看统计</string>
     <string name="dictate__stats_milestones_title">里程碑庆祝</string>
     <string name="dictate__stats_milestones_summary">达到节省时间或听写次数里程碑时庆祝一次</string>
     <string name="dictate__stats_milestone_title">达成里程碑 🎉</string>
-    <string name="dictate__stats_milestone_time">你用 Dictate 节省了 %s — 干得好！</string>
-    <string name="dictate__stats_milestone_count">你用 Dictate 达到了 %s 次听写！</string>
-    <string name="dictate__promo_milestone_time">用 Dictate 节省了 %s！🎉</string>
-    <string name="dictate__promo_milestone_count">用 Dictate 达成 %s 次！🎉</string>
+    <string name="dictate__stats_milestone_time">你用 TypeBetter 节省了 %s — 干得好！</string>
+    <string name="dictate__stats_milestone_count">你用 TypeBetter 达到了 %s 次听写！</string>
+    <string name="dictate__promo_milestone_time">用 TypeBetter 节省了 %s！🎉</string>
+    <string name="dictate__promo_milestone_count">用 TypeBetter 达成 %s 次！🎉</string>
     <string name="dictate__promo_milestone_action">统计</string>
     <string name="dictate__reasoning_effort_title">推理力度</string>
     <string name="dictate__reasoning_effort_off">服务商默认</string>
@@ -1953,7 +1940,7 @@
     <string name="dictate__reasoning_effort_high_summary">思考最多，更慢</string>
     <string name="dictate__reasoning_effort_custom">自定义</string>
     <string name="dictate__action_save_audio">保存音频</string>
-    <string name="dictate__audio_saved">音频已保存到 Downloads/Dictate：%s</string>
+    <string name="dictate__audio_saved">音频已保存到 Downloads/TypeBetter：%s</string>
     <string name="dictate__audio_save_failed">无法保存音频</string>
     <string name="dictate__instant_recording_mode_off">关闭</string>
     <string name="dictate__instant_recording_mode_always">每次打开键盘时</string>
@@ -2013,14 +2000,14 @@
     <string name="apptour__badge_highlight">★ 亮点</string>
     <string name="apptour__intro_eyebrow">Version 5.0</string>
     <string name="apptour__intro_title">快速导览</string>
-    <string name="apptour__intro_body">这是 Dictate 5.0 的新变化——精华内容，一分钟内看完。在任意页面点按「试一试」即可直接跳到该设置。</string>
+    <string name="apptour__intro_body">这是 TypeBetter 5.0 的新变化——精华内容，一分钟内看完。在任意页面点按「试一试」即可直接跳到该设置。</string>
     <string name="apptour__glide_eyebrow">键盘</string>
     <string name="apptour__glide_title">滑动输入</string>
-    <string name="apptour__glide_body">手指在按键之间滑动，Dictate 就会把轨迹变成完整的词语。每种语言都有各自的词典，按需下载——在「手势」中开启它。</string>
+    <string name="apptour__glide_body">手指在按键之间滑动，TypeBetter 就会把轨迹变成完整的词语。每种语言都有各自的词典，按需下载——在「手势」中开启它。</string>
     <string name="apptour__glide_cta">设置滑动输入</string>
     <string name="apptour__suggestions_eyebrow">键盘</string>
     <string name="apptour__suggestions_title">自动更正与建议</string>
-    <string name="apptour__suggestions_body">输入时，Dictate 会推荐合适的词语并悄悄纠正拼写错误。你实际输入的词会保留在建议栏中，因此轻点一下即可撤销任何更正。</string>
+    <string name="apptour__suggestions_body">输入时，TypeBetter 会推荐合适的词语并悄悄纠正拼写错误。你实际输入的词会保留在建议栏中，因此轻点一下即可撤销任何更正。</string>
     <string name="apptour__suggestions_cta">调整建议</string>
     <string name="apptour__realtime_eyebrow">转录</string>
     <string name="apptour__realtime_title">实时转录</string>
@@ -2053,16 +2040,16 @@
     <string name="apptour51__continue_to">继续前往 {version}</string>
     <string name="apptour51__intro_eyebrow">版本 5.1</string>
     <string name="apptour51__intro_title">5.1 新功能</string>
-    <string name="apptour51__intro_body">自 5.0 以来，Dictate 有了长足的进步。以下是 5.1 的亮点——在任意页面点按「试一试」即可直接跳到该功能。</string>
+    <string name="apptour51__intro_body">自 5.0 以来，TypeBetter 有了长足的进步。以下是 5.1 的亮点——在任意页面点按「试一试」即可直接跳到该功能。</string>
     <string name="apptour51__history_eyebrow">转录</string>
     <string name="apptour51__history_title">转录历史</string>
     <string name="apptour51__history_body">现在每次口述都会保存在可搜索的历史记录中。轻点一下即可重新插入任何过往的转录，重放原始音频，重新转录，或把最常用的置顶。专门的页面让你管理一切，包括音频录音的保留时长。</string>
     <string name="apptour51__longform_eyebrow">转录</string>
     <string name="apptour51__longform_title">长篇口述</string>
-    <string name="apptour51__longform_body">想说多久就说多久。长录音会自动分段，并在你继续说话时于后台转录，因此你能更快拿到文字，也永远不会撞上长度上限。你可以自己切分某一段，也可以让 Dictate 检测自然停顿。</string>
+    <string name="apptour51__longform_body">想说多久就说多久。长录音会自动分段，并在你继续说话时于后台转录，因此你能更快拿到文字，也永远不会撞上长度上限。你可以自己切分某一段，也可以让 TypeBetter 检测自然停顿。</string>
     <string name="apptour51__gif_eyebrow">键盘</string>
     <string name="apptour51__gif_title">GIF 搜索</string>
-    <string name="apptour51__gif_body">无需离开 Dictate 即可查找并发送 GIF。打开 GIF 面板，搜索任何内容，直接放进你的聊天——一个内置于此、Gboard 风格的快捷选择器。</string>
+    <string name="apptour51__gif_body">无需离开 TypeBetter 即可查找并发送 GIF。打开 GIF 面板，搜索任何内容，直接放进你的聊天——一个内置于此、Gboard 风格的快捷选择器。</string>
     <string name="apptour51__classic_eyebrow">经典布局</string>
     <string name="apptour51__classic_title">经典布局，全新改造</string>
     <string name="apptour51__classic_body">无键盘的听写界面迎来重大升级：一个通过拖放自行搭建、可随意排列的操作行，长篇录音控件，一或两行提示词，始终可用的退格键，Enter 键上的字符弹出菜单，以及一个可选的第二个「切换键盘」按钮，方便单手操作。</string>
@@ -2077,14 +2064,13 @@
     <string name="apptour51__more_body">还有许多较小的升级：在设置中选择当前的转录语言，停止按钮现在能真正取消正在运行的请求，API 密钥的显示/隐藏开关，以及不会跨语言自动更正的多语言输入——此外还有经典布局、数字键盘等诸多修复。</string>
     <string name="apptour51__outro_eyebrow">这就是 5.1</string>
     <string name="apptour51__outro_title">尽情享受此次更新</string>
-    <string name="apptour51__outro_body">感谢你使用 Dictate！如果它每天都在帮助你，一笔小额捐赠就能让项目继续下去。你随时可以在「设置 › 关于」中重新查看这些导览。</string>
     <string name="apptour52__cta_try">试试</string>
-    <string name="apptour52__intro_eyebrow">Dictate 5.2</string>
+    <string name="apptour52__intro_eyebrow">TypeBetter 5.2</string>
     <string name="apptour52__intro_title">随处口述</string>
-    <string name="apptour52__intro_body">这个版本让 Dictate 走出自家键盘：作为手机的语音输入、随时随地的语音指令，并帮你整理长篇口述。以下是新功能。</string>
+    <string name="apptour52__intro_body">这个版本让 TypeBetter 走出自家键盘：作为手机的语音输入、随时随地的语音指令，并帮你整理长篇口述。以下是新功能。</string>
     <string name="apptour52__voiceinput_eyebrow">系统级语音输入</string>
-    <string name="apptour52__voiceinput_title">从任意键盘使用 Dictate</string>
-    <string name="apptour52__voiceinput_body">Dictate 现在注册为系统语音输入：其他键盘和应用的麦克风按键将通过 Dictate 转写——使用你的服务商、你的提示词和你的设备端模型。在键盘列表中启用「Dictate 语音输入」并将其选为语音输入方式。（Gboard 的麦克风固定绑定 Google，请使用遵循系统设置的键盘。）</string>
+    <string name="apptour52__voiceinput_title">从任意键盘使用 TypeBetter</string>
+    <string name="apptour52__voiceinput_body">TypeBetter 现在注册为系统语音输入：其他键盘和应用的麦克风按键将通过 TypeBetter 转写——使用你的服务商、你的提示词和你的设备端模型。在键盘列表中启用「TypeBetter 语音输入」并将其选为语音输入方式。（Gboard 的麦克风固定绑定 Google，请使用遵循系统设置的键盘。）</string>
     <string name="apptour52__liveprompt_eyebrow">自由语音指令</string>
     <string name="apptour52__liveprompt_title">随时告诉 AI 该做什么</string>
     <string name="apptour52__liveprompt_body">长按悬浮按钮打开菜单，点按「Live prompt」，然后直接说出需求：「写一封婉拒明天会议的回复」「把上面的文字翻译成西班牙语」。选中的文字会作为上下文；未选中时 AI 从零开始撰写。</string>
@@ -2096,7 +2082,7 @@
     <string name="apptour52__trim_body">说到一半停下来思考？超过几秒的静音会在发送前被剪掉——每个说出的字都保留，只去掉空白时间。上传更短意味着等待更少、花费更低。</string>
     <string name="apptour52__paragraphs_eyebrow">长篇也易读</string>
     <string name="apptour52__paragraphs_title">自动分段</string>
-    <string name="apptour52__paragraphs_body">长篇口述不再是一整块文字。设定字数后，Dictate 会在下一个句末开始新段落——确定性处理，且仅用于纯转写文本，绝不改动 AI 已格式化的内容。</string>
+    <string name="apptour52__paragraphs_body">长篇口述不再是一整块文字。设定字数后，TypeBetter 会在下一个句末开始新段落——确定性处理，且仅用于纯转写文本，绝不改动 AI 已格式化的内容。</string>
     <string name="apptour52__smartturn_eyebrow">更聪明的长篇模式</string>
     <string name="apptour52__smartturn_title">在想法说完时切分</string>
     <string name="apptour52__smartturn_body">长篇口述现在可使用设备端 Smart Turn v3 模型判断你是否真的说完了一个想法，而不是一停顿就切分。可选，按需下载。</string>
@@ -2107,12 +2093,12 @@
     <string name="apptour52__outro_title">口述愉快</string>
     <string name="apptour52__outro_body">此外还有诸多内部改进：整个口述过程中屏幕保持常亮，设备端模型闲置时释放内存，手表口述可挺过连接中断，德语自动更正也学会了变音符号。你可以在设置 › 关于中重温任意导览。</string>
     <string name="apptour53__cta_try">试试看</string>
-    <string name="apptour53__intro_eyebrow">Dictate 5.3</string>
+    <string name="apptour53__intro_eyebrow">TypeBetter 5.3</string>
     <string name="apptour53__intro_title">按住、说话、完成</string>
     <string name="apptour53__intro_body">这一版围绕你最常做的两件事：对着手机说话，以及在手机上打字。两者都更快了，也都更懂得让路。</string>
     <string name="apptour53__pushtotalk_eyebrow">按住说话</string>
     <string name="apptour53__pushtotalk_title">按住麦克风，松手即发送</string>
-    <string name="apptour53__pushtotalk_body">就像语音消息：按住麦克风键说话，松手就发出去。向左滑丢弃这段录音，向上拖则锁定，腾出你的手。轻点仍和从前一样。可在 Dictate 设置中开启。</string>
+    <string name="apptour53__pushtotalk_body">就像语音消息：按住麦克风键说话，松手就发出去。向左滑丢弃这段录音，向上拖则锁定，腾出你的手。轻点仍和从前一样。可在 TypeBetter 设置中开启。</string>
     <string name="apptour53__autocorrect_eyebrow">重写的自动更正</string>
     <string name="apptour53__autocorrect_title">它读的是你的手指，不是你的错字</string>
     <string name="apptour53__autocorrect_body">更正现在依据你实际触到键盘的位置，边打边搜索可能的词，而不是从打完的词去猜。在我们的测试集上，准确率从 88 % 升到 98 %——打得越快越潦草，差别越明显。</string>
@@ -2130,7 +2116,7 @@
     <string name="apptour53__prediction_body">候选栏现在会给出通常接下来的词，来自它对你写法的学习。任意词长按即可加入词典，你的人名与行话从此不再被改掉。</string>
     <string name="apptour53__ownserver_eyebrow">你自己的服务器</string>
     <string name="apptour53__ownserver_title">自建服务器，现在也能实时</string>
-    <string name="apptour53__ownserver_body">只要会说 OpenAI 的 realtime 协议，你自己的服务器也能承担实时转写。若它前面是一台会休眠的机器，Dictate 可以提前把它叫醒，第一次请求就不必干等开机。</string>
+    <string name="apptour53__ownserver_body">只要会说 OpenAI 的 realtime 协议，你自己的服务器也能承担实时转写。若它前面是一台会休眠的机器，TypeBetter 可以提前把它叫醒，第一次请求就不必干等开机。</string>
     <string name="apptour53__outro_eyebrow">这就是 5.3</string>
     <string name="apptour53__outro_title">口述愉快</string>
     <string name="apptour53__outro_body">另有许多小改进：每个服务商都有自己的标志，录音指示可选静止、脉动或随声音变化，提示词输出可在旁保留原始转写，段落也不再在缩写后断开。你可以在设置 › 关于中重温任意导览。</string>
@@ -2138,7 +2124,7 @@
     <string name="apptour60__cta_try">试一试</string>
     <string name="apptour60__art_minutes">分钟</string>
     <string name="apptour60__art_speed">1.5×</string>
-    <string name="apptour60__intro_eyebrow">Dictate 6.0</string>
+    <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">额度、中文与更省钱的听写</string>
     <string name="apptour60__intro_body">这个版本增加了第二条入口——购买额度，而不必自备 API 密钥；还带来中文拼音输入、七种新增词库的语言，以及成本更低的录音处理。</string>
     <string name="apptour60__cloud_eyebrow">全新：Dictate Cloud</string>
@@ -2161,21 +2147,21 @@
     <string name="apptour60__more_body">长按停止键可以撤回卡住的转写。悬浮按钮不再报告它无法核实的成功，并会随屏幕一起熄灭。滑行输入现在认识你自己添加的词。更新后立即闪退的问题也已修复。</string>
     <string name="apptour60__outro_eyebrow">这就是 6.0</string>
     <string name="apptour60__outro_title">用得愉快</string>
-    <string name="apptour60__outro_body">无论你怎么使用 Dictate——自己的密钥、自己的服务器、设备上的模型，还是额度——其他方式都没有任何变化。所有导览都可以在 设置 › 关于 中重新查看。</string>
+    <string name="apptour60__outro_body">无论你怎么使用 TypeBetter——自己的密钥、自己的服务器、设备上的模型，还是额度——其他方式都没有任何变化。所有导览都可以在 设置 › 关于 中重新查看。</string>
     <string name="apptour61__cta_try">试一试</string>
     <string name="apptour61__art_folder">贴纸</string>
     <string name="apptour61__art_share">分享到</string>
     <string name="apptour61__art_typed">帐号</string>
     <string name="apptour61__art_fixed">账号</string>
-    <string name="apptour61__intro_eyebrow">Dictate 6.1</string>
+    <string name="apptour61__intro_eyebrow">TypeBetter 6.1</string>
     <string name="apptour61__intro_title">贴纸、语音消息，以及终于看得见错字的自动更正</string>
-    <string name="apptour61__intro_body">把一个装着你自己贴纸的文件夹指给键盘，把语音消息直接分享给 Dictate 就能知道里面说了什么，还有一个终于能发现它本来被设计为看不见的那类错误的自动更正。</string>
+    <string name="apptour61__intro_body">把一个装着你自己贴纸的文件夹指给键盘，把语音消息直接分享给 TypeBetter 就能知道里面说了什么，还有一个终于能发现它本来被设计为看不见的那类错误的自动更正。</string>
     <string name="apptour61__stickers_eyebrow">新功能：你自己的贴纸</string>
     <string name="apptour61__stickers_title">手机里的一个文件夹，搬到键盘上</string>
-    <string name="apptour61__stickers_body">把任意文件夹指给 Dictate，里面的图片就成了贴纸——子文件夹变成标签页，各有自己的收藏和最近使用。从任何应用通过分享菜单添加，不离开键盘就能删除。聊天应用真正接受的东西，和它声称接受的并不一样，所以每张贴纸在放进来时就被整理成合适的样子，之后只管发送。</string>
-    <string name="apptour61__share_eyebrow">新功能：分享给 Dictate</string>
+    <string name="apptour61__stickers_body">把任意文件夹指给 TypeBetter，里面的图片就成了贴纸——子文件夹变成标签页，各有自己的收藏和最近使用。从任何应用通过分享菜单添加，不离开键盘就能删除。聊天应用真正接受的东西，和它声称接受的并不一样，所以每张贴纸在放进来时就被整理成合适的样子，之后只管发送。</string>
+    <string name="apptour61__share_eyebrow">新功能：分享给 TypeBetter</string>
     <string name="apptour61__share_title">弄清那条语音消息说了什么</string>
-    <string name="apptour61__share_body">Dictate 现在会出现在音频和视频的分享菜单里。把语音消息分享过去，就会打开一个自己开始转写的界面——不用找输入框，也不用按按钮。转写结果可以搜索，长录音会分段处理，而不是被拒绝。</string>
+    <string name="apptour61__share_body">TypeBetter 现在会出现在音频和视频的分享菜单里。把语音消息分享过去，就会打开一个自己开始转写的界面——不用找输入框，也不用按按钮。转写结果可以搜索，长录音会分段处理，而不是被拒绝。</string>
     <string name="apptour61__autocorrect_eyebrow">自动更正</string>
     <string name="apptour61__autocorrect_title">它本来看不见的那个错字</string>
     <string name="apptour61__autocorrect_body">决定一个词能否被更正的规则，会放过滑到相邻按键附近的手指，却从不放过端端正正落在相邻按键上的手指——而后者恰恰是最常见的错字。这一点已经修好，更正得多果断也由你自己设定。空格键将要采用的那个词会用你的强调色标出，而紧接着按退格会原样还给你刚才输入的内容。</string>
@@ -2196,7 +2182,7 @@
     <string name="apptour62__art_word">泽雅</string>
     <string name="apptour62__art_emoji_word">蛋糕</string>
     <string name="apptour62__art_emoji">🍰</string>
-    <string name="apptour62__intro_eyebrow">Dictate 6.2</string>
+    <string name="apptour62__intro_eyebrow">TypeBetter 6.2</string>
     <string name="apptour62__intro_title">它会记住你的词，还添了五套新外观</string>
     <string name="apptour62__intro_body">键盘现在能记住任何词典都不认识的词，按键之间可以透出下面的应用，两个拇指也能各占一半。此外还有一把小工具，专门帮你处理每天都在做的事。</string>
     <string name="apptour62__learning_eyebrow">新功能：边打边学</string>
@@ -2204,7 +2190,7 @@
     <string name="apptour62__learning_body">把一个名字或术语输入足够多次，键盘就会把它留下：不再标成错误，而是开始推荐它。这次更新会为所有人打开它，包括此前把它关掉的人。在无痕模式、密码输入框，以及任何不是你一键一键敲出来的内容里都不会学到东西；所有内容都只留在这台设备上，下面的按钮会打开这份清单——以及那个开关。</string>
     <string name="apptour62__themes_eyebrow">五套新外观</string>
     <string name="apptour62__themes_title">Glass、Sand、Deep，以及深色 E-Ink</string>
-    <string name="apptour62__themes_body">Dictate Glass 让应用从按键之间的缝隙透出来，而按键本身仍然足够不透明，字看得清；Glass Clear 更通透、更好看，代价是在那些会画到键盘后面的应用里，它们的文字会透过来。Sand 是温暖的浅色主题，Deep 是沉静的深色主题，E-Ink 终于有了夜间版本——自动切换在天黑之后不会再递给你一块白色键盘。</string>
+    <string name="apptour62__themes_body">TypeBetter Glass 让应用从按键之间的缝隙透出来，而按键本身仍然足够不透明，字看得清；Glass Clear 更通透、更好看，代价是在那些会画到键盘后面的应用里，它们的文字会透过来。Sand 是温暖的浅色主题，Deep 是沉静的深色主题，E-Ink 终于有了夜间版本——自动切换在天黑之后不会再递给你一块白色键盘。</string>
     <string name="apptour62__split_eyebrow">新功能：分体键盘</string>
     <string name="apptour62__split_title">两个拇指都够得着，不必伸手</string>
     <string name="apptour62__split_body">在单手模式和悬浮模式旁边新增的快捷操作，会把每一行拉开，让每个拇指都待在自己那一半。所有布局都能分开，不只是 QWERTY，因为分界点是从键宽算出来的，而不是写进每套布局里。横屏时，只要空间够，应用现在会一直保持可见。</string>
@@ -2225,7 +2211,7 @@
     <string name="apptour62__gestures_body">按住符号键，滑到想要的字符再松手：字符就输入了，字母也已经回来，不用来回切换。在空格键上向上滑，现在能够到上面一行，而不只是前一个词。按键之间的间距也能在真正看得出差别的范围内调整。</string>
     <string name="apptour62__export_eyebrow">新功能：口述存成文件</string>
     <string name="apptour62__export_title">每次口述都写进你选的文件夹</string>
-    <string name="apptour62__export_body">选定一个文件夹之后，每段完成的口述在完成的那一刻都会额外以纯文本文件写进去。不论是什么在盯着那个文件夹——记事应用、同步工具、你的备份——都能拿到你的文字，而 Dictate 不必去学它的那套规矩。</string>
+    <string name="apptour62__export_body">选定一个文件夹之后，每段完成的口述在完成的那一刻都会额外以纯文本文件写进去。不论是什么在盯着那个文件夹——记事应用、同步工具、你的备份——都能拿到你的文字，而 TypeBetter 不必去学它的那套规矩。</string>
     <string name="apptour62__more_eyebrow">此外</string>
     <string name="apptour62__more_title">许多小改进</string>
     <string name="apptour62__more_body">候选词现在在每种语言里都会看光标前的两个词，而不只是英语。备份可以不带你的 API 密钥生成，因而可以放心转交。Azure 自家的转写模型已经可用，为离线使用选择模型时现在也会一并切换到离线引擎，每个请求也都有与等待时间相称的期限。口述在送出的那一刻就出现在历史记录里，导入会说明自己正处在哪一步并且可以取消，文字进入那些一向挑剔的应用时也更可靠了。</string>
@@ -2233,12 +2219,12 @@
     <string name="apptour62__outro_title">还是那块键盘，更多地属于你</string>
     <string name="apptour62__outro_body">你的口述方式没有任何变化——自己的密钥、自己的服务器，或是设备上的模型。所有导览都能在 设置 › 关于 中重新查看。</string>
     <string name="apptour63__cta_try">试试看</string>
-    <string name="apptour63__intro_eyebrow">Dictate 6.3</string>
+    <string name="apptour63__intro_eyebrow">TypeBetter 6.3</string>
     <string name="apptour63__intro_title">不用离开键盘，就能做更多</string>
     <string name="apptour63__intro_body">把相机对准印刷文字，它就会落进输入框。光标、选择和剪贴板终于共用一个面板。智能栏上的任何按钮都能在长按时承载第二个操作。离线听写也终于有了真正装得下手机的模型。</string>
     <string name="apptour63__scan_eyebrow">新功能：扫描文字</string>
     <string name="apptour63__scan_title">印刷文字，直接进入输入框</string>
-    <string name="apptour63__scan_body">信上的 IBAN、盒子上的序列号、包裹上的地址：把相机对准它，文字就出现在你正在输入的位置，而不必重新敲一遍。识别在本机完成——不上传任何内容，也没有任何服务商参与。Dictate 也从不索取相机权限：照片由系统相机拍摄，只交回那一张，读取完就删除。</string>
+    <string name="apptour63__scan_body">信上的 IBAN、盒子上的序列号、包裹上的地址：把相机对准它，文字就出现在你正在输入的位置，而不必重新敲一遍。识别在本机完成——不上传任何内容，也没有任何服务商参与。TypeBetter 也从不索取相机权限：照片由系统相机拍摄，只交回那一张，读取完就删除。</string>
     <string name="apptour63__editing_eyebrow">新功能：编辑面板</string>
     <string name="apptour63__editing_title">光标、选择和剪贴板在同一个地方</string>
     <string name="apptour63__editing_body">这些其实早就有了，只是分散在十一个你得先知道的按键上。现在是一个面板：按字符、按词或按行移动，选择、复制、粘贴、撤销。按住一个键会重复，而不是要你点十一下。数字键盘现在也能明确调出，不必再靠一个谁也没绑定过的手势偶然撞见。</string>
@@ -2259,7 +2245,7 @@
     <string name="apptour63__outro_body">你的口述方式没有任何变化——自己的密钥、自己的服务器，或是设备上的模型。所有导览都能在 设置 › 关于 中重新查看。</string>
     <string name="apptour64__cta_languages">选择语言</string>
     <string name="apptour64__cta_providers">查看服务商</string>
-    <string name="apptour64__intro_eyebrow">Dictate 6.4</string>
+    <string name="apptour64__intro_eyebrow">TypeBetter 6.4</string>
     <string name="apptour64__intro_title">在手机上翻译，符号由你安排</string>
     <string name="apptour64__intro_body">用一种语言输入，输入框里出现的却是另一种语言——翻译就在这台设备上完成。两页符号都能放上你自己选的按键。此外还有新的服务商、一个好得多的离线模型、一个能把听写变成指令的词，以及对整个应用的一次隐私与安全审查。</string>
     <string name="apptour64__translate_eyebrow">新功能：翻译</string>
@@ -2276,7 +2262,7 @@
     <string name="apptour64__command_body">在「改写」中选一个词，比如「贾维斯」。以它开头的听写会作为实时指令执行：有选中的文本就作用于它，什么都没选就作为提问。只有第一个词算数，所以只是顺带提到它的句子会照常写下来。自动提示词现在也按预期工作了：它们总能拿到自己要处理的那段听写；而只由[方括号]括起来的文本构成的提示词，会原样追加到末尾，不再发给模型。</string>
     <string name="apptour64__privacy_eyebrow">隐私与安全</string>
     <string name="apptour64__privacy_title">整个应用，全面检查</string>
-    <string name="apptour64__privacy_body">Dictate 的每个部分都做了隐私与安全审查，发现的问题均已修复。在密码或 PIN 输入框里听写的内容不会进入历史记录，现在通过悬浮按钮也是如此。Android 的云备份只会以端到端加密的形式带走你的 API 密钥。「信任用户证书」现在按服务商账户分别设置，而不是一次对所有账户生效。</string>
+    <string name="apptour64__privacy_body">TypeBetter 的每个部分都做了隐私与安全审查，发现的问题均已修复。在密码或 PIN 输入框里听写的内容不会进入历史记录，现在通过悬浮按钮也是如此。Android 的云备份只会以端到端加密的形式带走你的 API 密钥。「信任用户证书」现在按服务商账户分别设置，而不是一次对所有账户生效。</string>
     <string name="apptour64__more_eyebrow">此外</string>
     <string name="apptour64__more_title">6.4 的其他改动</string>
     <string name="apptour64__more_body">一些较小的改动，写给想了解细节的人。不感兴趣的话，直接跳过即可。</string>
@@ -2365,13 +2351,12 @@
     <string name="dictate__legacy_prompt_rows_title">提示行</string>
     <string name="dictate__legacy_prompt_rows_one">一行</string>
     <string name="dictate__legacy_prompt_rows_two">两行</string>
-    <string name="about__website__title">网站</string>
     <string name="dictate__cloud_title">Dictate Cloud</string>
     <string name="dictate__cloud_row_summary_none">购买听写额度——无需 API 密钥</string>
     <string name="dictate__cloud_row_summary_balance">还剩 {minutes} 分钟额度</string>
     <string name="dictate__cloud_intro_title">无需 API 密钥即可听写</string>
     <string name="dictate__cloud_intro_body">直接在应用内购买听写额度。不用在 AI 服务商处注册账号，不用 API 密钥，也没有订阅。额度不会过期，只在你真正使用时才消耗：听写一分钟花一分钟，改写约花两秒。</string>
-    <string name="dictate__cloud_intro_alternative">这完全是可选的。用你自己在任意服务商处的密钥，Dictate 同样好用——其中好几家是免费的——那样你保留自己的账号，按服务商的价格直接付费。</string>
+    <string name="dictate__cloud_intro_alternative">这完全是可选的。用你自己在任意服务商处的密钥，TypeBetter 同样好用——其中好几家是免费的——那样你保留自己的账号，按服务商的价格直接付费。</string>
     <string name="dictate__cloud_use_own_provider_btn">还是用我自己的服务商</string>
     <string name="dictate__cloud_balance_label">剩余额度</string>
     <string name="dictate__cloud_balance_minutes">{minutes} 分钟</string>
@@ -2431,25 +2416,6 @@
     <string name="dictate__action_top_up">充值额度</string>
     <string name="dictate__promo_low_credit_message">额度快用完了。</string>
     <string name="dictate__promo_low_credit_action">充值</string>
-    <string name="dictate__promo_sayova_message">新应用：手表上的 AI 助手</string>
-    <string name="dictate__promo_sayova_action">了解</string>
-    <string name="about__more_apps__title">更多应用</string>
-    <string name="about__more_apps__summary">适用于手表的 SayOVA 和 TunerToGo</string>
-    <string name="about__more_apps__tunertogo_tagline">适用于 Wear OS 的乐器调音器</string>
-    <string name="about__more_apps__tunertogo_description">精准的调音器始终戴在手腕上，拿起乐器即可使用。</string>
-    <string name="about__more_apps__tunertogo_feature_instruments">支持吉他、贝斯、尤克里里、小提琴等，自动识别琴弦</string>
-    <string name="about__more_apps__tunertogo_feature_chromatic">半音阶模式适用于其他所有乐器和人声</string>
-    <string name="about__more_apps__tunertogo_feature_vibration">琴弦调准时短促振动，视线无需离开弦钮</string>
-    <string name="about__more_apps__tunertogo_feature_privacy">无网络访问、无广告：声音在手表上分析，绝不保存</string>
-    <string name="about__more_apps__tunertogo_requirements">需要配备麦克风、搭载 Wear OS 3 或更高版本的手表。无需手机应用。</string>
-    <string name="about__more_apps__intro">同样来自 Dictate 的开发者 DevEmperor：</string>
-    <string name="about__more_apps__sayova_tagline">适用于 Wear OS 的 AI 语音助手</string>
-    <string name="about__more_apps__sayova_description">直接在手表上与 Google Gemini 或 OpenAI 对话：自然开口，随时打断，一边听回答一边阅读文字。</string>
-    <string name="about__more_apps__sayova_feature_interpreter">支持 21 种语言的口译，双方内容均以文字显示</string>
-    <string name="about__more_apps__sayova_feature_tasks">设置计时器和闹钟、保存笔记、搜索网络</string>
-    <string name="about__more_apps__sayova_feature_phone">在手机上准备好消息、日程和路线，由您亲自发送</string>
-    <string name="about__more_apps__sayova_feature_privacy">使用您自己的 API 密钥：无需账号，无跟踪，开源</string>
-    <string name="about__more_apps__sayova_requirements">需要配备麦克风、搭载 Wear OS 3 或更高版本的手表，以及 Google Gemini 或 OpenAI 的 API 密钥。使用费用由您的服务商收取。</string>
     <string name="prefs__media__sticker__title">贴纸</string>
     <string name="prefs__media__sticker_folder__title">贴纸文件夹</string>
     <string name="prefs__media__sticker_folder__summary_unset">选择一个存放你自己图片的文件夹</string>
@@ -2488,9 +2454,9 @@
     <string name="quick_action__ime_ui_mode_sticker">贴纸</string>
     <string name="quick_action__ime_ui_mode_sticker__tooltip">插入你自己的贴纸</string>
     <string name="prefs__media__sticker_add">添加贴纸</string>
-    <string name="prefs__media__sticker_add__summary">把图片复制到文件夹。你也可以从任意应用把图片分享到 Dictate。</string>
+    <string name="prefs__media__sticker_add__summary">把图片复制到文件夹。你也可以从任意应用把图片分享到 TypeBetter。</string>
     <string name="prefs__media__sticker_import_whatsapp">从 WhatsApp 获取</string>
-    <string name="prefs__media__sticker_import_whatsapp__summary">在 WhatsApp 的贴纸文件夹中打开文件选择器。三星键盘等把自己的贴纸存放在其他应用无法读取的位置 — 那些请分享到 Dictate。</string>
+    <string name="prefs__media__sticker_import_whatsapp__summary">在 WhatsApp 的贴纸文件夹中打开文件选择器。三星键盘等把自己的贴纸存放在其他应用无法读取的位置 — 那些请分享到 TypeBetter。</string>
     <string name="sticker__import_share_label">保存为贴纸</string>
     <string name="sticker__import_added">已添加 {n} 个</string>
     <string name="sticker__import_duplicate">{n} 个已存在</string>
@@ -2514,7 +2480,7 @@
     <string name="sticker__source_downloads">下载</string>
     <string name="sticker__source_pictures">图片</string>
     <string name="sticker__source_dcim">相机</string>
-    <string name="sticker__source_hint">这些只是起点，不是保证 — 文件夹不存在时，选择器会照常打开。像三星键盘这类把贴纸留给自己的应用，只能分享到 Dictate。</string>
+    <string name="sticker__source_hint">这些只是起点，不是保证 — 文件夹不存在时，选择器会照常打开。像三星键盘这类把贴纸留给自己的应用，只能分享到 TypeBetter。</string>
     <string name="sticker__import_progress">正在复制 {done} / {total}</string>
     <string name="sticker__import_cancel">点按即可停止。已复制的会保留。</string>
     <string name="sticker__refused_declares_nothing">此应用不接受来自键盘的图片 — 已复制到剪贴板，长按即可粘贴</string>
@@ -2570,4 +2536,14 @@
     <string name="translate__missing">{language}尚未下载</string>
     <string name="translate__failed">翻译失败</string>
     <string name="translate__unsupported">此设备不支持翻译</string>
+    <string name="about__tagline">基于 Dictate 和 FlorisBoard</string>
+    <string name="about__feedback__summary_issues">在 GitHub 上报告问题或提出建议</string>
+    <string name="about__credits__title">致谢</string>
+    <string name="about__credits_dictate__title">基于 Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter 是 DevEmperor 开发的 Dictate Keyboard 的分支，采用 Apache 2.0 许可。语音输入、键盘以及你在这里看到的大部分功能都来自这项工作。谢谢！点按即可打开。</string>
+    <string name="about__credits_floris__summary">Dictate 本身是 Patrick Goldinger 及贡献者开发的 FlorisBoard 的分支，采用 Apache 2.0 许可。点按即可打开。</string>
+    <string name="about__credits_donate__title">支持 Dictate 的开发者</string>
+    <string name="about__credits_donate__summary">为 TypeBetter 所依托的工作给 DevEmperor 打赏</string>
+    <string name="changelog__donate_credit">基于 DevEmperor 开发的 Dictate。点按此处支持其开发者 ♥</string>
+    <string name="apptour51__outro_body_credit">感谢使用 TypeBetter！这些功能来自 TypeBetter 所依托的应用 Dictate。如果它们每天都在帮助你，给开发者 DevEmperor 一点小小的打赏就能让这项工作继续下去。你可以随时在 设置 › 关于 中重新查看这些导览。</string>
 </resources>

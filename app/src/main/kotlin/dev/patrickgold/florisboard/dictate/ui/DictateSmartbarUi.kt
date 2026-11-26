@@ -52,7 +52,6 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
@@ -66,7 +65,6 @@ import androidx.compose.material.icons.filled.AddCard
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.WarningAmber
@@ -919,8 +917,8 @@ private fun errorIcon(
 
 /**
  * One-time Smartbar nudge: a tinted icon, a short message and accept (✓) / decline (✗) buttons.
- * Accepting opens the Play Store (rate, 9.7), PayPal (donate, 9.8) or the in-app "What's new" dialog
- * (changelog after an update, 11.9); both buttons mark the nudge as handled so it never reappears.
+ * Accepting opens the in-app "What's new" dialog (changelog after an update), the stats screen
+ * (milestone) or the credit screen (low credit); both buttons mark the nudge as handled.
  * Shown only when idle, replacing the normal Smartbar.
  */
 @Composable
@@ -930,34 +928,23 @@ private fun PromoContent(kind: DictateController.PromoKind, message: String? = n
     val rowStyle = rememberSnyggThemeQuery(FlorisImeUi.SmartbarSharedActionsRow.elementName)
     val accent by prefs.theme.accentColor.collectAsState() // follows the user's keyboard accent.
     val leadingIcon: Painter = when (kind) {
-        DictateController.PromoKind.RATE -> rememberVectorPainter(Icons.Default.Star)
-        DictateController.PromoKind.DONATE -> rememberVectorPainter(Icons.Default.Favorite)
         DictateController.PromoKind.CHANGELOG -> rememberVectorPainter(Icons.Default.NewReleases)
         DictateController.PromoKind.MILESTONE -> rememberVectorPainter(Icons.Default.EmojiEvents)
         // The mark of what is running low, not of the action — the accent pill beside it already
         // says "top up".
         DictateController.PromoKind.LOW_CREDIT -> painterResource(R.drawable.ic_dictate_cloud)
-        // Another app's own icon, the orb its users see on their watch, so the nudge is recognisable as
-        // that app rather than as one more of Dictate's glyphs.
-        DictateController.PromoKind.SAYOVA -> painterResource(R.drawable.sayova_icon)
     }
-    val iconTint = if (kind == DictateController.PromoKind.SAYOVA) Color.Unspecified else accent
+    val iconTint = accent
     // Milestone text is dynamic (which milestone), so it arrives via [message]; the rest map to a res.
     val messageRes = when (kind) {
-        DictateController.PromoKind.RATE -> R.string.dictate__promo_rate_message
-        DictateController.PromoKind.DONATE -> R.string.dictate__promo_donate_message
         DictateController.PromoKind.CHANGELOG -> R.string.dictate__promo_changelog_message
         DictateController.PromoKind.MILESTONE -> R.string.dictate__stats_milestone_title
         DictateController.PromoKind.LOW_CREDIT -> R.string.dictate__promo_low_credit_message
-        DictateController.PromoKind.SAYOVA -> R.string.dictate__promo_sayova_message
     }
     val actionRes = when (kind) {
-        DictateController.PromoKind.RATE -> R.string.dictate__promo_rate_action
-        DictateController.PromoKind.DONATE -> R.string.dictate__promo_donate_action
         DictateController.PromoKind.CHANGELOG -> R.string.dictate__promo_changelog_action
         DictateController.PromoKind.MILESTONE -> R.string.dictate__promo_milestone_action
         DictateController.PromoKind.LOW_CREDIT -> R.string.dictate__promo_low_credit_action
-        DictateController.PromoKind.SAYOVA -> R.string.dictate__promo_sayova_action
     }
 
     // Gentle pop-in (fade + slight scale) on top of the Smartbar's own slide transition.
@@ -981,8 +968,7 @@ private fun PromoContent(kind: DictateController.PromoKind, message: String? = n
                 scaleY = s
             },
     ) {
-        // Tinted leading icon (star = rate, heart = donate, badge = update/changelog); SayOVA's in its own
-        // colours.
+        // Tinted leading icon (badge = update/changelog, trophy = milestone, cloud = credit).
         Icon(
             painter = leadingIcon,
             contentDescription = null,
@@ -1000,7 +986,7 @@ private fun PromoContent(kind: DictateController.PromoKind, message: String? = n
             modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(modifier = Modifier.width(10.dp))
-        // Filled accent pill = primary action (opens Play Store / PayPal / the in-app changelog).
+        // Filled accent pill = primary action (opens the changelog, stats or credit screen).
         Text(
             text = stringRes(actionRes),
             color = Color.White,
@@ -1034,7 +1020,7 @@ private fun PromoContent(kind: DictateController.PromoKind, message: String? = n
  * lines. It stays on one line while it fits at [BAR_MESSAGE_ONE_LINE_RATIO] of [fontSize] and takes the
  * second line only below that, so a short message looks as it always did and a long one does not lose
  * its last word to the next line. These were single lines with an ellipsis, and on a Galaxy A55 the
- * German SayOVA nudge was cut off halfway, with nothing to tap to read the rest.
+ * German nudge for another app was cut off halfway, with nothing to tap to read the rest.
  *
  * The bar's height is part of the fit: where two lines do not fit at the font scale in use, the text
  * shrinks further, down to [BAR_MESSAGE_MIN_RATIO], before anything is cut.

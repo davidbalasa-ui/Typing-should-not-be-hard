@@ -470,7 +470,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         // who rarely open the settings still discover the changelog. Checked first so it takes priority
         // over the rate/donate nudge; both no-op unless idle, so neither interrupts a recording above.
         dev.patrickgold.florisboard.dictate.DictateController.maybePromptChangelog(this)
-        // Low credit, SayOVA, then rate/donate once enough audio was dictated (roadmap 9.7/9.8).
+        // Low credit (TypeBetter dropped upstream's rate, donate and other-app nudges).
         // Guarded internally to no-op unless idle, so it never interrupts a recording started above.
         dev.patrickgold.florisboard.dictate.DictateController.maybePromptForReview()
     }

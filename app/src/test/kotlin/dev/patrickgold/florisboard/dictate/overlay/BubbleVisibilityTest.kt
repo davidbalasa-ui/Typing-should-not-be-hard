@@ -29,7 +29,7 @@ class BubbleVisibilityTest {
     private val recording = DictateController.UiState.Recording(startedAtMs = 0L)
     private val transcribing = DictateController.UiState.Transcribing(startedAtMs = 0L)
     private val rewording = DictateController.UiState.Rewording("Formal")
-    private val nudge = DictateController.UiState.Promo(DictateController.PromoKind.RATE)
+    private val nudge = DictateController.UiState.Promo(DictateController.PromoKind.MILESTONE)
     private val interrupted = DictateController.UiState.Interrupted(seconds = 12L)
     private val failed = DictateController.UiState.Error(
         message = "No internet connection",

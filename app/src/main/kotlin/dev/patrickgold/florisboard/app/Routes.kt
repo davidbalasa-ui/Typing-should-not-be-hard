@@ -53,7 +53,6 @@ import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreen
 import dev.patrickgold.florisboard.app.settings.about.AboutScreen
 import dev.patrickgold.florisboard.app.settings.about.DataAttributionsScreen
-import dev.patrickgold.florisboard.app.settings.about.MoreAppsScreen
 import dev.patrickgold.florisboard.app.settings.about.ProjectLicenseScreen
 import dev.patrickgold.florisboard.app.settings.about.ThirdPartyLicensesScreen
 import dev.patrickgold.florisboard.app.settings.advanced.BackupScreen
@@ -336,11 +335,6 @@ object Routes {
         @Deeplink("settings/about/data-attributions")
         object DataAttributions
 
-        // The developer's other apps; the SayOVA Smartbar nudge deep-links here.
-        @Serializable
-        @Deeplink("settings/about/more-apps")
-        object MoreApps
-
         // On-device translation (issue #424); the translate bar deep-links here for its languages.
         @Serializable
         @Deeplink("settings/translation")
@@ -495,7 +489,6 @@ object Routes {
             composableWithDeepLink(Settings.ProjectLicense::class) { ProjectLicenseScreen() }
             composableWithDeepLink(Settings.ThirdPartyLicenses::class) { ThirdPartyLicensesScreen() }
             composableWithDeepLink(Settings.DataAttributions::class) { DataAttributionsScreen() }
-            composableWithDeepLink(Settings.MoreApps::class) { MoreAppsScreen() }
             composableWithDeepLink(Settings.Translation::class) { TranslationScreen() }
 
             composableWithDeepLink(Devtools.Home::class) { DevtoolsScreen() }

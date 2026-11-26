@@ -16,8 +16,6 @@
 
 package dev.patrickgold.florisboard.app.settings.about
 
-import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,13 +27,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Policy
-import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,6 +60,7 @@ import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisCanvasIcon
 import org.florisboard.lib.compose.stringRes
@@ -96,7 +95,7 @@ fun AboutScreen() = FlorisScreen {
                 modifier = Modifier.padding(top = 16.dp),
             )
             Text(
-                text = stringRes(R.string.about__made_by),
+                text = stringRes(R.string.about__tagline),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),
@@ -162,20 +161,6 @@ fun AboutScreen() = FlorisScreen {
             )
         }
         Preference(
-            icon = Icons.Outlined.Apps,
-            modifier = Modifier.settingsSearchAnchor("about__more_apps__title"),
-            title = stringRes(R.string.about__more_apps__title),
-            summary = stringRes(R.string.about__more_apps__summary),
-            onClick = { navController.navigate(Routes.Settings.MoreApps) },
-        )
-        Preference(
-            icon = Icons.Outlined.Public,
-            modifier = Modifier.settingsSearchAnchor("about__website__title"),
-            title = stringRes(R.string.about__website__title),
-            summary = "dictatekeyboard.com",
-            onClick = { context.launchUrl(R.string.florisboard__website_url) },
-        )
-        Preference(
             icon = Icons.Default.History,
             modifier = Modifier.settingsSearchAnchor("about__changelog__title"),
             title = stringRes(R.string.about__changelog__title),
@@ -190,28 +175,12 @@ fun AboutScreen() = FlorisScreen {
             onClick = { context.launchUrl(R.string.florisboard__repo_url) },
         )
         Preference(
-            icon = Icons.Default.CallSplit,
-            modifier = Modifier.settingsSearchAnchor("about__based_on_floris__title"),
-            title = stringRes(R.string.about__based_on_floris__title),
-            summary = stringRes(R.string.about__based_on_floris__summary),
-            onClick = { context.launchUrl(R.string.florisboard__upstream_repo_url) },
-        )
-        Preference(
             icon = Icons.Outlined.Email,
             modifier = Modifier.settingsSearchAnchor("about__feedback__title"),
             title = stringRes(R.string.about__feedback__title),
-            summary = stringRes(R.string.about__feedback__summary),
-            onClick = {
-                val email = context.stringRes(R.string.about__feedback__email)
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$email")).apply {
-                    putExtra(Intent.EXTRA_SUBJECT, context.stringRes(R.string.about__feedback__subject))
-                }
-                try {
-                    context.startActivity(intent)
-                } catch (e: Throwable) {
-                    Toast.makeText(context, email, Toast.LENGTH_LONG).show()
-                }
-            },
+            summary = stringRes(R.string.about__feedback__summary_issues),
+            // TypeBetter has no support mailbox; questions and bugs go to its GitHub issues.
+            onClick = { context.launchUrl(R.string.florisboard__issue_tracker_url) },
         )
         Preference(
             icon = Icons.Outlined.Policy,
@@ -240,5 +209,31 @@ fun AboutScreen() = FlorisScreen {
             summary = stringRes(id = R.string.about__data_attributions__summary),
             onClick = { navController.navigate(Routes.Settings.DataAttributions) },
         )
+
+        // Credits: TypeBetter is built on Dictate, which is built on FlorisBoard. Kept as its own section
+        // so the thanks stay easy to find, with links to both projects and to Dictate's developer.
+        PreferenceGroup(title = stringRes(R.string.about__credits__title)) {
+            Preference(
+                icon = Icons.Default.Favorite,
+                modifier = Modifier.settingsSearchAnchor("about__credits_dictate__title"),
+                title = stringRes(R.string.about__credits_dictate__title),
+                summary = stringRes(R.string.about__credits_dictate__summary),
+                onClick = { context.launchUrl(R.string.dictate__upstream_repo_url) },
+            )
+            Preference(
+                icon = Icons.Default.CallSplit,
+                modifier = Modifier.settingsSearchAnchor("about__based_on_floris__title"),
+                title = stringRes(R.string.about__based_on_floris__title),
+                summary = stringRes(R.string.about__credits_floris__summary),
+                onClick = { context.launchUrl(R.string.florisboard__upstream_repo_url) },
+            )
+            Preference(
+                icon = Icons.Outlined.VolunteerActivism,
+                modifier = Modifier.settingsSearchAnchor("about__credits_donate__title"),
+                title = stringRes(R.string.about__credits_donate__title),
+                summary = stringRes(R.string.about__credits_donate__summary),
+                onClick = { context.launchUrl(R.string.dictate__upstream_donate_url) },
+            )
+        }
     }
 }

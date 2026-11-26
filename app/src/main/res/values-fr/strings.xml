@@ -124,9 +124,9 @@
     <string name="settings__home__title" comment="Title of the Home screen">Bienvenue dans {app_name}</string>
     <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when Dictate Keyboard is not enabled in the system">{app_name} n\'est pas activé dans le système et ne sera donc pas disponible comme méthode de saisie dans le sélectionneur de saisie. Cliquez ici pour résoudre ce problème.</string>
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when Dictate Keyboard is not selected as the default keyboard">{app_name} n\'est pas sélectionné comme méthode de saisie par défaut. Cliquez ici pour résoudre ce problème.</string>
-    <string name="dictate__settings_unreadable_card">Vos paramètres n’ont pas pu être lus, Dictate a donc démarré avec les valeurs par défaut. Touchez ici pour les récupérer.</string>
+    <string name="dictate__settings_unreadable_card">Vos paramètres n’ont pas pu être lus, TypeBetter a donc démarré avec les valeurs par défaut. Touchez ici pour les récupérer.</string>
     <string name="dictate__settings_unreadable_title">Restaurer ?</string>
-    <string name="dictate__settings_unreadable_message">Au démarrage, Dictate n’a pas pu lire son fichier de paramètres. Il l’a conservé tel quel et a démarré avec les valeurs par défaut. « Restaurer » récupère vos fournisseurs, clés, prompts et paramètres tels qu’ils étaient. « Supprimer » efface l’ancien fichier.</string>
+    <string name="dictate__settings_unreadable_message">Au démarrage, TypeBetter n’a pas pu lire son fichier de paramètres. Il l’a conservé tel quel et a démarré avec les valeurs par défaut. « Restaurer » récupère vos fournisseurs, clés, prompts et paramètres tels qu’ils étaient. « Supprimer » efface l’ancien fichier.</string>
     <string name="dictate__settings_restore_failed">Les anciens paramètres sont toujours illisibles.</string>
     <string name="settings__search__title" comment="Title of the settings search screen">Rechercher dans les paramètres</string>
     <string name="settings__search__placeholder" comment="Placeholder in the settings search field">Rechercher dans les paramètres…</string>
@@ -599,7 +599,7 @@
     <string name="setup__select_ime__description">{app_name} est maintenant activé dans votre système. Pour l\'utiliser, passez à {app_name} en le sélectionnant dans le menu de sélection des saisies !</string>
     <string name="setup__select_ime__switch_keyboard_btn">Changer de Clavier</string>
     <string name="setup__grant_notification_permission__title">Autoriser les notifications</string>
-    <string name="setup__grant_notification_permission__description">Depuis Android 13, les applications doivent demander avant d’afficher des notifications. Dictate Keyboard en affiche une pendant que le bouton flottant enregistre, pendant le téléchargement d’un modèle vocal et pendant que votre montre dicte via le téléphone, et ouvre un rapport d’incident si l’application plante. Vous pouvez modifier cela à tout moment dans les paramètres du système.</string>
+    <string name="setup__grant_notification_permission__description">Depuis Android 13, les applications doivent demander avant d’afficher des notifications. TypeBetter Keyboard en affiche une pendant que le bouton flottant enregistre, pendant le téléchargement d’un modèle vocal et pendant que votre montre dicte via le téléphone, et ouvre un rapport d’incident si l’application plante. Vous pouvez modifier cela à tout moment dans les paramètres du système.</string>
     <string name="setup__grant_notification_permission__btn">Donner l\'autorisation</string>
     <string name="setup__finish_up__title">Terminer</string>
     <string name="setup__finish_up__description_p1">{app_name} est maintenant activé dans le système et prêt à être personnalisé par vous.</string>
@@ -630,7 +630,7 @@
     <string name="backup_and_restore__restore__encrypted">Cette archive de sauvegarde est protégée par un mot de passe. Saisissez-le pour voir ce qu’elle contient.</string>
     <string name="backup_and_restore__restore__unlock">Déverrouiller</string>
     <string name="backup_and_restore__restore__wrong_password">Mot de passe incorrect</string>
-    <string name="backup_and_restore__restore__encrypted_unreadable">Impossible d’ouvrir cette archive. Elle est endommagée, ou elle a été créée par une version plus récente de Dictate.</string>
+    <string name="backup_and_restore__restore__encrypted_unreadable">Impossible d’ouvrir cette archive. Elle est endommagée, ou elle a été créée par une version plus récente de TypeBetter.</string>
     <string name="backup_and_restore__back_up__files_ime_keyboard">Extensions de clavier</string>
     <string name="backup_and_restore__back_up__files_ime_spelling">Extensions de dictionnaires</string>
     <string name="backup_and_restore__back_up__files_ime_theme">Extensions de thème</string>
@@ -655,18 +655,18 @@
     <string name="backup_and_restore__restore__success">Données restaurées avec succès !</string>
     <string name="backup_and_restore__restore__failure">Impossible de restaurer les données : {error_message}</string>
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">Rapport d\'erreur de Dictate</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">Désolé pour le désagrément, mais Dictate a crashé en raison d\'une erreur inattendue.</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">Si vous souhaitez signaler cette erreur, vérifier avant tout si votre problème n\'a pas déjà été signalé sur le tracker d\'erreur de github.\nSi ce n\'est pas le cas, copiez le journal d\'erreur généré et ouvrez une nouvelle issue. Utilisez le modèle \"%s\" et remplissez la description, les étapes de reproduction puis collez le journal d\'erreur généré à la fin. Ceci contribue à améliorer Dictate et à le rendre plus stable pour tous. Merci de votre aide!</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">Rapport d\'erreur de TypeBetter</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">Désolé pour le désagrément, mais TypeBetter a crashé en raison d\'une erreur inattendue.</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">Si vous souhaitez signaler cette erreur, vérifier avant tout si votre problème n\'a pas déjà été signalé sur le tracker d\'erreur de github.\nSi ce n\'est pas le cas, copiez le journal d\'erreur généré et ouvrez une nouvelle issue. Utilisez le modèle \"%s\" et remplissez la description, les étapes de reproduction puis collez le journal d\'erreur généré à la fin. Ceci contribue à améliorer TypeBetter et à le rendre plus stable pour tous. Merci de votre aide!</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Copier vers le presse-papier système</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">Copié vers le presse-papier système</string>
     <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">Impossible de copier vers le presse-papier système : Instance du gestionnaire de presse-papier introuvable</string>
     <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">Ouvrir le tracker d\'erreur (github.com)</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">Fermer</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Rapports d\'erreur de Dictate</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Dictate a cessé de fonctionner…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Rapports d\'erreur de TypeBetter</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">TypeBetter a cessé de fonctionner…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Touchez pour voir les détails de l\'erreur</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Dictate semble cesser de fonctionner de façon répétitive…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">TypeBetter semble cesser de fonctionner de façon répétitive…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">Retour au clavier précédent pour arrêter la boucle de plantage infinie. Appuyez pour afficher les détails de l\'erreur</string>
     <!-- Clipboard strings -->
     <string name="editing__back_to_keyboard">Retour au clavier</string>
@@ -1076,14 +1076,9 @@
     <string name="quick_action__dictate_prompts">Prompts d\'IA</string>
     <string name="quick_action__dictate_prompts__tooltip">Ouvrir les prompts de reformulation par IA</string>
     <string name="about__based_on_floris__title">Basé sur FlorisBoard</string>
-    <string name="about__based_on_floris__summary">Un fork de FlorisBoard par Patrick Goldinger et ses contributeurs, Apache 2.0. Touchez pour ouvrir.</string>
-    <string name="about__made_by">Fait avec ❤️ par DevEmperor\nSoli deo gloria ✝️</string>
     <string name="about__feedback__title">Commentaires et assistance</string>
-    <string name="about__feedback__summary">Envoyez un e-mail avec vos questions, bugs ou idées</string>
-    <string name="about__feedback__email">contact@devemperor.net</string>
-    <string name="about__feedback__subject">Dictate Feedback</string>
-    <string name="setup__provider__title">Choisissez comment Dictate transcrit</string>
-    <string name="setup__provider__choose_intro">Dictate transforme votre voix en texte à l\'aide d\'un service d\'IA. Deux façons conviennent à la plupart des gens — et si vous préférez vous passer complètement d\'un service en ligne, deux autres se trouvent en dessous.</string>
+    <string name="setup__provider__title">Choisissez comment TypeBetter transcrit</string>
+    <string name="setup__provider__choose_intro">TypeBetter transforme votre voix en texte à l\'aide d\'un service d\'IA. Deux façons conviennent à la plupart des gens — et si vous préférez vous passer complètement d\'un service en ligne, deux autres se trouvent en dessous.</string>
     <string name="setup__provider__choice_cloud_title">Acheter du crédit dans l\'application</string>
     <string name="setup__provider__choice_cloud_body">Dictate Cloud : aucun compte nulle part, aucune clé API. Vous achetez des minutes de dictée via Google Play et elles n\'expirent jamais. La voie pratique — et un peu plus chère que de passer directement par un fournisseur.</string>
     <string name="setup__provider__choice_cloud_btn">Voir les packs de crédit</string>
@@ -1095,15 +1090,15 @@
     <string name="setup__provider__choice_local_title">Sur votre appareil, hors ligne</string>
     <string name="setup__provider__choice_local_body">Téléchargez un modèle vocal une seule fois. Aucun compte, aucun coût, et aucun audio ne quitte votre téléphone.</string>
     <string name="setup__provider__choice_server_title">Votre propre serveur</string>
-    <string name="setup__provider__choice_server_body">Pointez Dictate vers un serveur vocal que vous hébergez vous-même, ou vers n\'importe quel endpoint compatible OpenAI.</string>
+    <string name="setup__provider__choice_server_body">Pointez TypeBetter vers un serveur vocal que vous hébergez vous-même, ou vers n\'importe quel endpoint compatible OpenAI.</string>
     <string name="setup__provider__local_intro">La reconnaissance vocale s\'exécute alors sur votre téléphone : rien n\'est envoyé nulle part et cela fonctionne sans connexion. Choisissez un modèle à télécharger maintenant — vous pourrez en ajouter ou en changer plus tard.</string>
     <string name="setup__provider__local_recommended">Recommandé pour votre langue</string>
     <string name="setup__provider__local_bigger">Plus précis, mais un téléchargement bien plus lourd</string>
     <string name="setup__provider__local_download_btn">Télécharger le modèle</string>
     <string name="setup__provider__local_use_btn">Utiliser ce modèle</string>
     <string name="setup__provider__local_all_models">Afficher tous les modèles</string>
-    <string name="setup__provider__intro">Dictate transforme votre voix en texte à l\'aide d\'un service d\'IA en ligne. Pour l\'utiliser, il vous faut votre propre clé personnelle pour un tel service.</string>
-    <string name="setup__provider__what_is_key">Une clé d\'API est comme un mot de passe personnel qui permet à Dictate d\'utiliser le service pour vous. En créer une est gratuit et prend environ deux minutes.</string>
+    <string name="setup__provider__intro">TypeBetter transforme votre voix en texte à l\'aide d\'un service d\'IA en ligne. Pour l\'utiliser, il vous faut votre propre clé personnelle pour un tel service.</string>
+    <string name="setup__provider__what_is_key">Une clé d\'API est comme un mot de passe personnel qui permet à TypeBetter d\'utiliser le service pour vous. En créer une est gratuit et prend environ deux minutes.</string>
     <string name="setup__provider__recommended">Nous recommandons <b>Groq</b> : rapide et gratuit pour la dictée au quotidien.</string>
     <string name="setup__provider__steps_groq">1. Touchez le bouton ci-dessous pour ouvrir Groq.\n2. Connectez-vous avec Google ou votre adresse e-mail.\n3. Touchez « Create API Key », donnez-lui un nom au choix et confirmez.\n4. Copiez la clé (elle commence par « gsk_ »).\n5. Revenez ici et touchez « Coller la clé d\'API » ci-dessous.</string>
     <string name="setup__provider__steps_generic">1. Touchez le bouton ci-dessous pour ouvrir {provider}.\n2. Créez un compte si vous n\'en avez pas encore.\n3. Créez une nouvelle clé d\'API et copiez-la.\n4. Revenez ici et touchez « Coller la clé d\'API » ci-dessous.</string>
@@ -1118,7 +1113,6 @@
     <string name="setup__provider__other_provider">Utiliser un autre fournisseur d\'IA</string>
     <string name="setup__provider__other_provider_hint">Avancé : choisissez un autre service que Groq. Il vous faudra une clé d\'API de ce fournisseur.</string>
     <string name="setup__finish_up__add_key_hint">Astuce : vous n\'avez pas encore ajouté de clé d\'IA. Ajoutez-en une à tout moment dans Paramètres → Dictate → Fournisseurs d\'IA pour commencer à dicter.</string>
-    <string name="crash_dialog__bug_report_template">Rapport de plantage</string>
     <string name="enum__swipe_action__toggle_compact_layout">Basculer la disposition compacte</string>
     <string name="unit__hours__symbol">{v} h</string>
     <string name="unit__minutes__symbol">{v} min</string>
@@ -1127,9 +1121,9 @@
     <string name="unit__percent__symbol">{v} %</string>
     <string name="unit__display_pixel__symbol">{v} dp</string>
     <string name="unit__display_pixel_per_seconds__symbol">{v} dp/s</string>
-    <string name="dictate__accessibility_service_label">Bouton flottant de Dictate</string>
+    <string name="dictate__accessibility_service_label">Bouton flottant de TypeBetter</string>
     <string name="dictate__accessibility_service_summary">Affiche un bouton flottant pour dicter dans n’importe quel champ de texte.</string>
-    <string name="dictate__accessibility_service_description">Dictate utilise ce service pour le bouton de dictée flottant. Une fois activé, il détecte quand un champ de texte a le focus dans n’importe quelle application — afin que le bouton puisse apparaître — et insère votre parole transcrite dans ce champ. Dictate lit uniquement le champ ciblé pour placer votre texte au curseur ; il ne collecte, ne stocke ni ne partage aucun autre contenu de l’écran.</string>
+    <string name="dictate__accessibility_service_description">TypeBetter utilise ce service pour le bouton de dictée flottant. Une fois activé, il détecte quand un champ de texte a le focus dans n’importe quelle application — afin que le bouton puisse apparaître — et insère votre parole transcrite dans ce champ. TypeBetter lit uniquement le champ ciblé pour placer votre texte au curseur ; il ne collecte, ne stocke ni ne partage aucun autre contenu de l’écran.</string>
     <string name="dictate__overlay_notification_channel">Bouton de dictée flottant</string>
     <string name="dictate__overlay_notification_recording">Enregistrement — touchez le bouton flottant pour transcrire</string>
     <string name="dictate__overlay_notification_working">Transcription…</string>
@@ -1141,14 +1135,14 @@
     <string name="dictate__floating_button_service_enabled">Activé · touchez pour ouvrir les paramètres système</string>
     <string name="dictate__floating_button_service_disabled">Pas encore activé · touchez pour configurer</string>
     <string name="dictate__floating_button_disclosure_title">Activer le bouton flottant</string>
-    <string name="dictate__floating_button_disclosure_message">Pour afficher le bouton flottant, Dictate a besoin du service d’accessibilité. Il détecte quand un champ de texte a le focus dans n’importe quelle application — afin que le bouton puisse apparaître — et insère votre parole transcrite dans ce champ. Dictate lit uniquement le champ ciblé pour placer votre texte ; il ne collecte, ne stocke ni ne partage aucun autre contenu de l’écran.\n\nSur l’écran suivant, trouvez « Bouton flottant de Dictate » et activez-le.</string>
+    <string name="dictate__floating_button_disclosure_message">Pour afficher le bouton flottant, TypeBetter a besoin du service d’accessibilité. Il détecte quand un champ de texte a le focus dans n’importe quelle application — afin que le bouton puisse apparaître — et insère votre parole transcrite dans ce champ. TypeBetter lit uniquement le champ ciblé pour placer votre texte ; il ne collecte, ne stocke ni ne partage aucun autre contenu de l’écran.\n\nSur l’écran suivant, trouvez « Bouton flottant de TypeBetter » et activez-le.</string>
     <string name="dictate__floating_button_disclosure_continue">Ouvrir les paramètres</string>
     <string name="dictate__floating_button_mic_title">Accès au microphone</string>
     <string name="dictate__floating_button_mic_summary">Nécessaire pour enregistrer votre voix · touchez pour autoriser</string>
     <string name="dictate__floating_button_show_when_title">Quand l’afficher</string>
     <string name="dictate__floating_button_show_when_field">Dès qu’un champ de texte est sélectionné</string>
     <string name="dictate__floating_button_show_when_keyboard">Uniquement avec le clavier ouvert</string>
-    <string name="dictate__floating_button_show_when_dictate_keyboard">Aussi avec le clavier Dictate</string>
+    <string name="dictate__floating_button_show_when_dictate_keyboard">Aussi avec le clavier TypeBetter</string>
     <string name="dictate__action_continue_recording">Continuer l’enregistrement</string>
     <string name="dictate__a11y_mic_hold_local">Transcrire sur l’appareil</string>
     <string name="smartbar__a11y_show_actions">Afficher les actions</string>
@@ -1178,12 +1172,12 @@
     <string name="dictate__floating_button_apps_scope_all">Toutes les applications</string>
     <string name="dictate__floating_button_apps_scope_only">Uniquement les applications ci-dessous</string>
     <string name="dictate__floating_button_apps_scope_except">Toutes sauf les applications ci-dessous</string>
-    <string name="dictate__floating_button_apps_note">Le bouton n\'est jamais dessiné au-dessus d\'une application que vous excluez, et Dictate n\'y lit aucun champ de texte. Une application qui refuse les services d\'accessibilité en général verra toujours que le service est activé.</string>
+    <string name="dictate__floating_button_apps_note">Le bouton n\'est jamais dessiné au-dessus d\'une application que vous excluez, et TypeBetter n\'y lit aucun champ de texte. Une application qui refuse les services d\'accessibilité en général verra toujours que le service est activé.</string>
     <string name="dictate__floating_button_apps_list_title">Applications</string>
     <string name="dictate__floating_button_apps_search">Rechercher une application</string>
     <string name="dictate__floating_button_apps_none">Aucune application trouvée pour « {search_term} »</string>
     <string name="dictate__floating_button_design_title">Style du bouton</string>
-    <string name="dictate__floating_button_no_prompts">Aucune instruction de reformulation pour l’instant — ajoutez-en dans les réglages de Dictate.</string>
+    <string name="dictate__floating_button_no_prompts">Aucune instruction de reformulation pour l’instant — ajoutez-en dans les réglages de TypeBetter.</string>
     <string name="dictate__floating_button_remember_position_summary_off">Une position partagée pour toutes les applis.</string>
     <string name="dictate__floating_button_remember_position_summary_on">Chaque appli conserve sa propre position du bouton.</string>
     <string name="dictate__floating_button_remember_position_title">Mémoriser la position par appli</string>
@@ -1211,7 +1205,7 @@
     <string name="setup__floating_button__skip_btn">Passer — j’utilise le clavier</string>
     <string name="dictate__floating_button_badge_new">Nouveau</string>
     <string name="dictate__panel_title">Prompts d\'IA</string>
-    <string name="dictate__panel_no_prompts">Aucun prompt pour l\'instant. Ajoutez-en dans les paramètres de Dictate, sous « Reformulation ».</string>
+    <string name="dictate__panel_no_prompts">Aucun prompt pour l\'instant. Ajoutez-en dans les paramètres de TypeBetter, sous « Reformulation ».</string>
     <string name="dictate__prompts_layout_title">Disposition des prompts</string>
     <string name="dictate__prompts_layout_panel_label">Panneau dédié</string>
     <string name="dictate__prompts_layout_panel_description">Ouvrir les prompts dans leur propre panneau via le bouton baguette magique.</string>
@@ -1229,8 +1223,8 @@
     <string name="dictate__voice_input_transcribing">Transcription…</string>
     <string name="dictate__voice_input_stop">Terminé</string>
     <string name="dictate__voice_input_hint">Appuyez pour envoyer</string>
-    <string name="dictate__voice_ime_label">Saisie vocale Dictate</string>
-    <string name="dictate__error_no_api_key">Aucune clé d\'API définie – configurez-la dans les paramètres de Dictate.</string>
+    <string name="dictate__voice_ime_label">Saisie vocale TypeBetter</string>
+    <string name="dictate__error_no_api_key">Aucune clé d\'API définie – configurez-la dans les paramètres de TypeBetter.</string>
     <string name="dictate__error_transcription_failed">Échec de la transcription.</string>
     <string name="dictate__error_unknown">Erreur inconnue lors de la transcription.</string>
     <string name="dictate__error_rewording_failed">Échec de la reformulation.</string>
@@ -1262,11 +1256,7 @@
     <string name="dictate__action_dismiss">Ignorer</string>
     <string name="dictate__action_yes">Oui</string>
     <string name="dictate__action_no">Non, merci</string>
-    <string name="dictate__promo_rate_message">Vous aimez Dictate ?</string>
-    <string name="dictate__promo_donate_message">Soutenir Dictate ?</string>
-    <string name="dictate__promo_rate_action">Noter</string>
-    <string name="dictate__promo_donate_action">Faire un don</string>
-    <string name="dictate__promo_changelog_message">Dictate a été mis à jour</string>
+    <string name="dictate__promo_changelog_message">TypeBetter a été mis à jour</string>
     <string name="dictate__promo_changelog_action">Détails</string>
     <string name="dictate__title">Dictate</string>
     <string name="dictate__provider_title">Fournisseur de transcription</string>
@@ -1516,7 +1506,7 @@
     <string name="dictate__command_word_summary">Les dictées commençant par « {word} » sont exécutées comme instruction en direct</string>
     <string name="dictate__command_word_placeholder">Jarvis</string>
     <string name="dictate__command_word_info_title">À propos du mot de commande</string>
-    <string name="dictate__command_word_info_description">Normalement, Dictate écrit ce que vous dites. Si un mot de commande est défini, une dictée qui commence par ce mot devient une instruction : le mot est retiré et le reste est envoyé à l’IA, avec le texte sélectionné s’il y en a un.\n\n« Jarvis, rends ceci plus formel » réécrit la sélection. « Jarvis, quelle est la capitale du Japon » écrit la réponse dans le champ. C’est le bouton Instruction en direct, atteint en disant son nom au lieu de le toucher.\n\nLe mot ne compte qu’au tout début d’une dictée et seulement en tant que mot entier : choisissez donc quelque chose par quoi vous commencez rarement une phrase.</string>
+    <string name="dictate__command_word_info_description">Normalement, TypeBetter écrit ce que vous dites. Si un mot de commande est défini, une dictée qui commence par ce mot devient une instruction : le mot est retiré et le reste est envoyé à l’IA, avec le texte sélectionné s’il y en a un.\n\n« Jarvis, rends ceci plus formel » réécrit la sélection. « Jarvis, quelle est la capitale du Japon » écrit la réponse dans le champ. C’est le bouton Instruction en direct, atteint en disant son nom au lieu de le toucher.\n\nLe mot ne compte qu’au tout début d’une dictée et seulement en tant que mot entier : choisissez donc quelque chose par quoi vous commencez rarement une phrase.</string>
     <string name="dictate__auto_formatting_title">Mise en forme automatique</string>
     <string name="dictate__auto_formatting_summary">Convertir les indications de mise en forme dictées en Markdown (titres, listes, …)</string>
     <string name="dictate__system_prompt_title">Instruction de reformulation</string>
@@ -1629,18 +1619,17 @@
     <string name="dictate__import_not_audio">Ce fichier ne contient aucun son.</string>
     <string name="dictate__import_only_first">Seul le premier fichier est transcrit – {count} autres ont été ignorés.</string>
     <string name="dictate__setup_description">Configurez votre fournisseur d\'IA et votre clé d\'API pour commencer à dicter avec le micro.</string>
-    <string name="dictate__setup_configure_btn">Configurer Dictate</string>
+    <string name="dictate__setup_configure_btn">Configurer TypeBetter</string>
     <string name="setup__grant_mic_permission__title">Accès au microphone</string>
-    <string name="setup__grant_mic_permission__description">Dictate a besoin d\'accéder au microphone pour enregistrer votre voix et la transcrire.</string>
+    <string name="setup__grant_mic_permission__description">TypeBetter a besoin d\'accéder au microphone pour enregistrer votre voix et la transcrire.</string>
     <string name="setup__grant_mic_permission__btn">Accorder l\'autorisation du microphone</string>
     <string name="changelog__dialog_title">Nouveautés</string>
     <string name="changelog__view_all">Voir tous les changements</string>
-    <string name="changelog__intro">Dictate a été mis à jour. Voici les nouveautés :</string>
+    <string name="changelog__intro">TypeBetter a été mis à jour. Voici les nouveautés :</string>
     <string name="changelog__version_header">Version {version}</string>
-    <string name="changelog__donate">Vous aimez Dictate ? Touchez ici pour soutenir le développement ♥</string>
     <string name="changelog__current">• Tout nouveau clavier : Dictate est désormais un clavier de disposition complet et multilingue, doté d\'une touche micro dédiée qui ouvre le panneau vocal.\n• Votre propre IA : choisissez n\'importe quel fournisseur compatible OpenAI et saisissez votre clé d\'API dans Paramètres → Dictate.\n• Mise en forme et reformulation intelligentes grâce au modèle de votre choix.\n• Vos paramètres de l\'ancienne application Dictate sont importés automatiquement.</string>
     <string name="changelog__v4_1_0">• Nouveau : recherchez des emojis directement depuis le clavier.\n• Nouveau fournisseur de transcription : Soniox.\n• Réinsérez votre dernière dictée et récupérez les enregistrements interrompus à la fermeture du clavier.\n• La barre de prompts se met désormais à jour en direct : appui long sur un prompt pour le modifier.\n• L\'écran des fournisseurs d\'IA affiche maintenant à la fois le fournisseur de transcription et celui de reformulation actifs.\n• Bouton d\'enregistrement plus grand et plus facile à toucher.\n• Corrections : un message de soutien pouvait rester bloqué et masquer la barre dans certaines langues ; la sauvegarde n\'échoue plus lorsque des prompts, le clavier ou le thème sont sélectionnés ; les clés d\'API enregistrées sont conservées lors de la mise à jour.</string>
-    <string name="changelog__v4_1_1">• Correction : la couleur d\'accent pouvait apparaître en vert sur certains appareils ; les touches et boutons reviennent au bleu de Dictate.</string>
+    <string name="changelog__v4_1_1">• Correction : la couleur d\'accent pouvait apparaître en vert sur certains appareils ; les touches et boutons reviennent au bleu de TypeBetter.</string>
     <!-- Dictate on-device (offline) models -->
     <string name="dictate__local_models_header">Fonctionne sur votre appareil — aucun audio n’est envoyé. Téléchargez un modèle pour commencer.</string>
     <string name="dictate__local_models_live_header">En direct (streaming)</string>
@@ -1679,7 +1668,7 @@
     <string name="dictate__floating_button_copy_to_clipboard_summary_on">Chaque dictée est aussi copiée dans le presse-papiers, pour que vous puissiez la coller manuellement si l\'insertion échoue. Peut afficher une notification du presse-papiers sur certains téléphones.</string>
     <string name="dictate__floating_button_copy_to_clipboard_summary_off">Les dictées sont seulement insérées, pas copiées dans le presse-papiers.</string>
     <string name="dictate__floating_button_menu_group">Menu de l’appui long</string>
-    <string name="dictate__floating_button_menu_settings_title">Paramètres de Dictate</string>
+    <string name="dictate__floating_button_menu_settings_title">Paramètres de TypeBetter</string>
     <string name="dictate__floating_button_side_buttons_title">Boutons supplémentaires</string>
     <string name="dictate__mappings_add">Ajouter un remplacement</string>
     <string name="dictate__mappings_editor_title">Remplacement</string>
@@ -1726,8 +1715,6 @@
     <string name="dictate__providers_rewording_single_call_note">Non utilisé actuellement — votre fournisseur de transcription effectue la reformulation dans son appel unique.</string>
     <string name="dictate__wear_title">Wear OS</string>
     <string name="dictate__wear_summary">Options pour dicter depuis une montre associée</string>
-    <string name="dictate__wear_install_title">Installer Dictate sur votre montre</string>
-    <string name="dictate__wear_install_summary">Ouvre le Play Store — sur une montre Wear OS 3+ associée, choisissez votre montre comme cible.</string>
     <string name="dictate__wear_auto_rewording_title">Reformuler automatiquement les dictées de la montre</string>
     <string name="dictate__wear_auto_rewording_summary">Reformulez les dictées de la montre, comme sur le téléphone.</string>
     <string name="quick_action__system_prev_input_method">Changer de clavier</string>
@@ -1789,7 +1776,7 @@
     <string name="dictate__history_export_all_result">{written} écrites, {skipped} déjà présentes, {failed} en échec</string>
     <string name="dictate__history_export_last_failure">Une écriture a échoué {when}. « Tout exporter maintenant » rétablit ce qui manque.</string>
     <string name="dictate__history_export_warning_title">Ce qui y arrive</string>
-    <string name="dictate__history_export_warning_message">Le dossier contiendra le texte de chaque dictée que vous ferez désormais, et aussi les enregistrements si vous l\'activez. Tout ce qui le synchronise — un client cloud, un outil de sauvegarde, une autre application — emporte ces transcriptions hors de cet appareil.\n\nDictate continue d\'écrire jusqu\'à ce que vous déconnectiez le dossier, et n\'y supprime jamais rien : les entrées qui sortent de l\'historique restent dans le dossier. Les champs de mot de passe et de navigation privée ne sont jamais enregistrés, donc jamais exportés.</string>
+    <string name="dictate__history_export_warning_message">Le dossier contiendra le texte de chaque dictée que vous ferez désormais, et aussi les enregistrements si vous l\'activez. Tout ce qui le synchronise — un client cloud, un outil de sauvegarde, une autre application — emporte ces transcriptions hors de cet appareil.\n\nTypeBetter continue d\'écrire jusqu\'à ce que vous déconnectiez le dossier, et n\'y supprime jamais rien : les entrées qui sortent de l\'historique restent dans le dossier. Les champs de mot de passe et de navigation privée ne sont jamais enregistrés, donc jamais exportés.</string>
     <string name="dictate__history_export_needs_history">L\'export vers un dossier écrit ce que l\'historique enregistre : l\'historique doit donc être activé.</string>
     <string name="dictate__history_export_enable_history">Activer l\'historique</string>
     <string name="dictate__history_export_pick_failed">Impossible d\'obtenir l\'accès en écriture à ce dossier</string>
@@ -1812,15 +1799,15 @@
     <string name="dictate__stats_reset_confirm_title">Réinitialiser les statistiques ?</string>
     <string name="dictate__stats_reset_confirm_msg">Cela efface définitivement toutes vos statistiques de dictée.</string>
     <string name="dictate__stats_share">Partager</string>
-    <string name="dictate__stats_share_text">J’ai gagné %1$s avec Dictate — %2$s dictées, %3$s mots. 🎤</string>
+    <string name="dictate__stats_share_text">J’ai gagné %1$s avec TypeBetter — %2$s dictées, %3$s mots. 🎤</string>
     <string name="dictate__stats_view">Voir les statistiques</string>
     <string name="dictate__stats_milestones_title">Célébrations de jalons</string>
     <string name="dictate__stats_milestones_summary">Célébrez une fois en atteignant un jalon de temps gagné ou de dictées</string>
     <string name="dictate__stats_milestone_title">Jalon atteint 🎉</string>
-    <string name="dictate__stats_milestone_time">Vous avez gagné %s avec Dictate — bravo !</string>
-    <string name="dictate__stats_milestone_count">Vous avez atteint %s dictées avec Dictate !</string>
-    <string name="dictate__promo_milestone_time">%s gagné avec Dictate ! 🎉</string>
-    <string name="dictate__promo_milestone_count">%s dictées avec Dictate ! 🎉</string>
+    <string name="dictate__stats_milestone_time">Vous avez gagné %s avec TypeBetter — bravo !</string>
+    <string name="dictate__stats_milestone_count">Vous avez atteint %s dictées avec TypeBetter !</string>
+    <string name="dictate__promo_milestone_time">%s gagné avec TypeBetter ! 🎉</string>
+    <string name="dictate__promo_milestone_count">%s dictées avec TypeBetter ! 🎉</string>
     <string name="dictate__promo_milestone_action">Stats</string>
     <string name="dictate__reasoning_effort_title">Effort de raisonnement</string>
     <string name="dictate__reasoning_effort_off">Par défaut du fournisseur</string>
@@ -1839,7 +1826,7 @@
     <string name="dictate__reasoning_effort_high_summary">Réflexion maximale, plus lent</string>
     <string name="dictate__reasoning_effort_custom">Personnalisé</string>
     <string name="dictate__action_save_audio">Enregistrer l\'audio</string>
-    <string name="dictate__audio_saved">Audio enregistré dans Downloads/Dictate : %s</string>
+    <string name="dictate__audio_saved">Audio enregistré dans Downloads/TypeBetter : %s</string>
     <string name="dictate__audio_save_failed">Impossible d\'enregistrer l\'audio</string>
     <string name="dictate__instant_recording_mode_off">Désactivé</string>
     <string name="dictate__instant_recording_mode_always">À chaque ouverture du clavier</string>
@@ -1899,14 +1886,14 @@
     <string name="apptour__badge_highlight">★ À la une</string>
     <string name="apptour__intro_eyebrow">Version 5.0</string>
     <string name="apptour__intro_title">Une visite rapide</string>
-    <string name="apptour__intro_body">Voici les nouveautés de Dictate 5.0 — les points forts en moins d’une minute. Touchez « Essayer » sur n’importe quelle page pour aller droit au réglage concerné.</string>
+    <string name="apptour__intro_body">Voici les nouveautés de TypeBetter 5.0 — les points forts en moins d’une minute. Touchez « Essayer » sur n’importe quelle page pour aller droit au réglage concerné.</string>
     <string name="apptour__glide_eyebrow">Clavier</string>
     <string name="apptour__glide_title">Glissez pour écrire</string>
-    <string name="apptour__glide_body">Faites glisser votre doigt de touche en touche et Dictate transforme le tracé en mots entiers. Chaque langue apporte son propre dictionnaire téléchargé à la demande — activez-le dans Gestes.</string>
+    <string name="apptour__glide_body">Faites glisser votre doigt de touche en touche et TypeBetter transforme le tracé en mots entiers. Chaque langue apporte son propre dictionnaire téléchargé à la demande — activez-le dans Gestes.</string>
     <string name="apptour__glide_cta">Configurer la saisie gestuelle</string>
     <string name="apptour__suggestions_eyebrow">Clavier</string>
     <string name="apptour__suggestions_title">Correction auto &amp; suggestions</string>
-    <string name="apptour__suggestions_body">Pendant que vous tapez, Dictate suggère des mots adaptés et corrige discrètement les fautes de frappe. Le mot que vous avez réellement tapé reste dans la barre de suggestions, donc une simple touche annule toute correction.</string>
+    <string name="apptour__suggestions_body">Pendant que vous tapez, TypeBetter suggère des mots adaptés et corrige discrètement les fautes de frappe. Le mot que vous avez réellement tapé reste dans la barre de suggestions, donc une simple touche annule toute correction.</string>
     <string name="apptour__suggestions_cta">Ajuster les suggestions</string>
     <string name="apptour__realtime_eyebrow">Transcription</string>
     <string name="apptour__realtime_title">Transcription en temps réel</string>
@@ -1939,16 +1926,16 @@
     <string name="apptour51__continue_to">Continuer vers {version}</string>
     <string name="apptour51__intro_eyebrow">Version 5.1</string>
     <string name="apptour51__intro_title">Nouveautés de la 5.1</string>
-    <string name="apptour51__intro_body">Dictate a beaucoup évolué depuis la 5.0. Voici les points forts de la 5.1 — touchez « Essayer » sur n’importe quelle page pour aller droit à cette fonction.</string>
+    <string name="apptour51__intro_body">TypeBetter a beaucoup évolué depuis la 5.0. Voici les points forts de la 5.1 — touchez « Essayer » sur n’importe quelle page pour aller droit à cette fonction.</string>
     <string name="apptour51__history_eyebrow">Transcription</string>
     <string name="apptour51__history_title">Historique des transcriptions</string>
     <string name="apptour51__history_body">Chaque dictée est désormais conservée dans un historique consultable. Réinsérez n’importe quelle transcription passée d’une touche, réécoutez l’audio d’origine, retranscrivez-le ou épinglez celles que vous réutilisez le plus. Un écran dédié permet de tout gérer, y compris la durée de conservation des enregistrements audio.</string>
     <string name="apptour51__longform_eyebrow">Transcription</string>
     <string name="apptour51__longform_title">Dictée longue durée</string>
-    <string name="apptour51__longform_body">Parlez aussi longtemps que vous le souhaitez. Les longs enregistrements sont automatiquement découpés en segments et transcrits en arrière-plan pendant que vous continuez, pour obtenir votre texte plus tôt sans jamais buter sur une limite de durée. Coupez un segment vous-même, ou laissez Dictate détecter les pauses naturelles.</string>
+    <string name="apptour51__longform_body">Parlez aussi longtemps que vous le souhaitez. Les longs enregistrements sont automatiquement découpés en segments et transcrits en arrière-plan pendant que vous continuez, pour obtenir votre texte plus tôt sans jamais buter sur une limite de durée. Coupez un segment vous-même, ou laissez TypeBetter détecter les pauses naturelles.</string>
     <string name="apptour51__gif_eyebrow">Clavier</string>
     <string name="apptour51__gif_title">Recherche de GIF</string>
-    <string name="apptour51__gif_body">Trouvez et envoyez des GIF sans jamais quitter Dictate. Ouvrez le panneau GIF, cherchez ce que vous voulez et déposez-le directement dans votre conversation — un sélecteur rapide façon Gboard, intégré d’origine.</string>
+    <string name="apptour51__gif_body">Trouvez et envoyez des GIF sans jamais quitter TypeBetter. Ouvrez le panneau GIF, cherchez ce que vous voulez et déposez-le directement dans votre conversation — un sélecteur rapide façon Gboard, intégré d’origine.</string>
     <string name="apptour51__classic_eyebrow">Interface classique</string>
     <string name="apptour51__classic_title">Interface classique, repensée</string>
     <string name="apptour51__classic_body">L’écran de dictée sans clavier a reçu une grosse amélioration : une rangée d’actions librement organisable que vous composez par glisser-déposer, des commandes d’enregistrement longue durée, une ou deux rangées de prompts, une touche retour toujours disponible, une fenêtre de caractères sur la touche Entrée et un second bouton « changer de clavier » optionnel pour une utilisation à une main plus facile.</string>
@@ -1963,14 +1950,13 @@
     <string name="apptour51__more_body">Beaucoup de plus petites améliorations aussi : choisissez la langue de transcription active dans les réglages, le bouton d’arrêt annule désormais vraiment une requête en cours, un bouton afficher/masquer pour les clés API et la saisie multilingue sans correction automatique entre les langues — ainsi que de nombreuses corrections dans l’interface classique, le pavé numérique et au-delà.</string>
     <string name="apptour51__outro_eyebrow">Voilà la 5.1</string>
     <string name="apptour51__outro_title">Profitez de la mise à jour</string>
-    <string name="apptour51__outro_body">Merci d’utiliser Dictate ! S’il vous aide au quotidien, un petit don aide le projet à continuer. Vous pouvez revoir n’importe laquelle de ces visites à tout moment dans Réglages › À propos.</string>
     <string name="apptour52__cta_try">Essayer</string>
-    <string name="apptour52__intro_eyebrow">Dictate 5.2</string>
+    <string name="apptour52__intro_eyebrow">TypeBetter 5.2</string>
     <string name="apptour52__intro_title">Dicter partout</string>
-    <string name="apptour52__intro_body">Cette version emmène Dictate au-delà de son propre clavier : comme saisie vocale du téléphone, pour des commandes parlées depuis n\'importe où, et pour mettre en forme vos longues dictées. Voici les nouveautés.</string>
+    <string name="apptour52__intro_body">Cette version emmène TypeBetter au-delà de son propre clavier : comme saisie vocale du téléphone, pour des commandes parlées depuis n\'importe où, et pour mettre en forme vos longues dictées. Voici les nouveautés.</string>
     <string name="apptour52__voiceinput_eyebrow">Saisie vocale système</string>
-    <string name="apptour52__voiceinput_title">Dictate depuis n\'importe quel clavier</string>
-    <string name="apptour52__voiceinput_body">Dictate s\'enregistre désormais comme saisie vocale système : la touche micro des autres claviers et applis transcrit via Dictate — avec votre fournisseur, vos prompts et vos modèles locaux. Activez « Saisie vocale Dictate » dans la liste des claviers et choisissez-la comme méthode de saisie vocale. (Gboard garde son micro lié à Google : utilisez un clavier qui respecte le réglage système.)</string>
+    <string name="apptour52__voiceinput_title">TypeBetter depuis n\'importe quel clavier</string>
+    <string name="apptour52__voiceinput_body">TypeBetter s\'enregistre désormais comme saisie vocale système : la touche micro des autres claviers et applis transcrit via TypeBetter — avec votre fournisseur, vos prompts et vos modèles locaux. Activez « Saisie vocale TypeBetter » dans la liste des claviers et choisissez-la comme méthode de saisie vocale. (Gboard garde son micro lié à Google : utilisez un clavier qui respecte le réglage système.)</string>
     <string name="apptour52__liveprompt_eyebrow">Commande vocale libre</string>
     <string name="apptour52__liveprompt_title">Dites à l\'IA quoi faire — partout</string>
     <string name="apptour52__liveprompt_body">Maintenez le bouton flottant pour ouvrir son menu, touchez « Live prompt » et dites simplement ce que vous voulez : « écris un refus poli pour la réunion de demain », « traduis le texte ci-dessus en espagnol ». Le texte sélectionné sert de contexte ; sans sélection, l\'IA écrit à partir de zéro.</string>
@@ -1982,7 +1968,7 @@
     <string name="apptour52__trim_body">Une hésitation en pleine phrase ? Les silences de plus de quelques secondes sont coupés avant l\'envoi — chaque mot prononcé est conservé, seul le vide disparaît. Des envois plus courts, donc moins d\'attente et moins de coût.</string>
     <string name="apptour52__paragraphs_eyebrow">Dictées longues lisibles</string>
     <string name="apptour52__paragraphs_title">Paragraphes automatiques</string>
-    <string name="apptour52__paragraphs_body">Les longues dictées n\'arrivent plus en un seul bloc. Réglez un nombre de mots et Dictate commence un nouveau paragraphe à la fin de phrase suivante — de façon déterministe et uniquement pour les transcriptions brutes, jamais pour du texte mis en forme par l\'IA.</string>
+    <string name="apptour52__paragraphs_body">Les longues dictées n\'arrivent plus en un seul bloc. Réglez un nombre de mots et TypeBetter commence un nouveau paragraphe à la fin de phrase suivante — de façon déterministe et uniquement pour les transcriptions brutes, jamais pour du texte mis en forme par l\'IA.</string>
     <string name="apptour52__smartturn_eyebrow">Long-form plus malin</string>
     <string name="apptour52__smartturn_title">Coupe sur les idées terminées</string>
     <string name="apptour52__smartturn_body">La dictée longue peut désormais utiliser le modèle local Smart Turn v3 pour détecter quand vous avez vraiment fini une idée, au lieu de couper à chaque pause. Optionnel et téléchargé à la demande.</string>
@@ -1993,12 +1979,12 @@
     <string name="apptour52__outro_title">Bonne dictée</string>
     <string name="apptour52__outro_body">Et beaucoup sous le capot : l\'écran reste allumé pendant toute la dictée, les modèles locaux libèrent leur mémoire au repos, les dictées sur montre survivent aux coupures, et la correction allemande gère les trémas. Vous pouvez revoir toutes les visites sous Réglages › À propos.</string>
     <string name="apptour53__cta_try">Essayer</string>
-    <string name="apptour53__intro_eyebrow">Dictate 5.3</string>
+    <string name="apptour53__intro_eyebrow">TypeBetter 5.3</string>
     <string name="apptour53__intro_title">Maintenir, parler, terminé</string>
     <string name="apptour53__intro_body">Cette version porte sur les deux choses que vous faites le plus : parler à votre téléphone et taper dessus. Les deux sont plus rapides, et les deux se font mieux oublier.</string>
     <string name="apptour53__pushtotalk_eyebrow">Appuyer pour parler</string>
     <string name="apptour53__pushtotalk_title">Maintenez le micro, relâchez pour envoyer</string>
-    <string name="apptour53__pushtotalk_body">Comme un message vocal : maintenez la touche micro et parlez, relâchez et c\'est envoyé. Glissez vers la gauche pour jeter l\'enregistrement, ou vers le haut pour le verrouiller et libérer votre main. Un appui bref fonctionne toujours comme avant. À activer dans les réglages de Dictate.</string>
+    <string name="apptour53__pushtotalk_body">Comme un message vocal : maintenez la touche micro et parlez, relâchez et c\'est envoyé. Glissez vers la gauche pour jeter l\'enregistrement, ou vers le haut pour le verrouiller et libérer votre main. Un appui bref fonctionne toujours comme avant. À activer dans les réglages de TypeBetter.</string>
     <string name="apptour53__autocorrect_eyebrow">Correction refondue</string>
     <string name="apptour53__autocorrect_title">Elle lit vos doigts, pas vos fautes</string>
     <string name="apptour53__autocorrect_body">Les corrections partent désormais de l\'endroit où vous avez réellement touché les touches, en explorant les mots probables au fil de la frappe, au lieu de deviner à partir du mot fini. Sur notre jeu de test, on passe de 88 % à 98 % de réussite — la différence se voit surtout quand on tape vite et mal.</string>
@@ -2016,7 +2002,7 @@
     <string name="apptour53__prediction_body">La barre de suggestions propose maintenant ce qui vient d\'ordinaire ensuite, appris de votre façon d\'écrire. Et un appui long sur n\'importe quel mot l\'ajoute à votre dictionnaire, pour que vos noms et votre jargon cessent d\'être corrigés.</string>
     <string name="apptour53__ownserver_eyebrow">Votre propre serveur</string>
     <string name="apptour53__ownserver_title">Auto-hébergé, maintenant en direct</string>
-    <string name="apptour53__ownserver_body">Un serveur à vous peut aussi assurer la transcription en direct, s\'il parle le protocole realtime d\'OpenAI. Et s\'il se trouve devant une machine en veille, Dictate peut la réveiller à l\'avance pour que la première requête n\'attende pas son démarrage.</string>
+    <string name="apptour53__ownserver_body">Un serveur à vous peut aussi assurer la transcription en direct, s\'il parle le protocole realtime d\'OpenAI. Et s\'il se trouve devant une machine en veille, TypeBetter peut la réveiller à l\'avance pour que la première requête n\'attende pas son démarrage.</string>
     <string name="apptour53__outro_eyebrow">Voilà la 5.3</string>
     <string name="apptour53__outro_title">Bonne dictée</string>
     <string name="apptour53__outro_body">Et plein de petites choses : chaque fournisseur porte son propre logo, l\'indicateur d\'enregistrement peut être fixe, pulsé ou réactif à la voix, la sortie des prompts peut conserver la transcription d\'origine à côté, et les paragraphes ne se coupent plus après une abréviation. Vous pouvez revoir toutes les visites sous Réglages › À propos.</string>
@@ -2024,7 +2010,7 @@
     <string name="apptour60__cta_try">Essayer</string>
     <string name="apptour60__art_minutes">minutes</string>
     <string name="apptour60__art_speed">1,5×</string>
-    <string name="apptour60__intro_eyebrow">Dictate 6.0</string>
+    <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Crédit, chinois, dictée moins chère</string>
     <string name="apptour60__intro_body">Cette version ajoute une deuxième porte d\'entrée — acheter du crédit au lieu d\'apporter sa propre clé API —, le pinyin pour le chinois, sept langues dotées d\'un dictionnaire et des enregistrements qui coûtent moins cher.</string>
     <string name="apptour60__cloud_eyebrow">Nouveau : Dictate Cloud</string>
@@ -2047,21 +2033,21 @@
     <string name="apptour60__more_body">Maintenir le bouton d\'arrêt annule une transcription qui reste bloquée. Le bouton flottant n\'annonce plus une réussite qu\'il n\'a pas pu vérifier, et s\'éteint avec l\'écran. La saisie gestuelle connaît désormais les mots que vous avez ajoutés. Et le plantage juste après la mise à jour est corrigé.</string>
     <string name="apptour60__outro_eyebrow">Voilà pour 6.0</string>
     <string name="apptour60__outro_title">Bonne utilisation</string>
-    <string name="apptour60__outro_body">Quelle que soit votre façon d\'utiliser Dictate — votre clé, votre serveur, un modèle sur l\'appareil ou du crédit —, rien n\'a changé pour les autres. Vous pouvez revoir chaque visite guidée dans Paramètres › À propos.</string>
+    <string name="apptour60__outro_body">Quelle que soit votre façon d\'utiliser TypeBetter — votre clé, votre serveur, un modèle sur l\'appareil ou du crédit —, rien n\'a changé pour les autres. Vous pouvez revoir chaque visite guidée dans Paramètres › À propos.</string>
     <string name="apptour61__cta_try">Essayer</string>
     <string name="apptour61__art_folder">Stickers</string>
     <string name="apptour61__art_share">Partager avec</string>
     <string name="apptour61__art_typed">qeu</string>
     <string name="apptour61__art_fixed">que</string>
-    <string name="apptour61__intro_eyebrow">Dictate 6.1</string>
+    <string name="apptour61__intro_eyebrow">TypeBetter 6.1</string>
     <string name="apptour61__intro_title">Des stickers, les messages vocaux et une correction qui voit enfin la faute</string>
-    <string name="apptour61__intro_body">Montrez au clavier un dossier de vos propres stickers, partagez un message vocal directement vers Dictate pour savoir ce qu\'il dit, et profitez d\'une correction automatique qui repère enfin la faute qu\'elle était construite pour ignorer.</string>
+    <string name="apptour61__intro_body">Montrez au clavier un dossier de vos propres stickers, partagez un message vocal directement vers TypeBetter pour savoir ce qu\'il dit, et profitez d\'une correction automatique qui repère enfin la faute qu\'elle était construite pour ignorer.</string>
     <string name="apptour61__stickers_eyebrow">Nouveau : vos propres stickers</string>
     <string name="apptour61__stickers_title">Un dossier sur le téléphone, sur le clavier</string>
-    <string name="apptour61__stickers_body">Indiquez n\'importe quel dossier à Dictate et ses images deviennent des stickers — les sous-dossiers deviennent des onglets, avec leurs favoris et leurs récents. Ajoutez-en depuis n\'importe quelle application via le menu de partage, supprimez-en sans quitter le clavier. Ce qu\'une messagerie accepte réellement n\'est pas ce qu\'elle annonce accepter : chaque sticker est donc mis en forme une seule fois à l\'arrivée, puis simplement envoyé.</string>
-    <string name="apptour61__share_eyebrow">Nouveau : partager vers Dictate</string>
+    <string name="apptour61__stickers_body">Indiquez n\'importe quel dossier à TypeBetter et ses images deviennent des stickers — les sous-dossiers deviennent des onglets, avec leurs favoris et leurs récents. Ajoutez-en depuis n\'importe quelle application via le menu de partage, supprimez-en sans quitter le clavier. Ce qu\'une messagerie accepte réellement n\'est pas ce qu\'elle annonce accepter : chaque sticker est donc mis en forme une seule fois à l\'arrivée, puis simplement envoyé.</string>
+    <string name="apptour61__share_eyebrow">Nouveau : partager vers TypeBetter</string>
     <string name="apptour61__share_title">Savoir ce que dit ce message vocal</string>
-    <string name="apptour61__share_body">Dictate apparaît désormais dans le menu de partage pour l\'audio et la vidéo. Partagez-y un message vocal et un écran s\'ouvre qui commence à transcrire tout seul — aucun champ à trouver, aucun bouton à presser. La transcription est consultable, et les longs enregistrements sont traités par morceaux au lieu d\'être refusés.</string>
+    <string name="apptour61__share_body">TypeBetter apparaît désormais dans le menu de partage pour l\'audio et la vidéo. Partagez-y un message vocal et un écran s\'ouvre qui commence à transcrire tout seul — aucun champ à trouver, aucun bouton à presser. La transcription est consultable, et les longs enregistrements sont traités par morceaux au lieu d\'être refusés.</string>
     <string name="apptour61__autocorrect_eyebrow">Correction automatique</string>
     <string name="apptour61__autocorrect_title">La faute qu\'elle ne pouvait pas voir</string>
     <string name="apptour61__autocorrect_body">La règle décidant si un mot pouvait être corrigé laissait passer un doigt ayant glissé presque jusqu\'à la touche voisine — mais jamais un doigt tombé franchement dessus, ce qui est pourtant la faute ordinaire. C\'est corrigé, et l\'ardeur de la correction se règle maintenant. Le mot que la barre d\'espace va prendre est marqué dans votre couleur d\'accent, et la touche retour juste après rend exactement ce que vous aviez tapé.</string>
@@ -2082,7 +2068,7 @@
     <string name="apptour62__art_word">Zoya</string>
     <string name="apptour62__art_emoji_word">gâteau</string>
     <string name="apptour62__art_emoji">🍰</string>
-    <string name="apptour62__intro_eyebrow">Dictate 6.2</string>
+    <string name="apptour62__intro_eyebrow">TypeBetter 6.2</string>
     <string name="apptour62__intro_title">Il apprend vos mots et change cinq fois d\'allure</string>
     <string name="apptour62__intro_body">Le clavier peut retenir les mots qu\'aucun dictionnaire ne connaît, les touches peuvent laisser transparaître l\'application derrière elles, et chaque pouce peut avoir sa moitié. Plus une poignée de petits outils pour ce que vous faites tous les jours.</string>
     <string name="apptour62__learning_eyebrow">Nouveau : il apprend en écrivant</string>
@@ -2090,7 +2076,7 @@
     <string name="apptour62__learning_body">Tapez un nom ou un terme assez souvent et le clavier le garde : il cesse de le signaler comme une faute et se met à le proposer. Cette mise à jour l\'active pour tout le monde, y compris ceux qui l\'avaient désactivé. Rien n\'est appris en navigation privée, dans les champs de mot de passe, ni à partir de ce que vous n\'avez pas tapé touche par touche ; tout reste sur cet appareil, et le bouton ci-dessous ouvre la liste — et l\'interrupteur.</string>
     <string name="apptour62__themes_eyebrow">Cinq nouveaux thèmes</string>
     <string name="apptour62__themes_title">Glass, Sand, Deep et un E-Ink sombre</string>
-    <string name="apptour62__themes_body">Dictate Glass laisse voir l\'application par les espaces entre les touches, tandis que les touches restent assez opaques pour qu\'on y lise ; Glass Clear va plus loin et rend mieux, au prix du texte des applications qui dessinent derrière le clavier, qui transparaît alors. Sand est un thème clair et chaud, Deep un thème sombre et calme, et E-Ink a enfin une version nuit — la bascule automatique ne vous tend donc plus un clavier blanc à la tombée du jour.</string>
+    <string name="apptour62__themes_body">TypeBetter Glass laisse voir l\'application par les espaces entre les touches, tandis que les touches restent assez opaques pour qu\'on y lise ; Glass Clear va plus loin et rend mieux, au prix du texte des applications qui dessinent derrière le clavier, qui transparaît alors. Sand est un thème clair et chaud, Deep un thème sombre et calme, et E-Ink a enfin une version nuit — la bascule automatique ne vous tend donc plus un clavier blanc à la tombée du jour.</string>
     <string name="apptour62__split_eyebrow">Nouveau : clavier scindé</string>
     <string name="apptour62__split_title">Les deux pouces, sans s\'étirer</string>
     <string name="apptour62__split_body">Une nouvelle action rapide, à côté du mode à une main et du mode flottant, écarte les rangées pour que chaque pouce reste sur sa moitié. Toutes les dispositions se scindent, pas seulement AZERTY, parce que la coupure est calculée à partir de la largeur des touches plutôt qu\'écrite dans chaque disposition. Et en paysage, l\'application reste maintenant visible dès qu\'il y a la place pour les deux.</string>
@@ -2111,7 +2097,7 @@
     <string name="apptour62__gestures_body">Maintenez la touche des symboles, glissez jusqu\'au caractère voulu et relâchez : il est inséré et les lettres sont déjà revenues, sans aller-retour. Le balayage vers le haut sur la barre d\'espace atteint maintenant la ligne du dessus, pas seulement le mot précédent. Et l\'écart entre les touches se règle sur une plage qui se voit vraiment.</string>
     <string name="apptour62__export_eyebrow">Nouveau : les dictées en fichiers</string>
     <string name="apptour62__export_title">Chaque dictée dans un dossier de votre choix</string>
-    <string name="apptour62__export_body">Choisissez un dossier une fois et chaque dictée terminée y est aussi écrite en fichier texte brut, à l\'instant où elle est prête. Ce qui surveille ce dossier — une application de notes, un outil de synchronisation, votre sauvegarde — reçoit vos textes sans que Dictate ait à en apprendre le langage.</string>
+    <string name="apptour62__export_body">Choisissez un dossier une fois et chaque dictée terminée y est aussi écrite en fichier texte brut, à l\'instant où elle est prête. Ce qui surveille ce dossier — une application de notes, un outil de synchronisation, votre sauvegarde — reçoit vos textes sans que TypeBetter ait à en apprendre le langage.</string>
     <string name="apptour62__more_eyebrow">Et aussi</string>
     <string name="apptour62__more_title">Beaucoup de petites choses</string>
     <string name="apptour62__more_body">Les suggestions regardent désormais les deux mots avant le curseur dans toutes les langues, pas seulement en anglais. Une sauvegarde peut être faite sans vos clés API, pour être transmise sans risque. Les modèles de transcription propres à Azure sont accessibles, choisir un modèle pour le hors-ligne bascule maintenant aussi sur le moteur local, et chaque requête a un délai à la mesure de l\'attente. Les dictées apparaissent dans l\'historique dès leur envoi, les imports disent à quelle étape ils en sont et peuvent être annulés, et le texte arrive plus sûrement dans les applications qui y résistaient.</string>
@@ -2119,12 +2105,12 @@
     <string name="apptour62__outro_title">Le même clavier, davantage le vôtre</string>
     <string name="apptour62__outro_body">Rien ne change à votre façon de dicter — votre propre clé, votre propre serveur ou un modèle sur l\'appareil. Vous retrouverez toutes les visites guidées dans Paramètres › À propos.</string>
     <string name="apptour63__cta_try">Essayer</string>
-    <string name="apptour63__intro_eyebrow">Dictate 6.3</string>
+    <string name="apptour63__intro_eyebrow">TypeBetter 6.3</string>
     <string name="apptour63__intro_title">Plus de clavier, sans le quitter</string>
     <string name="apptour63__intro_body">Pointez la caméra vers un texte imprimé et il arrive dans le champ. Le curseur, la sélection et le presse-papiers partagent enfin un seul panneau. Chaque bouton de la Smartbar peut porter une seconde action sous un appui long. Et la dictée hors ligne dispose enfin de modèles qui tiennent sur un téléphone.</string>
     <string name="apptour63__scan_eyebrow">Nouveau : scanner du texte</string>
     <string name="apptour63__scan_title">Du papier directement dans le champ</string>
-    <string name="apptour63__scan_body">L\'IBAN d\'une lettre, le numéro de série d\'un carton, l\'adresse d\'un colis : pointez la caméra et le texte apparaît là où vous écriviez, au lieu d\'être recopié. La reconnaissance se fait sur cet appareil — rien n\'est envoyé, aucun fournisseur n\'intervient. Dictate ne demande jamais l\'autorisation caméra non plus : l\'appareil photo du système prend la photo et ne rend que cette image, supprimée dès qu\'elle a été lue.</string>
+    <string name="apptour63__scan_body">L\'IBAN d\'une lettre, le numéro de série d\'un carton, l\'adresse d\'un colis : pointez la caméra et le texte apparaît là où vous écriviez, au lieu d\'être recopié. La reconnaissance se fait sur cet appareil — rien n\'est envoyé, aucun fournisseur n\'intervient. TypeBetter ne demande jamais l\'autorisation caméra non plus : l\'appareil photo du système prend la photo et ne rend que cette image, supprimée dès qu\'elle a été lue.</string>
     <string name="apptour63__editing_eyebrow">Nouveau : panneau d\'édition</string>
     <string name="apptour63__editing_title">Curseur, sélection et presse-papiers au même endroit</string>
     <string name="apptour63__editing_body">Tout existait déjà, réparti sur onze touches qu\'il fallait connaître. C\'est désormais un seul panneau : se déplacer par caractère, par mot ou par ligne, sélectionner, copier, coller, annuler. Une touche maintenue se répète au lieu d\'exiger onze appuis. Et le pavé numérique peut enfin être demandé explicitement, au lieu de n\'être atteint que par un geste que personne n\'avait attribué.</string>
@@ -2145,7 +2131,7 @@
     <string name="apptour63__outro_body">Rien ne change à votre façon de dicter — votre propre clé, votre propre serveur ou un modèle sur l\'appareil. Vous retrouverez toutes les visites guidées dans Paramètres › À propos.</string>
     <string name="apptour64__cta_languages">Choisir les langues</string>
     <string name="apptour64__cta_providers">Voir les fournisseurs</string>
-    <string name="apptour64__intro_eyebrow">Dictate 6.4</string>
+    <string name="apptour64__intro_eyebrow">TypeBetter 6.4</string>
     <string name="apptour64__intro_title">Traduit sur le téléphone, des symboles bien à vous</string>
     <string name="apptour64__intro_body">Tapez dans une langue et le champ se remplit dans une autre, traduit sur cet appareil. Les deux pages de symboles peuvent accueillir les touches de votre choix. S’y ajoutent de nouveaux fournisseurs et un modèle hors ligne bien meilleur, un mot à prononcer pour transformer une dictée en instruction, et un examen de toute l’application sous l’angle de la confidentialité et de la sécurité.</string>
     <string name="apptour64__translate_eyebrow">Nouveau : traduire</string>
@@ -2162,7 +2148,7 @@
     <string name="apptour64__command_body">Choisissez un mot dans Reformulation — « Jarvis », par exemple. Une dictée qui commence par ce mot est exécutée comme instruction en direct : sur le texte sélectionné, ou comme question si rien n’est sélectionné. Seul le premier mot compte, donc une phrase qui se contente de le mentionner est écrite normalement. Les prompts automatiques fonctionnent aussi enfin comme prévu : ils reçoivent toujours la dictée à laquelle ils s’appliquent, et un prompt composé uniquement de [texte entre crochets] est ajouté tel quel à la fin au lieu d’être envoyé au modèle.</string>
     <string name="apptour64__privacy_eyebrow">Confidentialité et sécurité</string>
     <string name="apptour64__privacy_title">Toute l’application, vérifiée</string>
-    <string name="apptour64__privacy_body">Chaque partie de Dictate a été passée en revue sous l’angle de la confidentialité et de la sécurité, et ce qui est ressorti a été corrigé. Une dictée dans un champ de mot de passe ou de code PIN reste hors de l’historique, désormais aussi via le bouton flottant. La sauvegarde cloud d’Android n’emporte vos clés API que chiffrées de bout en bout. Et « Faire confiance aux certificats utilisateur » se règle désormais par compte de fournisseur plutôt que pour tous à la fois.</string>
+    <string name="apptour64__privacy_body">Chaque partie de TypeBetter a été passée en revue sous l’angle de la confidentialité et de la sécurité, et ce qui est ressorti a été corrigé. Une dictée dans un champ de mot de passe ou de code PIN reste hors de l’historique, désormais aussi via le bouton flottant. La sauvegarde cloud d’Android n’emporte vos clés API que chiffrées de bout en bout. Et « Faire confiance aux certificats utilisateur » se règle désormais par compte de fournisseur plutôt que pour tous à la fois.</string>
     <string name="apptour64__more_eyebrow">Et aussi</string>
     <string name="apptour64__more_title">Tout le reste de la 6.4</string>
     <string name="apptour64__more_body">Les changements plus discrets, pour qui veut les détails. Sinon, passez directement à la suite.</string>
@@ -2251,13 +2237,12 @@
     <string name="dictate__legacy_prompt_rows_title">Lignes de prompt</string>
     <string name="dictate__legacy_prompt_rows_one">Une ligne</string>
     <string name="dictate__legacy_prompt_rows_two">Deux lignes</string>
-    <string name="about__website__title">Site web</string>
     <string name="dictate__cloud_title">Dictate Cloud</string>
     <string name="dictate__cloud_row_summary_none">Acheter du crédit de dictée — sans clé API</string>
     <string name="dictate__cloud_row_summary_balance">Il reste {minutes} minutes de crédit</string>
     <string name="dictate__cloud_intro_title">Dicter sans clé API</string>
     <string name="dictate__cloud_intro_body">Achetez du crédit de dictée directement dans l\'application. Aucun compte chez un fournisseur d\'IA, aucune clé API, aucun abonnement. Le crédit n\'expire pas et n\'est consommé que lorsque vous vous en servez vraiment : une minute de dictée coûte une minute, une reformulation environ deux secondes.</string>
-    <string name="dictate__cloud_intro_alternative">C\'est entièrement facultatif. Dictate fonctionne tout aussi bien avec votre propre clé chez le fournisseur de votre choix — plusieurs sont gratuits — et vous gardez alors votre compte et payez le fournisseur directement, à ses tarifs.</string>
+    <string name="dictate__cloud_intro_alternative">C\'est entièrement facultatif. TypeBetter fonctionne tout aussi bien avec votre propre clé chez le fournisseur de votre choix — plusieurs sont gratuits — et vous gardez alors votre compte et payez le fournisseur directement, à ses tarifs.</string>
     <string name="dictate__cloud_use_own_provider_btn">Utiliser plutôt mon propre fournisseur</string>
     <string name="dictate__cloud_balance_label">Crédit restant</string>
     <string name="dictate__cloud_balance_minutes">{minutes} min</string>
@@ -2317,25 +2302,6 @@
     <string name="dictate__action_top_up">Recharger le crédit</string>
     <string name="dictate__promo_low_credit_message">Crédit presque épuisé.</string>
     <string name="dictate__promo_low_credit_action">Recharger</string>
-    <string name="dictate__promo_sayova_message">Nouvelle app : l’IA au poignet</string>
-    <string name="dictate__promo_sayova_action">Découvrir</string>
-    <string name="about__more_apps__title">Autres apps</string>
-    <string name="about__more_apps__summary">SayOVA et TunerToGo pour votre montre</string>
-    <string name="about__more_apps__tunertogo_tagline">Accordeur d’instruments pour Wear OS</string>
-    <string name="about__more_apps__tunertogo_description">Un accordeur précis toujours à votre poignet, prêt dès que vous prenez votre instrument.</string>
-    <string name="about__more_apps__tunertogo_feature_instruments">Guitare, basse, ukulélé, violon et plus, avec détection automatique des cordes</string>
-    <string name="about__more_apps__tunertogo_feature_chromatic">Mode chromatique pour tous les autres instruments et pour votre voix</string>
-    <string name="about__more_apps__tunertogo_feature_vibration">Une courte vibration quand la corde est juste, les yeux restent sur les mécaniques</string>
-    <string name="about__more_apps__tunertogo_feature_privacy">Pas d’accès à Internet, pas de publicité : le son est analysé sur la montre et jamais enregistré</string>
-    <string name="about__more_apps__tunertogo_requirements">Nécessite une montre Wear OS 3 ou plus récente avec micro. Fonctionne sans application sur le téléphone.</string>
-    <string name="about__more_apps__intro">Également par DevEmperor, le développeur de Dictate :</string>
-    <string name="about__more_apps__sayova_tagline">Assistant vocal IA pour Wear OS</string>
-    <string name="about__more_apps__sayova_description">Parlez à Google Gemini ou OpenAI depuis votre montre : naturellement, interrompez quand vous voulez et lisez la réponse tout en l’écoutant.</string>
-    <string name="about__more_apps__sayova_feature_interpreter">Interprète entre 21 langues, l’échange affiché en texte</string>
-    <string name="about__more_apps__sayova_feature_tasks">Règle minuteurs et alarmes, enregistre des notes et cherche sur le web</string>
-    <string name="about__more_apps__sayova_feature_phone">Prépare messages, rendez-vous et itinéraires sur votre téléphone, prêts à envoyer</string>
-    <string name="about__more_apps__sayova_feature_privacy">Votre propre clé API : pas de compte, pas de pistage, open source</string>
-    <string name="about__more_apps__sayova_requirements">Nécessite une montre Wear OS 3 ou plus récente avec micro et une clé API Google Gemini ou OpenAI. Votre fournisseur facture l’utilisation.</string>
     <string name="prefs__media__sticker__title">Autocollants</string>
     <string name="prefs__media__sticker_folder__title">Dossier d\'autocollants</string>
     <string name="prefs__media__sticker_folder__summary_unset">Choisissez un dossier contenant vos propres images</string>
@@ -2374,9 +2340,9 @@
     <string name="quick_action__ime_ui_mode_sticker">Sticker</string>
     <string name="quick_action__ime_ui_mode_sticker__tooltip">Insérer vos propres autocollants</string>
     <string name="prefs__media__sticker_add">Ajouter des autocollants</string>
-    <string name="prefs__media__sticker_add__summary">Copiez des images dans le dossier. Vous pouvez aussi partager une image vers Dictate depuis n\'importe quelle application.</string>
+    <string name="prefs__media__sticker_add__summary">Copiez des images dans le dossier. Vous pouvez aussi partager une image vers TypeBetter depuis n\'importe quelle application.</string>
     <string name="prefs__media__sticker_import_whatsapp">Récupérer depuis WhatsApp</string>
-    <string name="prefs__media__sticker_import_whatsapp__summary">Ouvre le sélecteur de fichiers dans le dossier d\'autocollants de WhatsApp. Des claviers comme celui de Samsung rangent les leurs là où aucune autre application ne peut lire — partagez ceux-là vers Dictate.</string>
+    <string name="prefs__media__sticker_import_whatsapp__summary">Ouvre le sélecteur de fichiers dans le dossier d\'autocollants de WhatsApp. Des claviers comme celui de Samsung rangent les leurs là où aucune autre application ne peut lire — partagez ceux-là vers TypeBetter.</string>
     <string name="sticker__import_share_label">Enregistrer comme autocollant</string>
     <string name="sticker__import_added">{n} ajoutés</string>
     <string name="sticker__import_duplicate">{n} déjà présents</string>
@@ -2400,7 +2366,7 @@
     <string name="sticker__source_downloads">Téléchargements</string>
     <string name="sticker__source_pictures">Images</string>
     <string name="sticker__source_dcim">Appareil photo</string>
-    <string name="sticker__source_hint">Ce sont des points de départ, pas des garanties — si le dossier n\'existe pas, le sélecteur s\'ouvre comme d\'habitude. Les applications qui gardent leurs autocollants pour elles, comme le clavier Samsung, ne peuvent que les partager vers Dictate.</string>
+    <string name="sticker__source_hint">Ce sont des points de départ, pas des garanties — si le dossier n\'existe pas, le sélecteur s\'ouvre comme d\'habitude. Les applications qui gardent leurs autocollants pour elles, comme le clavier Samsung, ne peuvent que les partager vers TypeBetter.</string>
     <string name="sticker__import_progress">Copie {done} sur {total}</string>
     <string name="sticker__import_cancel">Appuyez pour arrêter. Ce qui est copié reste.</string>
     <string name="sticker__refused_declares_nothing">Cette application n\'accepte pas d\'images du clavier — copié dans le presse-papiers, appuyez longuement pour coller</string>
@@ -2456,4 +2422,14 @@
     <string name="translate__missing">Non téléchargé : {language}</string>
     <string name="translate__failed">Échec de la traduction</string>
     <string name="translate__unsupported">La traduction n\'est pas disponible sur cet appareil</string>
+    <string name="about__tagline">Basé sur Dictate et FlorisBoard</string>
+    <string name="about__feedback__summary_issues">Signaler un bug ou proposer une idée sur GitHub</string>
+    <string name="about__credits__title">Remerciements</string>
+    <string name="about__credits_dictate__title">Basé sur Dictate</string>
+    <string name="about__credits_dictate__summary">TypeBetter est un fork de Dictate Keyboard par DevEmperor, Apache 2.0. La saisie vocale, le clavier et presque tout ce que vous voyez ici viennent de ce travail. Merci ! Touchez pour l\'ouvrir.</string>
+    <string name="about__credits_floris__summary">Dictate est lui-même un fork de FlorisBoard par Patrick Goldinger et ses contributeurs, Apache 2.0. Touchez pour l\'ouvrir.</string>
+    <string name="about__credits_donate__title">Soutenir le développeur de Dictate</string>
+    <string name="about__credits_donate__summary">Envoyer un pourboire à DevEmperor pour le travail sur lequel repose TypeBetter</string>
+    <string name="changelog__donate_credit">Basé sur Dictate par DevEmperor. Touchez ici pour soutenir son développeur ♥</string>
+    <string name="apptour51__outro_body_credit">Merci d\'utiliser TypeBetter ! Ces fonctions viennent de Dictate, l\'application sur laquelle repose TypeBetter. Si elles vous aident chaque jour, un petit pourboire à son développeur, DevEmperor, fait vivre ce travail. Vous pouvez revoir ces visites à tout moment dans Paramètres › À propos.</string>
 </resources>

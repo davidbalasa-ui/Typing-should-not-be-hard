@@ -271,12 +271,13 @@ object DictateController {
     }
 
     /**
-     * Which one-time nudge is being shown. RATE/DONATE are usage-gated (see [maybePromptForReview]);
-     * CHANGELOG is shown right after an app update (see [maybePromptChangelog]) and opens the in-app
-     * "What's new" dialog instead of a web page. SAYOVA points at the developer's watch app (see
-     * [maybePromptSayova]).
+     * Which one-time nudge is being shown. CHANGELOG is shown right after an app update (see
+     * [maybePromptChangelog]) and opens the in-app "What's new" dialog instead of a web page.
+     * TypeBetter dropped upstream Dictate's rate and donate nudges (they opened Dictate's own Play
+     * listing and PayPal page) and its nudge for the developer's other app; Dictate's developer is
+     * credited, with a donation link, under Settings › About instead.
      */
-    enum class PromoKind { RATE, DONATE, CHANGELOG, MILESTONE, LOW_CREDIT, SAYOVA }
+    enum class PromoKind { CHANGELOG, MILESTONE, LOW_CREDIT }
 
     /**
      * Where the active dictation's output goes: the keyboard editor ([OutputTarget.IME]) or the
@@ -806,11 +807,6 @@ object DictateController {
 
     /** How long the key shows a lock after latching, before dissolving into its ordinary icon. */
     const val PUSH_TO_TALK_LOCK_FLASH_MS = 600L
-
-    // Jannis, 2026-11-05: 3 and 5 minutes put the two asks a couple of dictations apart in somebody's
-    // first days, so they now leave a real stretch of use between them.
-    private const val RATE_THRESHOLD_SECONDS = 300L    // 5 min
-    private const val DONATE_THRESHOLD_SECONDS = 600L  // 10 min
 
     /**
      * Single entry point for the mic button: starts recording, or stops and transcribes. [target]
@@ -2758,7 +2754,7 @@ object DictateController {
         // and then the failure handler goes to copy the very same text as the recovery route.
         if (DictateAccessibilityService.lastClipText == text) return
         val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
-        val copied = runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text)) }
+        val copied = runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("TypeBetter", text)) }
         // Tell the overlay what is on the clipboard now, so a paste-based insert moments later does not
         // write the identical text a second time either.
         if (copied.isSuccess) DictateAccessibilityService.lastClipText = text
@@ -3842,7 +3838,7 @@ object DictateController {
     }
 
     /**
-     * Copies [src] into Downloads/Dictate via MediaStore (API 29+) or the public dir. Returns the file
+     * Copies [src] into Downloads/TypeBetter via MediaStore (API 29+) or the public dir. Returns the file
      * name, or null on failure.
      *
      * Name and MIME follow what is actually in the file (#322). This used to say `.wav` and `audio/wav`
@@ -3859,7 +3855,7 @@ object DictateController {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, name)
                 put(MediaStore.Downloads.MIME_TYPE, container.mimeType)
-                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Dictate")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/TypeBetter")
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = context.contentResolver
@@ -3868,7 +3864,7 @@ object DictateController {
             resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
         } else {
             @Suppress("DEPRECATION")
-            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Dictate")
+            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "TypeBetter")
             dir.mkdirs()
             src.inputStream().use { input -> File(dir, name).outputStream().use { input.copyTo(it) } }
         }
@@ -4303,7 +4299,7 @@ object DictateController {
         )
     }
 
-    /** Exports a history entry's retained audio to Downloads/Dictate (issue #140), toasting the result. */
+    /** Exports a history entry's retained audio to Downloads/TypeBetter (issue #140), toasting the result. */
     fun exportHistoryAudio(context: Context, entry: DictateHistoryEntry) {
         val path = entry.audioPath ?: return
         val src = File(path)
@@ -4384,54 +4380,17 @@ object DictateController {
         )
     }
 
-    // --- Rate / Donate nudges (roadmap 9.7/9.8) -------------------------------------------------
+    // --- Usage nudges ------------------------------------------------------------------------------
 
     /**
-     * Shows a one-time rate or donate nudge in the Smartbar once the user has accumulated enough
-     * transcribed audio, mirroring the legacy app: rate after [RATE_THRESHOLD_SECONDS], donate after
-     * [DONATE_THRESHOLD_SECONDS]. Each is shown until acted on (a flag is then set); accepting or
-     * declining donate also marks rate as done, so a donor is never asked to rate. No-op unless idle.
-     * Called when the keyboard appears so it never interrupts an in-flight recording/transcription.
+     * Shows the one usage nudge left in TypeBetter: the low-credit warning (see [maybeWarnLowCredit]).
+     * Upstream Dictate also asked here for a Play rating and a donation, and pointed at its developer's
+     * other app; TypeBetter dropped those, since they led to Dictate's own listing and pages. No-op
+     * unless idle. Called when the keyboard appears so it never interrupts a recording/transcription.
      */
     fun maybePromptForReview() {
         if (_state.value !is UiState.Idle) return
-        // Credit running out comes first: it is the only nudge that is about to stop the app working,
-        // and asking someone to rate Dictate minutes before it refuses to transcribe is poor timing.
-        if (maybeWarnLowCredit()) return
-        // Before rate/donate: those stay until answered, so somebody who never answers them would never
-        // get to see this one.
-        if (maybePromptSayova()) return
-        val total = prefs.dictate.totalAudioSeconds.get()
-        val kind = when {
-            total > DONATE_THRESHOLD_SECONDS && !prefs.dictate.hasDonated.get() -> PromoKind.DONATE
-            total > RATE_THRESHOLD_SECONDS && total <= DONATE_THRESHOLD_SECONDS && !prefs.dictate.hasRated.get() -> PromoKind.RATE
-            else -> return
-        }
-        _state.value = UiState.Promo(kind)
-    }
-
-    /** How long the SayOVA nudge waits after the keyboard open that scheduled it. */
-    private const val SAYOVA_NUDGE_DELAY_MS = 3 * 24 * 60 * 60 * 1000L
-
-    /**
-     * Points everybody once at SayOVA, the developer's voice assistant for Wear OS watches, and returns true
-     * if it did. Not on the day of the update: the first keyboard open that reaches this point — the update
-     * notice comes first and holds the Smartbar until answered — only schedules it [SAYOVA_NUDGE_DELAY_MS]
-     * later, so the days are counted from that answer, not from the install.
-     * Tapping it opens the "More apps" page under About rather than the store, so nobody lands in Play
-     * without having read what the app is and that it needs a watch.
-     */
-    private fun maybePromptSayova(): Boolean {
-        if (prefs.dictate.sayovaNudgeDone.get()) return false
-        val now = System.currentTimeMillis()
-        val dueAt = prefs.dictate.sayovaNudgeDueAt.get()
-        if (dueAt == 0L) {
-            scope.launch { prefs.dictate.sayovaNudgeDueAt.set(now + SAYOVA_NUDGE_DELAY_MS) }
-            return false
-        }
-        if (now < dueAt) return false
-        _state.value = UiState.Promo(PromoKind.SAYOVA)
-        return true
+        maybeWarnLowCredit()
     }
 
     /** Below this much Dictate Cloud credit the Smartbar says so, once per depletion. */
@@ -4510,17 +4469,13 @@ object DictateController {
     }
 
     /**
-     * Acts on the active promo and marks it done: RATE/DONATE open the Play Store / PayPal page,
-     * CHANGELOG opens the app (which then shows the "What's new" dialog), SAYOVA the "More apps" page
-     * under About. No-op otherwise.
+     * Acts on the active promo and marks it done: CHANGELOG opens the app (which then shows the
+     * "What's new" dialog), MILESTONE the stats screen, LOW_CREDIT the credit screen. No-op otherwise.
      */
     fun acceptPromo(context: Context) {
         val kind = (_state.value as? UiState.Promo)?.kind ?: return
         runCatching {
             val intent = when (kind) {
-                PromoKind.RATE -> Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://play.google.com/store/apps/details?id=net.devemperor.dictate"))
-                PromoKind.DONATE -> Intent(Intent.ACTION_VIEW, Uri.parse("https://paypal.me/DevEmperor"))
                 PromoKind.CHANGELOG -> Intent(context, FlorisAppActivity::class.java)
                 PromoKind.MILESTONE -> Intent(
                     Intent.ACTION_VIEW,
@@ -4531,12 +4486,6 @@ object DictateController {
                 PromoKind.LOW_CREDIT -> Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("ui://florisboard/settings/dictate/cloud"),
-                    context,
-                    FlorisAppActivity::class.java,
-                ).addCategory(Intent.CATEGORY_BROWSABLE)
-                PromoKind.SAYOVA -> Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("ui://florisboard/settings/about/more-apps"),
                     context,
                     FlorisAppActivity::class.java,
                 ).addCategory(Intent.CATEGORY_BROWSABLE)
@@ -4558,11 +4507,6 @@ object DictateController {
     private fun markPromoDone(kind: PromoKind) {
         scope.launch {
             when (kind) {
-                PromoKind.RATE -> prefs.dictate.hasRated.set(true)
-                PromoKind.DONATE -> {
-                    prefs.dictate.hasDonated.set(true)
-                    prefs.dictate.hasRated.set(true)
-                }
                 // Remember this version so the keyboard nudge shows only once per update. The in-app
                 // dialog stays governed by versionLastChangelog, so tapping/dismissing here never hides it.
                 PromoKind.CHANGELOG -> prefs.dictate.changelogNudgeVersion.set(BuildConfig.VERSION_NAME)
@@ -4571,7 +4515,6 @@ object DictateController {
                 // The flag was already set when shown, so the nudge cannot come back on the next
                 // keyboard open whether it was acted on or waved away. A purchase clears it again.
                 PromoKind.LOW_CREDIT -> Unit
-                PromoKind.SAYOVA -> prefs.dictate.sayovaNudgeDone.set(true)
             }
         }
     }

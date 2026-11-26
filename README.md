@@ -41,3 +41,10 @@ python3 run_component_tests.py
 ```
 
 These commands download third-party sources and test dependencies. Full repositories, SDKs, model weights, credentials, and build outputs are excluded from version control. Upstream code retains its original license; the product license remains to be finalized around the selected Apache-2.0 upstream and its dependency terms.
+
+## Credits
+
+TypeBetter is built on [Dictate Keyboard](https://github.com/DevEmperor/Dictate) by DevEmperor, which is itself
+a fork of [FlorisBoard](https://github.com/florisboard/florisboard) by Patrick Goldinger and contributors. Both are
+licensed under the Apache License 2.0; their notices are kept in [NOTICE](NOTICE) and shown in the app under
+*Settings › About › Project license*. The app's About screen has a Credits section with links to both projects.

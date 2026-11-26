@@ -142,9 +142,6 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.sin
 
-/** PayPal donation link, kept in sync with the changelog dialog's donate invite. */
-private const val DONATE_URL = "https://paypal.me/DevEmperor"
-
 /**
  * One versioned "What's new" tour. The app keeps an ordered registry ([WHATS_NEW_TOURS]) so that a user
  * who skips several releases (e.g. 4.x → 5.1) is shown every tour they missed, in order, while a user who
@@ -466,7 +463,7 @@ private val WhatsNewPages51: List<WhatsNewPage> = listOf(
         icon = Icons.Filled.Celebration,
         eyebrow = R.string.apptour51__outro_eyebrow,
         title = R.string.apptour51__outro_title,
-        body = R.string.apptour51__outro_body,
+        body = R.string.apptour51__outro_body_credit,
         cta = R.string.apptour__done,
         route = null,
         kind = PageKind.OUTRO,
@@ -1889,7 +1886,7 @@ private fun TourShareToText() {
                     )
                     Spacer(modifier = Modifier.width(7.dp))
                     Text(
-                        text = "Dictate",
+                        text = "TypeBetter",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -4309,7 +4306,7 @@ private fun DonateInvite() {
     val context = LocalContext.current
     Spacer(modifier = Modifier.height(24.dp))
     Text(
-        text = stringRes(R.string.changelog__donate),
+        text = stringRes(R.string.changelog__donate_credit),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold,
@@ -4317,7 +4314,7 @@ private fun DonateInvite() {
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-            .clickable { context.launchUrl(DONATE_URL) }
+            .clickable { context.launchUrl(R.string.dictate__upstream_donate_url) }
             .padding(horizontal = 18.dp, vertical = 12.dp),
     )
 }

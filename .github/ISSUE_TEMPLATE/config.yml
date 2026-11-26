@@ -1,13 +1,9 @@
-# Blank issues stay on: this repo has no bug-report form, and taking away the plain
-# "New issue" box would leave people with nowhere to file an ordinary bug.
+# Blank issues stay on: the only form is the crash report (the app's crash screen points at it), and
+# taking away the plain "New issue" box would leave people with nowhere to file an ordinary bug.
 blank_issues_enabled: true
 contact_links:
   - name: 🔒 Report a security vulnerability (private)
-    url: https://github.com/DevEmperor/DictateKeyboard/security/advisories/new
+    url: https://github.com/davidbalasa-ui/Typing-should-not-be-hard/security
     about: >-
-      Anything that could be used against someone's device or data — a leaked API key, another app
-      reading what you type, a way to get Dictate Cloud credit for free. Reported privately, not in
-      a public issue. See SECURITY.md.
-  - name: 💬 Questions, ideas and feedback
-    url: https://github.com/DevEmperor/DictateKeyboard/discussions
-    about: Not sure it is a bug? Ask in Discussions — that is also where feature ideas are discussed.
+      Anything that could be used against someone's device or data, such as a leaked API key or
+      another app reading what you type. Reported privately, not in a public issue. See SECURITY.md.
