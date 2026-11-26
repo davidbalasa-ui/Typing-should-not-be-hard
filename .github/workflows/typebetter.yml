@@ -225,12 +225,32 @@ jobs:
             echo "keyPassword=$KEYSTORE_PASSWORD"
           } > keystore.properties
           echo "signed=true" >> "$GITHUB_OUTPUT"
+      - name: Check the built-in GIF key
+        env:
+          # David saved the key as the secret "TypeBetter" (stored as TYPEBETTER); KLIPY_API_KEY is read too.
+          KLIPY_API_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && (secrets.KLIPY_API_KEY || secrets.TYPEBETTER) || '' }}
+        run: |
+          # One trending request with the key, so a wrong or dead key shows up here rather than on the phone.
+          # Only the HTTP status is printed, never the key (GitHub also masks secrets in logs).
+          key=$(printf '%s' "$KLIPY_API_KEY" | tr -d '[:space:]')
+          if [ -z "$key" ]; then
+            echo "No built-in GIF key for this build (work branches never get one)."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            "https://api.klipy.com/api/v1/$key/gifs/trending?page=1&per_page=1" || echo "000")
+          if [ "$code" = "200" ]; then
+            echo "::notice::Built-in GIF key works (KLIPY answered HTTP 200)."
+          else
+            echo "::warning::Built-in GIF key check: KLIPY answered HTTP $code. GIF search may not work in this build."
+          fi
       - name: Build release APK and Play bundle
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
           # Built-in KLIPY key, so GIF search works with no setup (docs/decisions/2026-11-26-built-in-gif-key.md).
-          # Like the release key, only main's push or manual builds get it; branches build with none.
-          KLIPY_API_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && secrets.KLIPY_API_KEY || '' }}
+          # Like the release key, only main's push or manual builds get it; branches build with none. The key
+          # lives in the secret "TypeBetter" (stored as TYPEBETTER); KLIPY_API_KEY wins if it is ever added.
+          KLIPY_API_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && (secrets.KLIPY_API_KEY || secrets.TYPEBETTER) || '' }}
         run: |
           # Upstream Dictate's versionCode is 142; ours counts on from 142000 so every build is an update.
           TB_VERSION_CODE=$((142000 + GITHUB_RUN_NUMBER))
