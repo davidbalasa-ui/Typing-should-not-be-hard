@@ -1,5 +1,7 @@
 # Emoji key always next to the space bar
 
+> **Superseded 2026-11-26** by 2026-11-26-emoji-key-to-top-bar.md: David asked for the emoji key off the bottom row; emojis are a top-bar button now. The mode below is still selectable.
+
 **Problem.** David asked "No emojis?" on 2026-11-25. The emoji panel existed, but the key for it sat in
 the one slot next to the space bar that upstream FlorisBoard shares with the language (globe) key. Its
 default, "Dynamic", shows the emoji key with one language and swaps it for the globe as soon as a second

@@ -1842,6 +1842,7 @@
     <string name="enum__theme_mode__follow_system" comment="Enum value label">Follow system</string>
     <string name="enum__theme_mode__follow_time" comment="Enum value label">Follow time</string>
 
+    <string name="enum__utility_key_action__language_when_needed" comment="Enum value label">None (emojis are in the top bar), plus switch language when you have more than one</string>
     <string name="enum__utility_key_action__emojis_and_switch_language" comment="Enum value label">Emojis, plus switch language when you have more than one</string>
     <string name="enum__utility_key_action__switch_to_emojis" comment="Enum value label">Switch to emojis</string>
     <string name="enum__utility_key_action__switch_language" comment="Enum value label">Switch language</string>

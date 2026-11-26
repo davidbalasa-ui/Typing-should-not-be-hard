@@ -34,13 +34,26 @@ class UtilityKeyActionTest {
         UtilityKeyAction.showsLanguageKey(enabled, action, multi)
 
     @Test
-    fun `the TypeBetter default keeps the emoji key with one language`() {
+    fun `the TypeBetter default has no emoji key, so the space bar is wider`() {
+        // David, 2026-11-26: "pull out emoji button and make space bar bigger". Emojis are a top-bar button.
+        assertFalse(emoji(UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multi = false))
+        assertFalse(globe(UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multi = false))
+    }
+
+    @Test
+    fun `the TypeBetter default still shows the globe with two languages`() {
+        assertFalse(emoji(UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multi = true))
+        assertTrue(globe(UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multi = true))
+    }
+
+    @Test
+    fun `the emoji-and-language mode keeps the emoji key with one language`() {
         assertTrue(emoji(UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE, multi = false))
         assertFalse(globe(UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE, multi = false))
     }
 
     @Test
-    fun `the TypeBetter default keeps the emoji key and adds the globe with two languages`() {
+    fun `the emoji-and-language mode keeps the emoji key and adds the globe with two languages`() {
         // The bug David hit: the old dynamic default dropped the emoji key as soon as a second
         // language was added.
         assertTrue(emoji(UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE, multi = true))

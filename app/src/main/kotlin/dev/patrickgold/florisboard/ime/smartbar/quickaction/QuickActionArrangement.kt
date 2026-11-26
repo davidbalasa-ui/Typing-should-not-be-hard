@@ -94,6 +94,11 @@ data class QuickActionArrangement(
                 // moment the actions row is on screen: the bar shows the actions when the field is idle
                 // and during a selection, not mid-word.
                 QuickAction.InsertKey(TextKeyData.DICTATE_REINSERT),
+                // Emojis (2026-11-26): the bottom row no longer has an emoji key, so the space bar can be
+                // wider, and this is where emojis are now. Right after the history, so it is on the bar
+                // on every phone width, not in the ⋯ grid where nobody finds it
+                // (docs/decisions/2026-11-26-emoji-key-to-top-bar.md).
+                QuickAction.InsertKey(TextKeyData.IME_UI_MODE_MEDIA),
                 QuickAction.InsertKey(TextKeyData.IME_UI_MODE_CLIPBOARD),
                 // On-device translation (issue #424). Third, ahead of GIF: it is the start of an errand
                 // like the two before it, nobody looks for it in a keyboard until they see it there, and
@@ -127,10 +132,6 @@ data class QuickActionArrangement(
                 // overflow grid rather than a slot in the bar: it is the umbrella over fourteen of the
                 // actions below, so whoever needs any of them finds all of them here in one tap.
                 QuickAction.InsertKey(TextKeyData.IME_UI_MODE_EDITING),
-                // Emoji has the utility key next to the space bar by default, so it does not need a
-                // Smartbar slot — but it is the first grid tile for the users who gave that key to the
-                // language switch instead.
-                QuickAction.InsertKey(TextKeyData.IME_UI_MODE_MEDIA),
                 // Local sticker panel (issue #280): the folder the user picked, no network involved.
                 QuickAction.InsertKey(TextKeyData.IME_UI_MODE_STICKER),
                 // --- The shape of the keyboard ------------------------------------------------------

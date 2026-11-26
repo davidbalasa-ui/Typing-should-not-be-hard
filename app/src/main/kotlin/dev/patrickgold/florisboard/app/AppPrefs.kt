@@ -1552,9 +1552,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val utilityKeyAction = enum(
             key = "keyboard__utility_key_action",
-            // TypeBetter: the emoji key stays next to space even with two or more languages, the globe
-            // joins it (docs/decisions/2026-11-25-emoji-key-always-visible.md).
-            default = UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
+            // TypeBetter: no emoji key next to space, so the space bar is wider; emojis are a top-bar
+            // button instead, and the globe still joins with two or more languages
+            // (docs/decisions/2026-11-26-emoji-key-to-top-bar.md, replacing 2026-11-25-emoji-key-always-visible.md).
+            default = UtilityKeyAction.LANGUAGE_WHEN_NEEDED,
+        )
+        // One-time guard for com.typebetter.keyboard.keys.EmojiKeyMove: takes the emoji key off the bottom
+        // row of devices that still had it and makes sure the top bar shows the emoji button.
+        val emojiKeyMovedToTopBar = boolean(
+            key = "keyboard__emoji_key_moved_to_top_bar",
+            default = false,
         )
         // The letters' bottom row as the user arranged it in Keys & buttons, see
         // com.typebetter.keyboard.keys.BottomRow. Empty = the stock row from the layout file, which the

@@ -1328,6 +1328,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         when (prefs.keyboard.utilityKeyAction.get()) {
             UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
             UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE,
+            UtilityKeyAction.LANGUAGE_WHEN_NEEDED,
             UtilityKeyAction.SWITCH_LANGUAGE -> subtypeManager.switchToNextSubtype()
             // The utility key is explicitly configured to jump to the next keyboard app, so honour that.
             UtilityKeyAction.SWITCH_KEYBOARD_APP -> FlorisImeService.switchToNextInputMethod()

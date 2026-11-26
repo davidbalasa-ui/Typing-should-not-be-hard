@@ -155,6 +155,7 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateFrenchPunctuationRuleIfNeeded()
             DictateLegacyMigrator.migrateDevanagariPunctuationRuleIfNeeded()
             DictateLegacyMigrator.reofferRateAndDonateIfNeeded()
+            com.typebetter.keyboard.keys.EmojiKeyMove.runIfNeeded()
             preferenceStoreLoaded.value = true
             // Keep the Wear OS companion's settings snapshot fresh: re-publish whenever a watch-relevant
             // phone setting changes (#106), so the watch reflects accent/provider/key/prompt automatically.

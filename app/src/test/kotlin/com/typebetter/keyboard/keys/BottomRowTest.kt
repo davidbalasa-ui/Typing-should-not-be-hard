@@ -51,10 +51,18 @@ class BottomRowTest : FunSpec({
     }
 
     context("stock row matches what the keyboard showed before") {
-        test("default setting, one language: comma, emoji | period") {
+        test("TypeBetter default, one language: comma | period, the space bar takes the emoji key's room") {
+            BottomRow.stock(true, UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multipleLanguages = false) shouldBe
+                BottomRow(listOf(COMMA), listOf(PERIOD))
+        }
+        test("TypeBetter default, two languages: only the globe joins") {
+            BottomRow.stock(true, UtilityKeyAction.LANGUAGE_WHEN_NEEDED, multipleLanguages = true) shouldBe
+                BottomRow(listOf(COMMA, LANGUAGE), listOf(PERIOD))
+        }
+        test("emoji-and-language setting, one language: comma, emoji | period") {
             BottomRow.stock(true, UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE, multipleLanguages = false) shouldBe stockRow
         }
-        test("default setting, two languages: the globe joins") {
+        test("emoji-and-language setting, two languages: the globe joins") {
             BottomRow.stock(true, UtilityKeyAction.EMOJIS_AND_SWITCH_LANGUAGE, multipleLanguages = true) shouldBe
                 BottomRow(listOf(COMMA, LANGUAGE, EMOJI), listOf(PERIOD))
         }
