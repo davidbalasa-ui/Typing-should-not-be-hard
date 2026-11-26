@@ -2085,6 +2085,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Kredīts, ķīniešu valoda, lētāka diktēšana</string>
+    <string name="apptour60__intro_title_own">Ķīniešu valoda, lētāka diktēšana</string>
     <string name="apptour60__intro_body">Šī versija pievieno otru ceļu iekšā — nopirkt kredītu, nevis izmantot savu API atslēgu —, kā arī pinjinu ķīniešu valodai, septiņas valodas ar jaunu vārdnīcu un ierakstus, kas maksā mazāk.</string>
     <string name="apptour60__cloud_eyebrow">Jaunums: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Pērciet minūtes, nevis meklējiet atslēgu</string>
@@ -2505,4 +2506,7 @@
     <string name="about__credits_donate__summary">Nosūti DevEmperor dzeramnaudu par darbu, uz kura balstās TypeBetter</string>
     <string name="changelog__donate_credit">Veidots uz DevEmperor Dictate pamata. Pieskaries šeit, lai atbalstītu tā izstrādātāju ♥</string>
     <string name="apptour51__outro_body_credit">Paldies, ka lieto TypeBetter! Šīs funkcijas nāk no Dictate, lietotnes, uz kuras balstās TypeBetter. Ja tās tev palīdz katru dienu, neliela dzeramnauda tās izstrādātājam DevEmperor uztur šo darbu. Visas tūres vari jebkurā laikā skatīt vēlreiz sadaļā Iestatījumi › Par.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter pārvērš runu tekstā ar MI pakalpojumu. Lielākā daļa izmanto savu MI pakalpojumu sniedzēju — un ja negribat izmantot nevienu mākoņpakalpojumu, zemāk ir vēl divi veidi.</string>
+    <string name="apptour60__intro_body_own">Šajā versijā: pinjins ķīniešu valodai, vārdnīcas septiņām jaunām valodām un ieraksti, kuru atšifrēšana maksā mazāk.</string>
+    <string name="apptour60__outro_body_own">Lai kā jūs izmantojat TypeBetter — savu atslēgu, savu serveri vai modeli ierīcē —, citos veidos nekas nav mainījies. Katru ievadu varat pārskatīt sadaļā Iestatījumi › Par.</string>
 </resources>

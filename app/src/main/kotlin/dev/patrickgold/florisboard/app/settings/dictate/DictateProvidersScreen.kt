@@ -259,7 +259,7 @@ fun DictateProvidersScreen() = FlorisScreen {
             val noKey = stringRes(R.string.dictate__providers_status_no_key)
             val activeIds = setOfNotNull(activeTranscriptionId, activeRewordingId, effectiveFallbackId)
 
-            // The user's own providers only, with on-device and Dictate Cloud always among them (see
+            // The user's own providers only, with on-device always among them and Dictate Cloud hidden (see
             // [ProviderListing.isListed]); the other presets wait behind "Add a provider" at the end.
             // On-device first, above the cloud providers like OpenAI (issue #228); the rest keep their
             // registry display order (sortedByDescending is stable).

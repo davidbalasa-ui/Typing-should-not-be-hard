@@ -2138,6 +2138,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Кредит, китайски, по-евтина диктовка</string>
+    <string name="apptour60__intro_title_own">Китайски, по-евтина диктовка</string>
     <string name="apptour60__intro_body">Тази версия добавя втори път навътре — купуване на кредит вместо собствен API ключ —, както и пинин за китайски, седем езика с нов речник и записи, които струват по-малко.</string>
     <string name="apptour60__cloud_eyebrow">Ново: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Купувайте минути, вместо да търсите ключ</string>
@@ -2558,4 +2559,7 @@
     <string name="about__credits_donate__summary">Изпратете бакшиш на DevEmperor за работата, върху която е изграден TypeBetter</string>
     <string name="changelog__donate_credit">Създадено върху Dictate от DevEmperor. Докоснете тук, за да подкрепите разработчика ♥</string>
     <string name="apptour51__outro_body_credit">Благодарим, че използвате TypeBetter! Тези функции идват от Dictate, приложението, върху което е изграден TypeBetter. Ако ви помагат всеки ден, малък бакшиш за разработчика DevEmperor поддържа тази работа. Можете да прегледате обиколките отново по всяко време в Настройки › Относно.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter превръща речта в текст с помощта на ИИ услуга. Повечето хора използват собствен ИИ доставчик — а ако не искате никаква облачна услуга, по-долу има още два начина.</string>
+    <string name="apptour60__intro_body_own">Тази версия носи пинин за китайски, речници за седем нови езика и записи, чието транскрибиране струва по-малко.</string>
+    <string name="apptour60__outro_body_own">Както и да използвате TypeBetter — собствен ключ, собствен сървър или модел на устройството, — при другите начини нищо не се е променило. Всяка обиколка може да се види отново в Настройки › Относно.</string>
 </resources>

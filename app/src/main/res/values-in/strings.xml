@@ -2087,6 +2087,7 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Saldo, bahasa Mandarin, dikte lebih murah</string>
+    <string name="apptour60__intro_title_own">Bahasa Mandarin, dikte lebih murah</string>
     <string name="apptour60__intro_body">Versi ini menambah jalan masuk kedua — membeli saldo alih-alih membawa kunci API sendiri —, ditambah pinyin untuk bahasa Mandarin, tujuh bahasa dengan kamus baru, dan rekaman yang lebih murah.</string>
     <string name="apptour60__cloud_eyebrow">Baru: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Beli menit alih-alih mencari kunci</string>
@@ -2507,4 +2508,7 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="about__credits_donate__summary">Kirim tip kepada DevEmperor untuk karya yang menjadi dasar TypeBetter</string>
     <string name="changelog__donate_credit">Dibuat di atas Dictate oleh DevEmperor. Ketuk di sini untuk mendukung pengembangnya ♥</string>
     <string name="apptour51__outro_body_credit">Terima kasih telah menggunakan TypeBetter! Fitur-fitur ini berasal dari Dictate, aplikasi yang menjadi dasar TypeBetter. Jika fitur ini membantu Anda setiap hari, tip kecil untuk pengembangnya, DevEmperor, menjaga karya itu tetap berjalan. Anda dapat melihat tur ini lagi kapan saja di Setelan › Tentang.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter mengubah suara Anda menjadi teks dengan layanan AI. Kebanyakan orang memakai penyedia AI mereka sendiri — dan jika Anda tidak ingin memakai layanan cloud sama sekali, ada dua cara lain di bawah.</string>
+    <string name="apptour60__intro_body_own">Rilis ini menghadirkan pinyin untuk bahasa Mandarin, kamus untuk tujuh bahasa baru, dan rekaman yang lebih murah untuk ditranskripsi.</string>
+    <string name="apptour60__outro_body_own">Apa pun cara Anda memakai TypeBetter — kunci sendiri, server sendiri, atau model di perangkat — cara lainnya tidak berubah. Setiap tur dapat dilihat lagi di Setelan › Tentang.</string>
 </resources>

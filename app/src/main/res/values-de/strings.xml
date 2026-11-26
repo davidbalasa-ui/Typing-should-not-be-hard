@@ -2110,6 +2110,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Guthaben, Chinesisch, günstigere Diktate</string>
+    <string name="apptour60__intro_title_own">Chinesisch, günstigere Diktate</string>
     <string name="apptour60__intro_body">Diese Version bringt einen zweiten Weg hinein — Guthaben kaufen statt eigenem API-Schlüssel —, dazu Pinyin für Chinesisch, sieben Sprachen mit neuen Wörterbüchern und Aufnahmen, die weniger kosten.</string>
     <string name="apptour60__cloud_eyebrow">Neu: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Minuten kaufen statt Schlüssel besorgen</string>
@@ -2469,4 +2470,7 @@
     <string name="about__credits_donate__summary">DevEmperor ein Trinkgeld für die Arbeit schicken, auf der TypeBetter aufbaut</string>
     <string name="changelog__donate_credit">Basiert auf Dictate von DevEmperor. Hier tippen, um seinen Entwickler zu unterstützen ♥</string>
     <string name="apptour51__outro_body_credit">Danke, dass du TypeBetter nutzt! Diese Funktionen stammen aus Dictate, der App, auf der TypeBetter aufbaut. Wenn sie dir jeden Tag helfen, hält ein kleines Trinkgeld an den Entwickler DevEmperor diese Arbeit am Laufen. Alle Touren findest du jederzeit wieder unter Einstellungen › Über.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter macht aus deiner Sprache Text, mit einem KI-Dienst. Die meisten nutzen ihren eigenen KI-Anbieter — und wenn du lieber gar keinen Cloud-Dienst willst, gibt es unten zwei weitere Wege.</string>
+    <string name="apptour60__intro_body_own">Diese Version bringt Pinyin für Chinesisch, sieben Sprachen mit neuem Wörterbuch und Aufnahmen, deren Transkription weniger kostet.</string>
+    <string name="apptour60__outro_body_own">Egal wie du TypeBetter benutzt — eigener Schlüssel, eigener Server oder ein Modell auf dem Gerät: an den jeweils anderen Wegen hat sich nichts geändert. Alle Touren findest du erneut unter Einstellungen › Über.</string>
 </resources>

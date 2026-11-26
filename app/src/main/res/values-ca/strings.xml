@@ -2006,6 +2006,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Saldo, xinès i dictat més barat</string>
+    <string name="apptour60__intro_title_own">Xinès i dictat més barat</string>
     <string name="apptour60__intro_body">Aquesta versió afegeix una segona porta d\'entrada — comprar saldo en lloc de portar la teva pròpia clau d\'API —, a més de pinyin per al xinès, set llengües amb diccionari nou i enregistraments que costen menys.</string>
     <string name="apptour60__cloud_eyebrow">Nou: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Compra minuts en comptes de buscar una clau</string>
@@ -2426,4 +2427,7 @@
     <string name="about__credits_donate__summary">Envia una propina a DevEmperor per la feina en què es basa TypeBetter</string>
     <string name="changelog__donate_credit">Basat en Dictate de DevEmperor. Toca aquí per donar suport al seu desenvolupador ♥</string>
     <string name="apptour51__outro_body_credit">Gràcies per fer servir TypeBetter! Aquestes funcions venen de Dictate, l\'aplicació en què es basa TypeBetter. Si t\'ajuden cada dia, una petita propina al seu desenvolupador, DevEmperor, manté viva aquella feina. Pots tornar a veure aquests recorreguts quan vulguis a Configuració › Quant a.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter converteix la teva veu en text amb un servei d\'IA. La majoria de gent fa servir el seu propi proveïdor d\'IA — i si prefereixes no fer servir cap servei al núvol, a sota hi ha dues maneres més.</string>
+    <string name="apptour60__intro_body_own">Aquesta versió porta el pinyin per al xinès, set idiomes que han guanyat diccionari i enregistraments que costen menys de transcriure.</string>
+    <string name="apptour60__outro_body_own">Facis servir TypeBetter com el facis servir — la teva clau, el teu servidor o un model al dispositiu —, res no ha canviat en les altres maneres. Pots tornar a veure qualsevol visita a Configuració › Quant a.</string>
 </resources>

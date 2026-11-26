@@ -1922,6 +1922,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Credito, cinese, dettatura più economica</string>
+    <string name="apptour60__intro_title_own">Cinese, dettatura più economica</string>
     <string name="apptour60__intro_body">Questa versione aggiunge una seconda via d\'accesso — comprare credito invece di portare la propria chiave API —, il pinyin per il cinese, sette lingue con un nuovo dizionario e registrazioni che costano meno.</string>
     <string name="apptour60__cloud_eyebrow">Novità: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Comprare minuti invece di procurarsi una chiave</string>
@@ -2344,4 +2345,7 @@
     <string name="about__credits_donate__summary">Manda una mancia a DevEmperor per il lavoro su cui si basa TypeBetter</string>
     <string name="changelog__donate_credit">Basato su Dictate di DevEmperor. Tocca qui per sostenere il suo sviluppatore ♥</string>
     <string name="apptour51__outro_body_credit">Grazie per usare TypeBetter! Queste funzioni vengono da Dictate, l\'app su cui si basa TypeBetter. Se ti aiutano ogni giorno, una piccola mancia al suo sviluppatore, DevEmperor, fa andare avanti quel lavoro. Puoi rivedere questi tour quando vuoi in Impostazioni › Informazioni.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter trasforma la tua voce in testo con un servizio di IA. La maggior parte delle persone usa il proprio fornitore di IA — e se preferisci non usare alcun servizio cloud, qui sotto ci sono altri due modi.</string>
+    <string name="apptour60__intro_body_own">Questa versione porta il pinyin per il cinese, sette lingue con un nuovo dizionario e registrazioni che costano meno da trascrivere.</string>
+    <string name="apptour60__outro_body_own">Comunque tu usi TypeBetter — la tua chiave, il tuo server o un modello sul dispositivo — negli altri modi non è cambiato nulla. Puoi rivedere ogni tour in Impostazioni › Informazioni.</string>
 </resources>

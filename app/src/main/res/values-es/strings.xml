@@ -2118,6 +2118,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Saldo, chino y dictado más barato</string>
+    <string name="apptour60__intro_title_own">Chino y dictado más barato</string>
     <string name="apptour60__intro_body">Esta versión añade una segunda vía de entrada — comprar saldo en lugar de traer tu propia clave de API —, además de pinyin para el chino, siete idiomas con diccionario nuevo y grabaciones que cuestan menos.</string>
     <string name="apptour60__cloud_eyebrow">Nuevo: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Comprar minutos en vez de buscar una clave</string>
@@ -2538,4 +2539,7 @@
     <string name="about__credits_donate__summary">Envía una propina a DevEmperor por el trabajo en el que se basa TypeBetter</string>
     <string name="changelog__donate_credit">Basado en Dictate de DevEmperor. Toca aquí para apoyar a su desarrollador ♥</string>
     <string name="apptour51__outro_body_credit">¡Gracias por usar TypeBetter! Estas funciones vienen de Dictate, la app en la que se basa TypeBetter. Si te ayudan cada día, una pequeña propina a su desarrollador, DevEmperor, mantiene ese trabajo en marcha. Puedes volver a ver estos recorridos cuando quieras en Ajustes › Acerca de.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter convierte tu voz en texto con un servicio de IA. La mayoría usa su propio proveedor de IA — y si prefieres no usar ningún servicio en la nube, abajo hay dos formas más.</string>
+    <string name="apptour60__intro_body_own">Esta versión trae pinyin para el chino, siete idiomas que ganaron diccionario y grabaciones que cuestan menos de transcribir.</string>
+    <string name="apptour60__outro_body_own">Uses TypeBetter como lo uses — tu propia clave, tu propio servidor o un modelo en el dispositivo —, nada ha cambiado en las demás formas. Puedes volver a ver cualquier recorrido en Ajustes › Acerca de.</string>
 </resources>

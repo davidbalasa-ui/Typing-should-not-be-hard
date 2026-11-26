@@ -1989,6 +1989,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Баланс, китайська, дешевше диктування</string>
+    <string name="apptour60__intro_title_own">Китайська, дешевше диктування</string>
     <string name="apptour60__intro_body">У цій версії з\'явився другий шлях — купити баланс замість власного ключа API, — а також піньїнь для китайської, сім мов із новим словником і записи, що коштують менше.</string>
     <string name="apptour60__cloud_eyebrow">Нове: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Купити хвилини замість пошуку ключа</string>
@@ -2409,4 +2410,7 @@
     <string name="about__credits_donate__summary">Надіслати DevEmperor чайові за роботу, на якій побудовано TypeBetter</string>
     <string name="changelog__donate_credit">Створено на основі Dictate від DevEmperor. Торкніться, щоб підтримати розробника ♥</string>
     <string name="apptour51__outro_body_credit">Дякуємо, що користуєтеся TypeBetter! Ці функції прийшли з Dictate — застосунку, на якому побудовано TypeBetter. Якщо вони допомагають вам щодня, невеликі чайові його розробнику, DevEmperor, підтримають цю роботу. Усі огляди можна знову відкрити в Налаштування › Про застосунок.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter перетворює мовлення на текст за допомогою ШІ-сервісу. Більшість користується своїм ШІ-провайдером — а якщо ви не хочете жодних хмарних сервісів, нижче є ще два способи.</string>
+    <string name="apptour60__intro_body_own">У цій версії: піньїнь для китайської, словники для семи нових мов і записи, розшифрування яких коштує менше.</string>
+    <string name="apptour60__outro_body_own">Хоч би як ви користувалися TypeBetter — свій ключ, свій сервер чи модель на пристрої, — в інших способах нічого не змінилося. Будь-який тур можна переглянути в Налаштування › Про застосунок.</string>
 </resources>

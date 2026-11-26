@@ -1940,6 +1940,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Créditos, chinês e ditado mais barato</string>
+    <string name="apptour60__intro_title_own">Chinês e ditado mais barato</string>
     <string name="apptour60__intro_body">Esta versão traz uma segunda porta de entrada — comprar créditos em vez de usar sua própria chave de API —, além de pinyin para chinês, sete idiomas com dicionário novo e gravações que custam menos.</string>
     <string name="apptour60__cloud_eyebrow">Novo: Dictate Cloud</string>
     <string name="apptour60__cloud_title">Comprar minutos em vez de conseguir uma chave</string>
@@ -2360,4 +2361,7 @@
     <string name="about__credits_donate__summary">Mande uma gorjeta ao DevEmperor pelo trabalho em que o TypeBetter se baseia</string>
     <string name="changelog__donate_credit">Baseado no Dictate de DevEmperor. Toque aqui para apoiar o desenvolvedor ♥</string>
     <string name="apptour51__outro_body_credit">Obrigado por usar o TypeBetter! Esses recursos vêm do Dictate, o app em que o TypeBetter se baseia. Se eles ajudam você todo dia, uma pequena gorjeta ao desenvolvedor, DevEmperor, mantém esse trabalho. Você pode rever estes tours quando quiser em Configurações › Sobre.</string>
+    <string name="setup__provider__choose_intro_own">O TypeBetter transforma sua voz em texto com um serviço de IA. A maioria das pessoas usa o próprio provedor de IA — e se você preferir não usar nenhum serviço na nuvem, há mais duas formas abaixo.</string>
+    <string name="apptour60__intro_body_own">Esta versão traz pinyin para chinês, sete idiomas que ganharam dicionário e gravações que custam menos para transcrever.</string>
+    <string name="apptour60__outro_body_own">Não importa como você usa o TypeBetter — sua chave, seu servidor ou um modelo no aparelho — nada mudou nas outras formas. Você pode rever qualquer tour em Configurações › Sobre.</string>
 </resources>

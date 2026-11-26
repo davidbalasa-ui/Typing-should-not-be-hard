@@ -2012,6 +2012,7 @@
     <string name="apptour60__art_speed">1,5×</string>
     <string name="apptour60__intro_eyebrow">TypeBetter 6.0</string>
     <string name="apptour60__intro_title">Crédit, chinois, dictée moins chère</string>
+    <string name="apptour60__intro_title_own">Chinois, dictée moins chère</string>
     <string name="apptour60__intro_body">Cette version ajoute une deuxième porte d\'entrée — acheter du crédit au lieu d\'apporter sa propre clé API —, le pinyin pour le chinois, sept langues dotées d\'un dictionnaire et des enregistrements qui coûtent moins cher.</string>
     <string name="apptour60__cloud_eyebrow">Nouveau : Dictate Cloud</string>
     <string name="apptour60__cloud_title">Acheter des minutes plutôt que chercher une clé</string>
@@ -2432,4 +2433,7 @@
     <string name="about__credits_donate__summary">Envoyer un pourboire à DevEmperor pour le travail sur lequel repose TypeBetter</string>
     <string name="changelog__donate_credit">Basé sur Dictate par DevEmperor. Touchez ici pour soutenir son développeur ♥</string>
     <string name="apptour51__outro_body_credit">Merci d\'utiliser TypeBetter ! Ces fonctions viennent de Dictate, l\'application sur laquelle repose TypeBetter. Si elles vous aident chaque jour, un petit pourboire à son développeur, DevEmperor, fait vivre ce travail. Vous pouvez revoir ces visites à tout moment dans Paramètres › À propos.</string>
+    <string name="setup__provider__choose_intro_own">TypeBetter transforme votre voix en texte grâce à un service d\'IA. La plupart des gens utilisent leur propre fournisseur d\'IA — et si vous préférez n\'utiliser aucun service cloud, il y a deux autres façons ci-dessous.</string>
+    <string name="apptour60__intro_body_own">Cette version apporte le pinyin pour le chinois, sept langues qui ont gagné un dictionnaire et des enregistrements moins coûteux à transcrire.</string>
+    <string name="apptour60__outro_body_own">Quelle que soit votre façon d\'utiliser TypeBetter — votre propre clé, votre propre serveur ou un modèle sur l\'appareil — rien n\'a changé pour les autres. Vous pouvez revoir chaque visite guidée dans Paramètres › À propos.</string>
 </resources>
