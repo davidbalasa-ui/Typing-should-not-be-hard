@@ -41,6 +41,9 @@ internal object CorrectionReaders {
     /** Flat cost for a candidate of a different length (a dropped or doubled letter) on the touch path. */
     private const val TOUCH_LENGTH_PENALTY = -5.0
 
+    /** Weight on ln(bigram count + 1) that the previous word adds to a candidate (Tier 2 context). */
+    const val CONTEXT_WEIGHT = 0.3
+
     /** How many words the beam returns before scoring. */
     const val BEAM_CANDIDATES = 12
 
@@ -55,8 +58,12 @@ internal object CorrectionReaders {
      *
      * [topCost] is the winning candidate's excess tap distance, or null when it came from edit distance and
      * there is therefore no positional evidence either way (a dropped or doubled letter).
+     *
+     * [topMargin] is how far the winner's score (prior, taps and context together) is ahead of the
+     * runner-up's, or null when nothing else was in the running. [AutoCommitGate.allowsInContext] reads it:
+     * a costly reading may only be swapped in when no other word is a close second.
      */
-    class TouchReading(val words: List<String>, val topCost: Float?)
+    class TouchReading(val words: List<String>, val topCost: Float?, val topMargin: Double? = null)
 
     /**
      * Corrections decoded from where the fingers landed, as folded dictionary keys — or null when the beam
@@ -104,7 +111,8 @@ internal object CorrectionReaders {
         }
         if (scored.isEmpty()) return null
         val ranked = scored.entries.sortedByDescending { it.value }.take(maxCount)
-        return TouchReading(words = ranked.map { it.key }, topCost = costs[ranked.first().key])
+        val margin = if (ranked.size > 1) ranked[0].value - ranked[1].value else null
+        return TouchReading(words = ranked.map { it.key }, topCost = costs[ranked.first().key], topMargin = margin)
     }
 
     /** How many of a prefix reading's most frequent words are considered as completions of it. */

@@ -119,7 +119,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
         // Bigram context model (Tier 2): weight on ln(bigram-count+1) added to a candidate that commonly
         // follows the previous word, so context ("of the" over "of teh") re-ranks the correction.
-        private const val CONTEXT_WEIGHT = 0.3
+        // Lives in [CorrectionReaders] so `ContextSlipEvalTest` scores context exactly as this does.
+        private const val CONTEXT_WEIGHT = CorrectionReaders.CONTEXT_WEIGHT
 
         // --- Touch-decoded corrections (issue #242) -------------------------------------------------
         // Both correction readers, their constants and the rule that merges them live in
@@ -1060,6 +1061,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         return CorrectionReaders.TouchReading(
             words = reading.words.map { index.canonical[it] ?: it },
             topCost = reading.topCost,
+            topMargin = reading.topMargin,
         )
     }
 
@@ -2060,8 +2062,25 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 // the `hadCandidatesBefore` gate, which suppressed 2.7 % of otherwise correct fixes merely
                 // because the typo prefixed some dictionary word — while a bare "a correction exists" rule
                 // would rewrite 30 % of correctly typed names.
-                topTouchCost != null ->
-                    AutoCommitGate.allows(topTouchCost, word.length, prefs.correction.autoCorrectStrength.get())
+                topTouchCost != null -> {
+                    val strength = prefs.correction.autoCorrectStrength.get()
+                    AutoCommitGate.allows(topTouchCost, word.length, strength) ||
+                        // Over the tap budget (two slips, `wotj`), but the previous word says which word was
+                        // meant (`words wotj` → `with`). Measured on English only, in `ContextSlipEvalTest`.
+                        (index.lang == ContextualFixes.LANG && prevWord != null &&
+                            touchCorrections.words.isNotEmpty() && run {
+                            val lead = index.fold(touchCorrections.words.first())
+                            AutoCommitGate.allowsInContext(
+                                totalCost = topTouchCost,
+                                tapCount = word.length,
+                                strength = strength,
+                                leadFreq = index.freq[lead] ?: 0,
+                                contextCount = bigrams.countOf("$prevWord $lead"),
+                                contextTotal = bigrams.totalAfter(prevWord),
+                                margin = touchCorrections.topMargin,
+                            )
+                        })
+                }
                 // A dropped or doubled letter: the beam cannot see it and the taps say nothing either way,
                 // so keep the conservative classic rule.
                 touchCorrections != null -> !hadCandidatesBefore

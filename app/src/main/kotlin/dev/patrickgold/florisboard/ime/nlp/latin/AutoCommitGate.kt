@@ -92,4 +92,65 @@ object AutoCommitGate {
         if (tapCount <= 0) return false
         return totalCost <= budgetPerTap(strength) * tapCount
     }
+
+    // ── Two slips, and the previous word says which (TypeBetter, 2026-11-26) ────────────────────────
+
+    /**
+     * How much more a costly reading needs before it may be swapped in on the previous word's say-so.
+     *
+     * @property budgetPerTap the tap budget this rule allows instead of [budgetPerTap]: two whole-key
+     *   slips in a four-letter word cost 2.0 over 4 taps, 0.50 per tap.
+     * @property minFreq how common the replacement must be. Only everyday words are worth the risk.
+     * @property minContext how often the bigram table saw the replacement right after the previous word.
+     * @property minShare that count as a share of everything seen after the previous word: `words with`
+     *   is 35 of about 1,700 (2 %), `to such` is 149 of hundreds of thousands. Raw counts favour words
+     *   that follow everything; the share asks whether this previous word predicts this replacement.
+     * @property minMargin how far the replacement's score (taps, frequency and context together) must be
+     *   ahead of the runner-up, so the context decided a real contest and did not pick between equals.
+     */
+    class ContextRule(
+        val budgetPerTap: Float,
+        val minFreq: Int,
+        val minContext: Long,
+        val minShare: Double,
+        val minMargin: Double,
+    )
+
+    /** Null where the rule is off: Cautious swaps nothing the taps alone do not support. */
+    fun contextRule(strength: AutoCorrectStrength): ContextRule? = when (strength) {
+        AutoCorrectStrength.CAUTIOUS -> null
+        AutoCorrectStrength.BALANCED -> ContextRule(
+            budgetPerTap = 0.70f, minFreq = 230, minContext = 20, minShare = 0.005, minMargin = 0.5,
+        )
+        AutoCorrectStrength.AGGRESSIVE -> ContextRule(
+            budgetPerTap = 0.90f, minFreq = 200, minContext = 12, minShare = 0.003, minMargin = 0.3,
+        )
+    }
+
+    /**
+     * True when a reading over the per-tap budget of [allows] may still be swapped in silently because the
+     * previous word backs it: `words wotj` → `with` (two neighbouring keys, o for i and j for h).
+     *
+     * [contextCount] is the bigram count of the previous word followed by the replacement, [contextTotal]
+     * the count of everything seen after the previous word ([NgramIndex.totalAfter]), and [margin]
+     * the replacement's score lead over the runner-up ([CorrectionReaders.TouchReading.topMargin]; null
+     * when there was no runner-up). Measured in `ContextSlipEvalTest`.
+     */
+    fun allowsInContext(
+        totalCost: Float,
+        tapCount: Int,
+        strength: AutoCorrectStrength,
+        leadFreq: Int,
+        contextCount: Long,
+        contextTotal: Long,
+        margin: Double?,
+        rule: ContextRule? = contextRule(strength),
+    ): Boolean {
+        if (rule == null || tapCount <= 0) return false
+        return totalCost <= rule.budgetPerTap * tapCount &&
+            leadFreq >= rule.minFreq &&
+            contextCount >= rule.minContext &&
+            contextTotal > 0 && contextCount >= rule.minShare * contextTotal &&
+            (margin == null || margin >= rule.minMargin)
+    }
 }
