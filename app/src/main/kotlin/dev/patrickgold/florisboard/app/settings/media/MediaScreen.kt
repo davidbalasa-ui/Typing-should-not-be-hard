@@ -88,6 +88,7 @@ import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.dictate.gif.GifContentFilter
+import dev.patrickgold.florisboard.dictate.gif.GifApiKey
 import dev.patrickgold.florisboard.dictate.sticker.StickerCategory
 import dev.patrickgold.florisboard.dictate.sticker.StickerHistoryHelper
 import dev.patrickgold.florisboard.dictate.sticker.StickerImports
@@ -286,8 +287,10 @@ fun MediaScreen() = FlorisScreen {
                 title = stringRes(R.string.prefs__media__gif_setup__title),
                 summary = when {
                     !gifEnabled -> stringRes(R.string.state__disabled)
-                    gifKey.isBlank() -> stringRes(R.string.prefs__media__gif_setup__summary_unset)
-                    else -> stringRes(R.string.prefs__media__gif_setup__summary_set)
+                    gifKey.isNotBlank() -> stringRes(R.string.prefs__media__gif_setup__summary_set)
+                    // Release builds carry a KLIPY key, so GIFs work with nothing to set up (GifApiKey).
+                    GifApiKey.hasBuiltIn -> stringRes(R.string.prefs__media__gif_setup__summary_built_in)
+                    else -> stringRes(R.string.prefs__media__gif_setup__summary_unset)
                 },
                 onClick = { gifSetupOpen = true },
             )
@@ -619,7 +622,12 @@ private fun GifSetupDialog(
                 checked = enabled,
                 onCheckedChange = { scope.launch { prefs.gif.enabled.set(it) } },
             )
-            Text(stringRes(R.string.prefs__media__gif_setup__intro))
+            // With a key built into the app the walkthrough is optional, and says so first.
+            if (GifApiKey.hasBuiltIn) {
+                Text(stringRes(R.string.prefs__media__gif_setup__built_in_intro))
+            } else {
+                Text(stringRes(R.string.prefs__media__gif_setup__intro))
+            }
             GifSetupStep(1, stringRes(R.string.prefs__media__gif_setup__step1))
             GifSetupStep(2, stringRes(R.string.prefs__media__gif_setup__step2))
             GifSetupStep(3, stringRes(R.string.prefs__media__gif_setup__step3))
@@ -646,7 +654,14 @@ private fun GifSetupDialog(
                 onValueChange = { key = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text(stringRes(R.string.prefs__media__gif_setup__key_label)) },
+                label = {
+                    Text(
+                        stringRes(
+                            if (GifApiKey.hasBuiltIn) R.string.prefs__media__gif_setup__key_label_optional
+                            else R.string.prefs__media__gif_setup__key_label
+                        )
+                    )
+                },
                 visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {

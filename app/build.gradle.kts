@@ -89,6 +89,20 @@ configure<ApplicationExtension> {
         }
 
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
+        // Built-in KLIPY key for GIF search, so GIFs work without the user making a KLIPY account
+        // (docs/decisions/2026-11-26-built-in-gif-key.md). CI passes the KLIPY_API_KEY repo secret on
+        // main builds only; every other build gets "" and falls back to the user's own key. A key the
+        // user saves in Settings always wins. Only [A-Za-z0-9_-] is accepted, so the value can never
+        // break out of the generated Java string; anything else fails the build (without printing the
+        // value), so a bad secret is noticed instead of shipping a release with GIFs silently off.
+        val klipyBuiltInKey = providers.environmentVariable("KLIPY_API_KEY").orNull?.trim().orEmpty()
+        val klipyKeyIsSafe = klipyBuiltInKey.all { it.isLetterOrDigit() && it.code < 128 || it == '-' || it == '_' }
+        if (!klipyKeyIsSafe) {
+            throw GradleException(
+                "KLIPY_API_KEY may only contain letters, digits, '-' and '_'. Re-copy the key from the KLIPY Partner Panel."
+            )
+        }
+        buildConfigField("String", "KLIPY_BUILT_IN_API_KEY", "\"$klipyBuiltInKey\"")
 
         sourceSets {
             maybeCreate("main").apply {

@@ -97,8 +97,8 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
  *  - **Results** (after the user typed a query and pressed Enter in [GifSearchPanel]): a large-thumbnail
  *    grid of search results, with a back arrow to the home view.
  * GIFs are shown large (unlike emojis they'd be unreadable small). Tapping a GIF inserts it; long-pressing
- * a recently used GIF removes it from history. Requires a free KLIPY API key (Settings → Emojis & GIFs);
- * without one an onboarding empty-state is shown. Attribution per KLIPY's terms.
+ * a recently used GIF removes it from history. Uses the KLIPY key built into release builds, or the
+ * user's own (Settings → Emojis & GIFs); with neither, an onboarding empty-state is shown. Attribution per KLIPY's terms.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -117,7 +117,9 @@ fun GifPanel(
     val inputFeedbackController = LocalInputFeedbackController.current
     // "Enable GIF search" off means no request to KLIPY at all, key or not: every request below waits on
     // this, so the switch is what it says rather than a label in the settings.
-    val hasKey = searchEnabled && apiKey.isNotBlank()
+    // The user's own key, or else the one built into release builds (GifApiKey), so a fresh install
+    // searches GIFs with no setup.
+    val hasKey = searchEnabled && GifApiKey.effective(apiKey).isNotBlank()
 
     var gifs by remember { mutableStateOf<List<GifItem>>(emptyList()) }
     var page by remember { mutableStateOf(1) }
