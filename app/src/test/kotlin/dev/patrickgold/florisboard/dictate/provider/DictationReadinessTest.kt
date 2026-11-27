@@ -114,19 +114,65 @@ class DictationReadinessTest {
     // --- the picker's choices -----------------------------------------------------------------------
 
     @Test
-    fun `the picker offers Tiny, Base and Small with Base recommended`() {
+    fun `for other languages the picker offers Tiny, Base and Small with Base recommended`() {
+        listOf("de", "fr", "pt-BR", "zh_CN").forEach { lang ->
+            assertEquals(
+                listOf("whisper-tiny", "whisper-base", "whisper-small"),
+                DictationReadiness.choicesFor(lang).map { it.spec.id },
+                lang,
+            )
+            assertEquals("whisper-base", DictationReadiness.recommendedFor(lang).spec.id)
+        }
+        // The non-English recommendation is also what a blank on-device pick resolves to.
+        assertEquals(ProviderRegistry.LOCAL.defaultTranscriptionModel, DictationReadiness.recommendedFor("de").spec.id)
+    }
+
+    @Test
+    fun `for English the picker leads with Parakeet, recommended, then Whisper Base and Small`() {
+        listOf("en", "EN", "en-US", "en_GB").forEach { lang ->
+            val shown = DictationReadiness.choicesFor(lang)
+            assertEquals(listOf("parakeet-tdt-110m-en", "whisper-base", "whisper-small"), shown.map { it.spec.id }, lang)
+            assertEquals("parakeet-tdt-110m-en", DictationReadiness.recommendedFor(lang).spec.id)
+            assertEquals(1, shown.count { it.recommended })
+            assertTrue(shown.first().englishOnly)
+            assertTrue(shown.drop(1).none { it.englishOnly })
+        }
+    }
+
+    @Test
+    fun `Parakeet is at least as fast and as accurate as every Whisper it is offered beside`() {
+        val (parakeet) = DictationReadiness.choicesFor("en")
+        DictationReadiness.choices.filter { it.spec.id.startsWith("whisper") }.forEach {
+            assertTrue(parakeet.speed >= it.speed && parakeet.accuracy >= it.accuracy, it.spec.id)
+        }
+    }
+
+    @Test
+    fun `an installed model stays in the list even when its language list leaves it out`() {
+        val shown = DictationReadiness.visibleChoices("en", setOf("whisper-tiny"))
         assertEquals(
-            listOf("whisper-tiny", "whisper-base", "whisper-small"),
-            DictationReadiness.choices.map { it.spec.id },
+            listOf("parakeet-tdt-110m-en", "whisper-base", "whisper-small", "whisper-tiny"),
+            shown.map { it.spec.id },
         )
-        assertEquals("whisper-base", DictationReadiness.recommended.spec.id)
-        // The recommendation is also what a blank on-device pick resolves to.
-        assertEquals(ProviderRegistry.LOCAL.defaultTranscriptionModel, DictationReadiness.recommended.spec.id)
+        assertEquals(1, shown.count { it.recommended })
+        assertEquals(
+            DictationReadiness.choicesFor("de").map { it.spec.id },
+            DictationReadiness.visibleChoices("de", setOf("parakeet-tdt-110m-en", "whisper-small")).dropLast(1).map { it.spec.id },
+        )
+        assertEquals(DictationReadiness.choicesFor("en"), DictationReadiness.visibleChoices("en", emptySet()))
+    }
+
+    @Test
+    fun `the picker plans for the dictation language, or the phone's when it detects`() {
+        assertEquals("en", DictationReadiness.pickerLanguage("detect", "en"))
+        assertEquals("en", DictationReadiness.pickerLanguage("", "en"))
+        assertEquals("de", DictationReadiness.pickerLanguage("de", "en"))
+        assertEquals("en", DictationReadiness.pickerLanguage(" en ", "de"))
     }
 
     @Test
     fun `the bars trade speed against accuracy and size`() {
-        val (tiny, base, small) = DictationReadiness.choices
+        val (tiny, base, small) = DictationReadiness.choicesFor("de")
         assertTrue(tiny.speed > base.speed && base.speed > small.speed)
         assertTrue(tiny.accuracy < base.accuracy && base.accuracy < small.accuracy)
         assertTrue(tiny.spec.totalBytes < base.spec.totalBytes && base.spec.totalBytes < small.spec.totalBytes)
@@ -140,7 +186,13 @@ class DictationReadinessTest {
     // The sizes on the cards come from the files actually downloaded, the VAD included.
     @Test
     fun `the card sizes are the real download sizes`() {
-        assertEquals(listOf(104, 161, 376), DictationReadiness.choices.map { it.megabytes })
+        assertEquals(listOf(104, 161, 376), DictationReadiness.choicesFor("de").map { it.megabytes })
+        assertEquals(137, DictationReadiness.choicesFor("en").first().megabytes)
+    }
+
+    @Test
+    fun `every card has a short name that fits a narrow card`() {
+        DictationReadiness.choices.forEach { assertTrue(it.shortName.isNotBlank() && it.shortName.length <= 8, it.spec.id) }
     }
 
     @Test

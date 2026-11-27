@@ -18,6 +18,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -148,65 +155,93 @@ fun LocalModelSection(
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
-        // Long-press "send with local model" shortcut (issue #228): a short explainer + checkbox below the
-        // general on-device intro. When on, holding the send button while recording transcribes with the
-        // selected on-device model instead of the cloud provider (plain recording only).
-        val scope = rememberCoroutineScope()
-        // Local state (persisted immediately) — avoids importing the jetpref collectAsState, which would
-        // clash by name with the runtime collectAsState already used for the download flows above.
-        var longPressLocal by remember { mutableStateOf(prefs.dictate.longPressSendLocalModel.get()) }
-        fun setLongPressLocal(value: Boolean) {
-            longPressLocal = value
-            scope.launch { prefs.dictate.longPressSendLocalModel.set(value) }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { setLongPressLocal(!longPressLocal) }
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = longPressLocal,
-                onCheckedChange = { setLongPressLocal(it) },
-            )
-            Text(
-                text = stringRes(R.string.dictate__local_longpress_send_summary),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 8.dp).weight(1f),
-            )
-        }
-
-        // Idle-unload timeout: after how long an idle on-device model is freed from RAM. The model is
-        // always also freed on an Android memory-pressure signal; this only covers the "app alive but not
-        // dictating" window. 0 = only on memory pressure.
-        var unloadMin by remember { mutableStateOf(prefs.dictate.localModelUnloadMinutes.get()) }
-        Text(
-            text = if (unloadMin <= 0) {
-                stringRes(R.string.dictate__local_unload_pressure)
-            } else {
-                stringRes(R.string.dictate__local_unload_after, "n" to unloadMin)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        Slider(
-            value = unloadMin.toFloat(),
-            onValueChange = { unloadMin = it.roundToInt() },
-            onValueChangeFinished = {
-                scope.launch { prefs.dictate.localModelUnloadMinutes.set(unloadMin) }
-            },
-            valueRange = 0f..30f,
-            steps = 5,
-        )
-        HorizontalDivider(modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
-
         // One list, in catalog order, with only the live models set apart. Ordered there by what most
         // people will want rather than by architecture, so the small broadly-useful models come first
         // and Whisper sits at the bottom.
         ModelRows(LocalModelCatalog.visibleTopLevel(installed), rowState, rowActions) { openFamily = it }
+
+        // The two options are for people who know they want them (David, 2026-11-27: the checkbox and
+        // slider above the list read as the point of the dialog). Folded under "Advanced", below the list.
+        var advancedOpen by remember { mutableStateOf(false) }
+        // Outside the folded block, so a change saved just before folding it is not cancelled with it.
+        val scope = rememberCoroutineScope()
+        val advancedState = stringRes(
+            if (advancedOpen) R.string.typebetter__local_advanced_open else R.string.typebetter__local_advanced_closed,
+        )
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button) { advancedOpen = !advancedOpen }
+                .semantics { stateDescription = advancedState }
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringRes(R.string.typebetter__local_advanced),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = if (advancedOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+            )
+        }
+        if (advancedOpen) {
+            Column {
+                // Long-press "send with local model" shortcut (issue #228): a short explainer + checkbox. When on, holding the send button while recording transcribes with the
+                // selected on-device model instead of the cloud provider (plain recording only).
+                // Local state (persisted immediately) — avoids importing the jetpref collectAsState, which would
+                // clash by name with the runtime collectAsState already used for the download flows above.
+                var longPressLocal by remember { mutableStateOf(prefs.dictate.longPressSendLocalModel.get()) }
+                fun setLongPressLocal(value: Boolean) {
+                    longPressLocal = value
+                    scope.launch { prefs.dictate.longPressSendLocalModel.set(value) }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { setLongPressLocal(!longPressLocal) }
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = longPressLocal,
+                        onCheckedChange = { setLongPressLocal(it) },
+                    )
+                    Text(
+                        text = stringRes(R.string.dictate__local_longpress_send_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 8.dp).weight(1f),
+                    )
+                }
+
+                // Idle-unload timeout: after how long an idle on-device model is freed from RAM. The model is
+                // always also freed on an Android memory-pressure signal; this only covers the "app alive but not
+                // dictating" window. 0 = only on memory pressure.
+                var unloadMin by remember { mutableStateOf(prefs.dictate.localModelUnloadMinutes.get()) }
+                Text(
+                    text = if (unloadMin <= 0) {
+                        stringRes(R.string.dictate__local_unload_pressure)
+                    } else {
+                        stringRes(R.string.dictate__local_unload_after, "n" to unloadMin)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Slider(
+                    value = unloadMin.toFloat(),
+                    onValueChange = { unloadMin = it.roundToInt() },
+                    onValueChangeFinished = {
+                        scope.launch { prefs.dictate.localModelUnloadMinutes.set(unloadMin) }
+                    },
+                    valueRange = 0f..30f,
+                    steps = 5,
+                )
+            }
+        }
     }
 
     openFamily?.let { entry ->

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +46,7 @@ import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
 import dev.patrickgold.florisboard.dictate.provider.LocalModelDownloads
 import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
+import dev.patrickgold.florisboard.dictate.ui.deviceLanguage
 import dev.patrickgold.florisboard.dictate.ui.useDownloadedModel
 import dev.patrickgold.florisboard.dictate.ui.useModel
 import dev.patrickgold.jetpref.datastore.model.collectAsState as collectPrefAsState
@@ -54,19 +56,21 @@ import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
 
 /**
- * The top of the Dictation settings (David, 2026-11-26): Whisper Tiny, Base and Small as a choice, with
- * real sizes, speed and accuracy bars and the download state, plus the names dictation listens for. The
- * same models and the same switch-over as the keyboard's setup sheet (DictationSetupPanel), so either
- * place can be used and they always agree.
+ * The top of the Dictation settings (David, 2026-11-26): the voice models for the dictation language
+ * (Parakeet first for English, David 2026-11-27; Whisper Tiny, Base and Small otherwise), with real
+ * sizes, speed and accuracy bars and the download state, plus the names dictation listens for. The same
+ * models and the same switch-over as the keyboard's setup sheet (DictationSetupPanel), so either place
+ * can be used and they always agree. Every other on-device model sits under AI providers, On-device.
  */
 @Composable
-internal fun VoiceModelSection(onOpenWords: () -> Unit) {
+internal fun VoiceModelSection(onOpenWords: () -> Unit, onOpenAllModels: () -> Unit) {
     val context = LocalContext.current
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
 
     val providerId by prefs.dictate.transcriptionProviderId.collectPrefAsState()
     val accounts by prefs.dictate.providerAccounts.collectPrefAsState()
+    val activeLanguage by prefs.dictate.activeInputLanguage.collectPrefAsState()
     val downloads by LocalModelDownloads.state.collectAsState()
     val installedTick by LocalModelDownloads.installedTick.collectAsState()
     val installed = remember(installedTick) {
@@ -77,6 +81,8 @@ internal fun VoiceModelSection(onOpenWords: () -> Unit) {
     } else {
         null
     }
+    val language = DictationReadiness.pickerLanguage(activeLanguage, deviceLanguage(context))
+    val shown = remember(language, installed) { DictationReadiness.visibleChoices(language, installed) }
     val pickerIds = DictationReadiness.choices.map { it.spec.id }.toSet()
     val activeDownload = downloads.values.firstOrNull { it.modelId in pickerIds && it.error == null }
     val failed = downloads.values.firstOrNull { it.modelId in pickerIds && it.error != null }
@@ -112,7 +118,7 @@ internal fun VoiceModelSection(onOpenWords: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        DictationReadiness.choices.forEach { choice ->
+        shown.forEach { choice ->
             val id = choice.spec.id
             val state = downloads[id]
             val status = when {
@@ -154,6 +160,11 @@ internal fun VoiceModelSection(onOpenWords: () -> Unit) {
             else -> stringRes(R.string.typebetter__voice_pick_hint)
         }
         Text(message, fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // The full on-device list (other languages, live models, delete) one tap away, so nobody has to
+        // know it sits under AI providers (David, 2026-11-27: "I can't even find the screen").
+        TextButton(onClick = onOpenAllModels) {
+            Text(stringRes(R.string.typebetter__voice_all_models))
+        }
     }
 
     NamesItListensFor(onOpenWords = onOpenWords)
@@ -185,7 +196,27 @@ private fun ModelChoice(
             RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(choice.spec.displayName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurface)
-                Text(status, fontSize = 13.sp, color = scheme.onSurfaceVariant)
+                if (choice.recommended) {
+                    Text(
+                        text = stringRes(
+                            if (choice.englishOnly) R.string.typebetter__voice_best_english
+                            else R.string.typebetter__voice_recommended,
+                        ),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = scheme.onPrimary,
+                        modifier = Modifier
+                            .padding(vertical = 2.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(scheme.primary)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+                val languages = stringRes(
+                    if (choice.englishOnly) R.string.typebetter__voice_english_only
+                    else R.string.typebetter__voice_any_language,
+                )
+                Text("$languages · $status", fontSize = 13.sp, color = scheme.onSurfaceVariant)
             }
             Text(
                 text = stringRes(R.string.typebetter__voice_size, "mb" to choice.megabytes),

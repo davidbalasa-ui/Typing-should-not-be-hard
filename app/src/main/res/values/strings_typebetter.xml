@@ -96,7 +96,9 @@
     <string name="dictate__setup_recommended" comment="Badge on the recommended model">Recommended</string>
     <string name="dictate__setup_blurb_tiny" comment="Very short description of Whisper Tiny">Fastest, smallest</string>
     <string name="dictate__setup_blurb_base" comment="Very short description of Whisper Base">Best balance</string>
-    <string name="dictate__setup_blurb_small" comment="Very short description of Whisper Small">Most accurate</string>
+    <string name="dictate__setup_blurb_small" comment="Very short description of Whisper Small">Most accurate Whisper</string>
+    <string name="typebetter__setup_blurb_parakeet" comment="Very short description of Parakeet, the English model">Fast, accurate, adds punctuation</string>
+    <string name="typebetter__setup_blurb_any_language" comment="Very short description of Whisper Base when an English model is offered beside it">Any language</string>
     <string name="dictate__setup_action_download" comment="Status on a model card that has not been downloaded">Tap to download</string>
     <string name="dictate__setup_action_retry" comment="Status on a model card whose download failed">Tap to retry</string>
     <string name="dictate__setup_action_use" comment="Status on a model card that is already downloaded but not in use">Downloaded. Tap to use</string>
@@ -303,7 +305,15 @@
     <string name="typebetter__quick_add_done">Saved ({count}). Your keyboard uses it from now on.</string>
     <string name="typebetter__quick_add_word_failed">Could not add the word. The personal dictionary may be off: switch it on in Settings, Dictionary.</string>
 
-    <string name="typebetter__voice_model_section">Whisper model</string>
+    <string name="typebetter__voice_model_section">Voice model</string>
+    <string name="typebetter__voice_best_english">Best for English</string>
+    <string name="typebetter__voice_recommended">Recommended</string>
+    <string name="typebetter__local_advanced">Advanced</string>
+    <string name="typebetter__local_advanced_open">Expanded</string>
+    <string name="typebetter__local_advanced_closed">Collapsed</string>
+    <string name="typebetter__voice_english_only">English only</string>
+    <string name="typebetter__voice_any_language">Any language</string>
+    <string name="typebetter__voice_all_models">All voice models</string>
     <string name="typebetter__voice_more_section">More dictation settings</string>
     <string name="typebetter__voice_size">~{mb} MB</string>
     <string name="typebetter__voice_speed">Speed</string>
