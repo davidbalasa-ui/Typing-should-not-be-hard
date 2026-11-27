@@ -255,6 +255,19 @@
     <string name="typebetter__home_gif">GIF search</string>
     <string name="typebetter__home_gif_summary">Search GIFs from the emoji panel</string>
     <string name="typebetter__home_about_summary">Built on Dictate and FlorisBoard</string>
+    <string name="typebetter__update_title">Check for updates</string>
+    <string name="typebetter__update_build">build {build}</string>
+    <string name="typebetter__update_checking">You have {current}. Asking Google Play…</string>
+    <string name="typebetter__update_up_to_date">You have {current}, the newest on Google Play. A new build can take up to an hour to show here. Tap to check again.</string>
+    <string name="typebetter__update_available">Build {new} is ready (you have {current}). Tap Update to install it here.</string>
+    <string name="typebetter__update_available_store">Build {new} is ready (you have {current}). Tap Update to get it in the Play Store.</string>
+    <string name="typebetter__update_in_progress">Updating…</string>
+    <string name="typebetter__update_in_progress_percent">Downloading the update… {percent}%</string>
+    <string name="typebetter__update_ready">Downloaded. Tap Restart to switch to the new build.</string>
+    <string name="typebetter__update_not_from_play">You have {current}. This copy was not installed from Google Play, so it cannot update here. Tap to check again.</string>
+    <string name="typebetter__update_failed">You have {current}. Could not reach Google Play. Tap to try again.</string>
+    <string name="typebetter__update_button">Update</string>
+    <string name="typebetter__update_restart">Restart</string>
 
     <string name="typebetter__tag_auto">Auto-fix</string>
     <string name="typebetter__tag_suggest">Suggest only</string>

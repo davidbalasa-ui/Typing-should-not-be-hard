@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ShortText
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import com.typebetter.keyboard.PersonalWords
+import com.typebetter.keyboard.settings.CheckForUpdatesRow
 import com.typebetter.keyboard.settings.TbDisplayTitle
 import com.typebetter.keyboard.settings.TbIntro
 import com.typebetter.keyboard.settings.TbRow
@@ -472,6 +473,7 @@ fun HomeScreen() = FlorisScreen {
             icon = Icons.AutoMirrored.Outlined.HelpOutline,
             onClick = { context.launchUrl(R.string.dictate__wiki_url) },
         )
+        CheckForUpdatesRow()
         TbRow(
             title = stringRes(R.string.about__title),
             summary = stringRes(R.string.typebetter__home_about_summary),

@@ -109,10 +109,17 @@ release() {
 commit() {
   call POST "$base/edits/$edit:commit" > /dev/null && return 0
   grep -qi 'changesNotSentForReview' "$work/err" || return 1
-  call POST "$base/edits/$edit:commit?changesNotSentForReview=true" > /dev/null
+  call POST "$base/edits/$edit:commit?changesNotSentForReview=true" > /dev/null || return 1
+  # Play kept the release back for a person to send: say so, or a green job hides an update nobody gets.
+  held_for_review=1
 }
+held_for_review=0
 if release completed; then
-  echo "Released $name (version code $version) to the $track track. Testers get it from the Play Store."
+  if [ "$held_for_review" = 1 ]; then
+    echo "::warning::Saved $name (version code $version) to the $track track, but Play would not send it out on its own. Open Play Console > Publishing overview and tap 'Send changes for review'; testers get it after that."
+  else
+    echo "Released $name (version code $version) to the $track track and sent it out. Testers get it from the Play Store, usually within minutes."
+  fi
 elif grep -qi 'status draft may be created on draft app' "$work/err"; then
   # A failed commit leaves the edit open, so the same edit can be committed as a draft.
   release draft || fail "Play refused the draft release."
