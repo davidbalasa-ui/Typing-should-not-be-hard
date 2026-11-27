@@ -133,7 +133,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                 // resetSuggestions that the commit below triggers a no-op, so they aren't wiped (issue #127).
                 nlpManager.suggestDirectly(suggestionList, holdNext = commit)
                 if (commit && suggestions.isNotEmpty()) {
-                    keyboardManager.commitGesture(suggestions.first())
+                    keyboardManager.commitGesture(suggestions.first(), alternatives = suggestions.drop(1))
                 }
                 callback.invoke(true)
             }
