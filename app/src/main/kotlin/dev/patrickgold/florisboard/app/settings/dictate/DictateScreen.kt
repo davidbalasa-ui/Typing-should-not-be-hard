@@ -123,6 +123,13 @@ fun DictateScreen() = FlorisScreen {
     content {
         val navController = LocalNavController.current
 
+        // TypeBetter: which Whisper model and the names it listens for come first (David, 2026-11-26;
+        // docs/decisions/2026-11-26-personal-settings-page.md). The rows below are unchanged.
+        com.typebetter.keyboard.settings.VoiceModelSection(
+            onOpenWords = { navController.navigate(Routes.Settings.TypeBetterWords) },
+        )
+        com.typebetter.keyboard.settings.TbSectionLabel(stringRes(R.string.typebetter__voice_more_section))
+
         // The active providers' display names, for the summary of the providers row. Show both the
         // transcription and (when rewording is on) the rewording provider, since they are configured
         // independently and often differ — the row previously surfaced only the transcription one.

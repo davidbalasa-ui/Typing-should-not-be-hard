@@ -453,7 +453,7 @@ private fun FractionBar(fraction: Float, fill: Color, track: Color, minFraction:
  * Points the on-device engine at [spec] and makes it the active transcription provider, the setup
  * wizard's own recipe ([DictationReadiness.withLocalModel]).
  */
-private suspend fun useModel(spec: LocalModelSpec) {
+internal suspend fun useModel(spec: LocalModelSpec) {
     val prefs by FlorisPreferenceStore
     prefs.dictate.providerAccounts.set(DictationReadiness.withLocalModel(prefs.dictate.providerAccounts.get(), spec.id))
     prefs.dictate.transcriptionProviderId.set(ProviderRegistry.LOCAL.id)
@@ -463,7 +463,7 @@ private suspend fun useModel(spec: LocalModelSpec) {
  * [useModel] once a download has finished, perhaps with the sheet long closed, on the main thread, plus a
  * toast saying dictation is ready.
  */
-private suspend fun useDownloadedModel(context: Context, spec: LocalModelSpec) {
+internal suspend fun useDownloadedModel(context: Context, spec: LocalModelSpec) {
     withContext(Dispatchers.Main) {
         useModel(spec)
         val text = context.getString(R.string.dictate__setup_ready_toast).curlyFormat("model" to spec.displayName)
