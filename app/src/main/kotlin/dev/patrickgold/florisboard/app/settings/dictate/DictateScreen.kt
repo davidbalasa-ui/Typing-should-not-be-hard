@@ -123,10 +123,16 @@ fun DictateScreen() = FlorisScreen {
     content {
         val navController = LocalNavController.current
 
-        // TypeBetter: which Whisper model and the names it listens for come first (David, 2026-11-26;
+        // TypeBetter: which voice model and the names it listens for come first (David, 2026-11-26;
         // docs/decisions/2026-11-26-personal-settings-page.md). The rows below are unchanged.
         com.typebetter.keyboard.settings.VoiceModelSection(
             onOpenWords = { navController.navigate(Routes.Settings.TypeBetterWords) },
+            onOpenAllModels = {
+                // Straight into the On-device editor; a model picked there becomes the dictation engine,
+                // just as one picked in the list above does.
+                ProviderSetupHandoff.openEditorFor = ProviderRegistry.LOCAL.id
+                navController.navigate(Routes.Settings.DictateProviders)
+            },
         )
         com.typebetter.keyboard.settings.TbSectionLabel(stringRes(R.string.typebetter__voice_more_section))
 

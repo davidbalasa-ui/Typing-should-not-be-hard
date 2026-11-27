@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,7 +63,7 @@ import org.florisboard.lib.compose.stringRes
  * can be used and they always agree. Every other on-device model sits under AI providers, On-device.
  */
 @Composable
-internal fun VoiceModelSection(onOpenWords: () -> Unit) {
+internal fun VoiceModelSection(onOpenWords: () -> Unit, onOpenAllModels: () -> Unit) {
     val context = LocalContext.current
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
@@ -159,6 +160,11 @@ internal fun VoiceModelSection(onOpenWords: () -> Unit) {
             else -> stringRes(R.string.typebetter__voice_pick_hint)
         }
         Text(message, fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // The full on-device list (other languages, live models, delete) one tap away, so nobody has to
+        // know it sits under AI providers (David, 2026-11-27: "I can't even find the screen").
+        TextButton(onClick = onOpenAllModels) {
+            Text(stringRes(R.string.typebetter__voice_all_models))
+        }
     }
 
     NamesItListensFor(onOpenWords = onOpenWords)

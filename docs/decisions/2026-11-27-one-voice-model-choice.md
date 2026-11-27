@@ -27,3 +27,7 @@ providers dialog is the full upstream catalog. Whichever was used last wins.
   "Advanced" below the list.
 - `ProviderRegistry.LOCAL.defaultTranscriptionModel` stays `whisper-base`: it is what a blank pick resolves
   to for anyone, in any language, so changing it could move people who never chose.
+- David could not find the full list (it was Dictate, scroll, AI providers, On-device). The Voice model
+  section now ends with an "All voice models" link that opens the On-device editor directly (through
+  `ProviderSetupHandoff`), and a model picked there becomes the dictation engine on OK, like one picked
+  in the simple list.
