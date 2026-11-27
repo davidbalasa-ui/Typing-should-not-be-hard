@@ -67,6 +67,7 @@ class CorrectionUndoTest {
     @Test
     fun `the longest shorter word wins`() {
         assertEquals("need", CorrectionUndo.glideUndoTarget("needed", listOf("nee", "need", "ne")))
+        assertEquals("seeds", CorrectionUndo.glideUndoTarget("seedses", listOf("seed", "seeds")))
     }
 
     @Test
@@ -81,9 +82,19 @@ class CorrectionUndoTest {
     }
 
     @Test
-    fun `at most three letters come off`() {
+    fun `only a word ending comes off`() {
         assertEquals("walk", CorrectionUndo.glideUndoTarget("walking", listOf("walk")))
+        assertEquals("stop", CorrectionUndo.glideUndoTarget("stopped", listOf("stop")))
+        assertEquals("box", CorrectionUndo.glideUndoTarget("boxes", listOf("box")))
         assertNull(CorrectionUndo.glideUndoTarget("therefore", listOf("the", "there")))
-        assertEquals("there", CorrectionUndo.glideUndoTarget("therein", listOf("the", "there")))
+        assertNull(CorrectionUndo.glideUndoTarget("therein", listOf("there")))
+        assertNull(CorrectionUndo.glideUndoTarget("walker", listOf("walk")))
+    }
+
+    @Test
+    fun `a short word is never shortened into another word`() {
+        assertNull(CorrectionUndo.glideUndoTarget("your", listOf("you")))
+        assertNull(CorrectionUndo.glideUndoTarget("then", listOf("the")))
+        assertNull(CorrectionUndo.glideUndoTarget("and", listOf("an")))
     }
 }
