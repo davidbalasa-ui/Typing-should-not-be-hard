@@ -3,7 +3,9 @@
 # Checks: the JWT is signed with the service account key and asks for the androidpublisher scope; the
 # bundle bytes arrive unchanged; the track gets the uploaded version code; and the three outcomes
 # (normal app, never-rolled-out "draft" app, re-run of an already uploaded version code) all end right.
-# Also checks a broken secret fails with a plain message. Needs python3, openssl, jq, curl.
+# Also checks a broken secret fails with a plain message, and the keyless route (tools/play-wif-token.sh):
+# GitHub identity token -> Google STS -> service account access token -> the same upload.
+# Needs python3, openssl, jq, curl.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 T=$(mktemp -d)
@@ -33,8 +35,25 @@ class H(BaseHTTPRequestHandler):
         if self.headers.get("Authorization") != "Bearer tok-123":
             self.send(401, {"error": "bad token"}); return False
         return True
+    def do_GET(self):
+        if self.path.startswith("/oidc?"):
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            log({"step": "oidc", "audience": q.get("audience", [""])[0], "auth": self.headers.get("Authorization")})
+            return self.send(200, {"value": "gh-jwt-1"})
+        self.send(404, {})
     def do_POST(self):
         p = self.path; data = self.body()
+        if p == "/sts":
+            f = json.loads(data)
+            log({"step": "sts", "body": f})
+            if mode() == "sts-refuse" or f.get("subjectToken") != "gh-jwt-1":
+                return self.send(400, {"error": "invalid_grant", "error_description": "The given credential is rejected by the attribute condition."})
+            return self.send(200, {"access_token": "fed-1", "token_type": "Bearer"})
+        if p.startswith("/v1/projects/-/serviceAccounts/") and p.endswith(":generateAccessToken"):
+            log({"step": "impersonate", "path": p, "auth": self.headers.get("Authorization"), "body": json.loads(data)})
+            if mode() == "sa-refuse" or self.headers.get("Authorization") != "Bearer fed-1":
+                return self.send(403, {"error": {"code": 403, "message": "Permission 'iam.serviceAccounts.getAccessToken' denied", "status": "PERMISSION_DENIED"}})
+            return self.send(200, {"accessToken": "tok-123", "expireTime": "2099-01-01T00:00:00Z"})
         if p == "/token":
             f = urllib.parse.parse_qs(data.decode())
             h, c, s = f["assertion"][0].split(".")
@@ -88,7 +107,8 @@ export PLAY_API_BASE="http://127.0.0.1:$port" PLAY_TOKEN_URL="http://127.0.0.1:$
 export PLAY_SERVICE_ACCOUNT_JSON
 PLAY_SERVICE_ACCOUNT_JSON=$(jq -n --rawfile k "$T/sa.pem" '{type:"service_account", client_email:"ci@p.iam.gserviceaccount.com", private_key:$k}')
 up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.poeticsquirrel.typebetter internal "Build 31" 142031 > "$T/out" 2>&1; }
-check() { jq -se "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
+check() { local a=(); [ "$1" = --arg ] && { a=(--arg "$2" "$3"); shift 3; }
+  jq -se "${a[@]}" "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
 
 rm -f "$T/log.jsonl"; up || { echo "FAIL: normal upload exited non-zero"; cat "$T/out"; exit 1; }
 check '.[0].type=="application/x-www-form-urlencoded" and .[0].claims.aud==env.PLAY_TOKEN_URL and .[0].sig_ok and .[0].claims.scope=="https://www.googleapis.com/auth/androidpublisher" and .[0].claims.iss=="ci@p.iam.gserviceaccount.com" and (.[0].claims.exp-.[0].claims.iat)==3600 and .[0].grant=="urn:ietf:params:oauth:grant-type:jwt-bearer"' "JWT is not a valid signed service-account assertion"
@@ -122,3 +142,36 @@ echo normal > "$T/mode"
 if PLAY_SERVICE_ACCOUNT_JSON='not json' up; then echo "FAIL: a broken secret was accepted"; exit 1; fi
 grep -q "not a service account key file" "$T/out" || { echo "FAIL: broken secret gave no plain message"; cat "$T/out"; exit 1; }
 echo "OK: a broken secret fails with a plain message"
+
+# Keyless route: no key file, a GitHub identity traded for a service account token.
+echo normal > "$T/mode"; rm -f "$T/log.jsonl"
+wif() {
+  env -u PLAY_SERVICE_ACCOUNT_JSON ACTIONS_ID_TOKEN_REQUEST_URL="http://127.0.0.1:$port/oidc?x=1" \
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN=req-1 PLAY_STS_URL="http://127.0.0.1:$port/sts" \
+    PLAY_IAMCREDENTIALS_BASE="http://127.0.0.1:$port" PLAY_GCP_PROJECT_NUMBER="${1:-123456789012}" \
+    PLAY_SERVICE_ACCOUNT="${2:-typebetter-upload@p.iam.gserviceaccount.com}" \
+    bash "$repo/tools/play-wif-token.sh" > "$T/tok" 2> "$T/out"
+}
+wif || { echo "FAIL: keyless token exited non-zero"; cat "$T/out"; exit 1; }
+[ "$(cat "$T/tok")" = tok-123 ] || { echo "FAIL: keyless token printed the wrong thing"; cat "$T/tok"; exit 1; }
+grep -E 'tok-123|fed-1|gh-jwt-1' "$T/out" | grep -qv '^::add-mask::' && { echo "FAIL: a token reached the log without a mask"; cat "$T/out"; exit 1; }
+for t in gh-jwt-1 fed-1 tok-123; do grep -qx "::add-mask::$t" "$T/out" || { echo "FAIL: $t not masked"; exit 1; }; done
+prov=projects/123456789012/locations/global/workloadIdentityPools/github/providers/github
+check --arg p "$prov" '.[0].step=="oidc" and .[0].audience==("https://iam.googleapis.com/"+$p) and .[0].auth=="bearer req-1"' "GitHub identity token not asked for the provider's audience"
+check --arg p "$prov" 'map(select(.step=="sts"))[0].body | .audience==("//iam.googleapis.com/"+$p) and .subjectToken=="gh-jwt-1" and .grantType=="urn:ietf:params:oauth:grant-type:token-exchange" and .subjectTokenType=="urn:ietf:params:oauth:token-type:jwt"' "STS exchange malformed"
+check 'map(select(.step=="impersonate"))[0] | .path=="/v1/projects/-/serviceAccounts/typebetter-upload@p.iam.gserviceaccount.com:generateAccessToken" and .auth=="Bearer fed-1" and .body.scope==["https://www.googleapis.com/auth/androidpublisher"]' "service account not borrowed with the Play scope only"
+rm -f "$T/log.jsonl"
+PLAY_ACCESS_TOKEN=$(cat "$T/tok") PLAY_SERVICE_ACCOUNT_JSON= up || { echo "FAIL: upload with a keyless token exited non-zero"; cat "$T/out"; exit 1; }
+check '(map(select(.step=="token"))|length==0) and (map(select(.step=="commit"))|length==1) and .[0].step=="edit"' "keyless upload still asked for a key-file token"
+echo "OK: keyless route: GitHub identity -> Google STS -> service account token, then the same upload"
+
+echo sts-refuse > "$T/mode"
+if wif; then echo "FAIL: a refused GitHub identity was accepted"; exit 1; fi
+grep -q "did not accept this run's GitHub identity (invalid_grant" "$T/out" || { echo "FAIL: STS refusal gave no plain message"; cat "$T/out"; exit 1; }
+echo sa-refuse > "$T/mode"
+if wif; then echo "FAIL: a refused service account was accepted"; exit 1; fi
+grep -q "Workload Identity User" "$T/out" || { echo "FAIL: impersonation refusal gave no plain message"; cat "$T/out"; exit 1; }
+echo normal > "$T/mode"
+if wif my-project-id; then echo "FAIL: a project id was accepted as the number"; exit 1; fi
+grep -q "project NUMBER" "$T/out" || { echo "FAIL: bad project number gave no plain message"; cat "$T/out"; exit 1; }
+echo "OK: keyless refusals (identity, service account, project number) fail with plain messages"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Uploads one app bundle to a Google Play testing track through the Play Developer API (v3).
 #
+#   PLAY_ACCESS_TOKEN          a ready Google access token (keyless sign-in, from tools/play-wif-token.sh), or
 #   PLAY_SERVICE_ACCOUNT_JSON  the service account key (JSON text, from the repository secret)
 #   tools/play-upload.sh <bundle.aab> <package name> <track> <release name> <version code>
 #
@@ -25,7 +26,9 @@ track=${3:?track}
 name=${4:?release name}
 expected_version=${5:?version code}
 api=${PLAY_API_BASE:-https://androidpublisher.googleapis.com}
-: "${PLAY_SERVICE_ACCOUNT_JSON:?PLAY_SERVICE_ACCOUNT_JSON is not set}"
+if [ -z "${PLAY_ACCESS_TOKEN:-}" ] && [ -z "${PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
+  echo "::error::Neither PLAY_ACCESS_TOKEN nor PLAY_SERVICE_ACCOUNT_JSON is set."; exit 1
+fi
 [ -s "$aab" ] || { echo "::error::No bundle at $aab"; exit 1; }
 
 work=$(mktemp -d)
@@ -33,22 +36,6 @@ trap 'rm -rf "$work"' EXIT
 umask 077
 
 b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-
-# The secret is JSON text; anything else is the most likely setup mistake, so say so plainly.
-if ! printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -e '.client_email and .private_key' > /dev/null 2>&1; then
-  echo "::error::PLAY_SERVICE_ACCOUNT_JSON is not a service account key file. Paste the whole downloaded .json file as the secret value."
-  exit 1
-fi
-email=$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .client_email)
-printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .private_key > "$work/key.pem"
-token_url=${PLAY_TOKEN_URL:-$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.token_uri // "https://oauth2.googleapis.com/token"')}
-
-now=$(date +%s)
-header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
-claims=$(jq -cn --arg iss "$email" --arg aud "$token_url" --argjson iat "$now" \
-  '{iss:$iss, scope:"https://www.googleapis.com/auth/androidpublisher", aud:$aud, iat:$iat, exp:($iat+3600)}' | b64url)
-signature=$(printf '%s.%s' "$header" "$claims" | openssl dgst -sha256 -sign "$work/key.pem" | b64url)
-rm -f "$work/key.pem"
 
 # call METHOD URL [curl args...]: prints the body; returns 1 on an HTTP error, with the body in $work/err.
 call() {
@@ -62,15 +49,36 @@ call() {
 }
 fail() { echo "::error::$1"; sed 's/^/  /' "$work/err" >&2; exit 1; }
 
-token=$(curl -sS --max-time 60 --retry 3 "$token_url" \
-  --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
-  --data-urlencode "assertion=$header.$claims.$signature") || token='{}'
-access=$(printf '%s' "$token" | jq -r '.access_token // empty' 2>/dev/null || true)
-if [ -z "$access" ]; then
-  # Google's error text (for example invalid_grant, or a deleted key) holds no secret.
-  why=$(printf '%s' "$token" | jq -r '[.error, .error_description] | map(select(.)) | join(": ")' 2>/dev/null || true)
-  echo "::error::Google refused the service account key${why:+ ($why)}. Check that PLAY_SERVICE_ACCOUNT_JSON is the current key file."
-  exit 1
+if [ -n "${PLAY_ACCESS_TOKEN:-}" ]; then
+  # Keyless sign-in: the token was already made for the androidpublisher scope.
+  access=$PLAY_ACCESS_TOKEN
+else
+  # The secret is JSON text; anything else is the most likely setup mistake, so say so plainly.
+  if ! printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -e '.client_email and .private_key' > /dev/null 2>&1; then
+    echo "::error::PLAY_SERVICE_ACCOUNT_JSON is not a service account key file. Paste the whole downloaded .json file as the secret value."
+    exit 1
+  fi
+  email=$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .client_email)
+  printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r .private_key > "$work/key.pem"
+  token_url=${PLAY_TOKEN_URL:-$(printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.token_uri // "https://oauth2.googleapis.com/token"')}
+
+  now=$(date +%s)
+  header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+  claims=$(jq -cn --arg iss "$email" --arg aud "$token_url" --argjson iat "$now" \
+    '{iss:$iss, scope:"https://www.googleapis.com/auth/androidpublisher", aud:$aud, iat:$iat, exp:($iat+3600)}' | b64url)
+  signature=$(printf '%s.%s' "$header" "$claims" | openssl dgst -sha256 -sign "$work/key.pem" | b64url)
+  rm -f "$work/key.pem"
+
+  token=$(curl -sS --max-time 60 --retry 3 "$token_url" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+    --data-urlencode "assertion=$header.$claims.$signature") || token='{}'
+  access=$(printf '%s' "$token" | jq -r '.access_token // empty' 2>/dev/null || true)
+  if [ -z "$access" ]; then
+    # Google's error text (for example invalid_grant, or a deleted key) holds no secret.
+    why=$(printf '%s' "$token" | jq -r '[.error, .error_description] | map(select(.)) | join(": ")' 2>/dev/null || true)
+    echo "::error::Google refused the service account key${why:+ ($why)}. Check that PLAY_SERVICE_ACCOUNT_JSON is the current key file."
+    exit 1
+  fi
 fi
 echo "::add-mask::$access"
 
