@@ -51,22 +51,39 @@ Chrome's ⋮ menu and tick **Desktop site**). Steps 1 to 5 are needed once. Step
 ## 6. Optional: automatic updates from every build
 
 Without this, each new build is installed by repeating step 4. With it, every merge to `main` goes to
-the internal test on its own and the Play Store updates the phone. It is easier on a computer.
+the internal test on its own and the Play Store updates the phone. There is no key file: Google blocks
+service account keys on new Cloud projects, so the build signs in with its own GitHub identity
+("Workload Identity Federation"), which Google accepts only from this repository's `main` builds.
 
-1. Open **https://console.cloud.google.com**, create a project (any name), then search for
-   **Google Play Android Developer API** and tap **Enable**.
-2. Go to **IAM & Admin → Service accounts → Create service account**, name it `typebetter-upload`,
-   tap **Done** (no roles needed). Open it, **Keys → Add key → Create new key → JSON**. A `.json` file
-   downloads. Copy its email address (ends in `iam.gserviceaccount.com`).
-3. In the Play Console: **Users and permissions → Invite new users**, paste that email, under **App
-   permissions** add TypeBetter with **Release to testing tracks**, and send the invite.
-4. In GitHub: the repository's **Settings → Secrets and variables → Actions → New repository secret**.
-   Name `PLAY_SERVICE_ACCOUNT_JSON`, value: the whole content of the `.json` file. Never paste it into a
-   chat. Delete the downloaded file afterwards.
-5. The next build of `main` uploads by itself. A fresh invite can take a few hours before Google accepts
+1. Open **https://console.cloud.google.com**, pick or create a project, search for
+   **Google Play Android Developer API** and tap **Enable**. Do the same for **IAM Service Account
+   Credentials API** and **Security Token Service API**. Note the project **number** (digits, on
+   the Dashboard's project info card).
+2. **IAM & Admin → Service accounts → Create service account**, name it `typebetter-upload`, tap
+   **Done** (no roles). Copy its email (ends in `iam.gserviceaccount.com`).
+3. **IAM & Admin → Workload Identity Federation → Create pool**: name and id `github`. Add a provider:
+   **OpenID Connect (OIDC)**, id `github`, issuer `https://token.actions.githubusercontent.com`,
+   audiences left on **Default audience**. Attribute mapping: `google.subject` = `assertion.sub` and
+   `attribute.repository` = `assertion.repository`. Attribute condition:
+   `assertion.repository=="davidbalasa-ui/Typing-should-not-be-hard" && assertion.ref=="refs/heads/main"`
+   (so only `main` builds are accepted, never a work branch). Save. If the pool or provider must be
+   named something other than `github`, add repository variables `PLAY_WIF_POOL` / `PLAY_WIF_PROVIDER`
+   with those ids in step 6.
+4. Open the `typebetter-upload` service account → **Principals with access → Grant access**. Principal:
+   `principalSet://iam.googleapis.com/projects/<project number>/locations/global/workloadIdentityPools/github/attribute.repository/davidbalasa-ui/Typing-should-not-be-hard`,
+   role **Workload Identity User**. Save.
+5. In the Play Console: **Users and permissions → Invite new users**, paste the service account email,
+   under **App permissions** add TypeBetter with **Release to testing tracks**, and send the invite.
+6. In GitHub: the repository's **Settings → Secrets and variables → Actions → Variables → New repository
+   variable**, twice: `PLAY_GCP_PROJECT_NUMBER` = the project number, `PLAY_SERVICE_ACCOUNT` = the
+   service account email. Neither is a secret.
+7. The next build of `main` uploads by itself. A fresh invite can take a few hours before Google accepts
    it; until then the build log says Play refused the edit, and the next build tries again.
    The first release must already exist (step 4). If the very first release was never rolled out, the build
    saves a draft and says so in its log: open Internal testing, **Review release → Start rollout**, once.
+
+The older key-file route still works if a `PLAY_SERVICE_ACCOUNT_JSON` secret is ever set and the two
+variables are not.
 
 ## Good to know
 

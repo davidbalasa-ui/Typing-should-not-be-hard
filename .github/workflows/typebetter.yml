@@ -2,8 +2,9 @@
 #
 # - Every push and pull request: run the unit tests and build a release APK.
 # - Push to main: publish the APK as a GitHub release (Obtainium installs and updates from these), with
-#   the matching Play app bundle (TypeBetter.aab) beside it. If the repository secret
-#   PLAY_SERVICE_ACCOUNT_JSON is set, the bundle also goes to the Play internal testing track, where the
+#   the matching Play app bundle (TypeBetter.aab) beside it. If the repository variables
+#   PLAY_GCP_PROJECT_NUMBER and PLAY_SERVICE_ACCOUNT are set (keyless sign-in), or else the secret
+#   PLAY_SERVICE_ACCOUNT_JSON, the bundle also goes to the Play internal testing track, where the
 #   Play Store installs and updates it. See docs/play/README.md.
 # - Push to a claude/* work branch: build and test only. Work branches never see the release key and
 #   never publish, so nothing unreviewed can reach the phone as an update.
@@ -338,11 +339,16 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+      # Keyless sign-in to Google: this job (main only, see the if above) may ask GitHub for a signed
+      # identity token, which Google trades for one hour of the typebetter-upload service account.
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          sparse-checkout: tools/play-upload.sh
+          sparse-checkout: |
+            tools/play-upload.sh
+            tools/play-wif-token.sh
           sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v4
         with:
@@ -350,12 +356,28 @@ jobs:
           path: out
       - name: Upload to the internal testing track
         env:
+          PLAY_GCP_PROJECT_NUMBER: ${{ vars.PLAY_GCP_PROJECT_NUMBER }}
+          PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          PLAY_WIF_POOL: ${{ vars.PLAY_WIF_POOL }}
+          PLAY_WIF_PROVIDER: ${{ vars.PLAY_WIF_PROVIDER }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           RUN: ${{ github.run_number }}
         run: |
-          # Optional: without the secret the bundle is still on the GitHub release for a manual upload.
-          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
-            echo "PLAY_SERVICE_ACCOUNT_JSON is not set, so nothing goes to Google Play. TypeBetter.aab is on the GitHub release for a manual upload (docs/play/README.md)."
+          # Keyless sign-in first (Google blocks key files on this Cloud project); a key file secret
+          # still works if one is ever set. Without either, the bundle is on the GitHub release for a
+          # manual upload.
+          if [ -n "$PLAY_GCP_PROJECT_NUMBER" ] && [ -n "$PLAY_SERVICE_ACCOUNT" ]; then
+            echo "Signing in to Google as $PLAY_SERVICE_ACCOUNT with this run's GitHub identity (no key file)."
+            PLAY_ACCESS_TOKEN=$(tools/play-wif-token.sh)
+            export PLAY_ACCESS_TOKEN
+            unset PLAY_SERVICE_ACCOUNT_JSON
+          elif [ -n "$PLAY_GCP_PROJECT_NUMBER$PLAY_SERVICE_ACCOUNT" ]; then
+            # Half set up: say which one is missing instead of a green job that uploads nothing.
+            [ -n "$PLAY_GCP_PROJECT_NUMBER" ] || echo "::error::Repository variable PLAY_GCP_PROJECT_NUMBER is missing (PLAY_SERVICE_ACCOUNT is set). Check its exact name under Settings > Secrets and variables > Actions > Variables."
+            [ -n "$PLAY_SERVICE_ACCOUNT" ] || echo "::error::Repository variable PLAY_SERVICE_ACCOUNT is missing (PLAY_GCP_PROJECT_NUMBER is set). Check its exact name under Settings > Secrets and variables > Actions > Variables."
+            exit 1
+          elif [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Google Play sign-in is not set up (repository variables PLAY_GCP_PROJECT_NUMBER and PLAY_SERVICE_ACCOUNT), so nothing goes to Google Play. TypeBetter.aab is on the GitHub release for a manual upload (docs/play/README.md)."
             exit 0
           fi
           # Same version code as the Build step: 142000 + run number.
