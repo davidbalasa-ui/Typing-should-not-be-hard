@@ -45,6 +45,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -62,8 +63,12 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
     var info by remember { mutableStateOf<AppUpdateInfo?>(null) }
     // Only the newest check may answer: an older one finishing late must not overwrite what is true now.
     var checkJob by remember { mutableStateOf<Job?>(null) }
+    // Set by a check that found an immediate update to reopen; the effect below reopens it.
+    var resumePending by remember { mutableStateOf(false) }
 
-    fun check() {
+    // [resume]: an immediate update left running is reopened straight away (Play's rule). Not after Play's
+    // own screen reports back, so closing that screen never traps David in a loop.
+    fun check(resume: Boolean = false) {
         checkJob?.cancel()
         state = UpdateState.Checking
         if (!installedByPlay(installerOf(context))) {
@@ -72,9 +77,16 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
         }
         checkJob = scope.launch {
             state = try {
-                val answer = manager.appUpdateInfo.await()
+                // A Play that never answers must not leave the row on "Asking Google Play…" for good.
+                val answer = withTimeoutOrNull(CHECK_TIMEOUT_MS) { manager.appUpdateInfo.await() }
                 info = answer
-                updateStateFor(answer.toPlayAnswer())
+                if (answer == null) {
+                    UpdateState.Failed
+                } else {
+                    val next = updateStateFor(answer.toPlayAnswer())
+                    if (resume && next is UpdateState.InProgress && next.resumable) resumePending = true
+                    next
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -99,6 +111,13 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
         if (!started) state = UpdateState.Failed
     }
 
+    LaunchedEffect(resumePending) {
+        if (resumePending) {
+            resumePending = false
+            startUpdate(AppUpdateType.IMMEDIATE)
+        }
+    }
+
     // Progress of a background (flexible) download, and the "downloaded" moment it ends with.
     DisposableEffect(manager) {
         val listener = InstallStateUpdatedListener { install ->
@@ -107,7 +126,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             when (install.installStatus()) {
                 InstallStatus.DOWNLOADED -> state = UpdateState.ReadyToInstall
                 InstallStatus.PENDING, InstallStatus.DOWNLOADING, InstallStatus.INSTALLING -> state =
-                    UpdateState.InProgress(downloadPercent(install.bytesDownloaded(), install.totalBytesToDownload()))
+                    UpdateState.InProgress(progressPercent(install.installStatus(), install.bytesDownloaded(), install.totalBytesToDownload()))
                 InstallStatus.FAILED -> state = UpdateState.Failed
                 InstallStatus.CANCELED -> check()
                 else -> Unit
@@ -119,7 +138,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
 
     // Ask when the screen opens, and again on coming back while an update is going or after the Play
     // Store page (an immediate update left running must be resumed, Play's own rule).
-    LaunchedEffect(Unit) { check() }
+    LaunchedEffect(Unit) { check(resume = true) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentState by rememberUpdatedState(state)
     DisposableEffect(lifecycleOwner) {
@@ -127,7 +146,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             if (event == Lifecycle.Event.ON_RESUME &&
                 (currentState is UpdateState.InProgress || currentState is UpdateState.AvailableInStore)
             ) {
-                check()
+                check(resume = true)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -148,7 +167,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             stringRes(R.string.typebetter__update_available, "new" to newer(s.availableVersionCode), "current" to current)
         is UpdateState.AvailableInStore ->
             stringRes(R.string.typebetter__update_available_store, "new" to newer(s.availableVersionCode), "current" to current)
-        is UpdateState.InProgress -> s.percent
+        is UpdateState.InProgress -> if (s.resumable) stringRes(R.string.typebetter__update_resume_summary) else s.percent
             ?.let { stringRes(R.string.typebetter__update_in_progress_percent, "percent" to it) }
             ?: stringRes(R.string.typebetter__update_in_progress)
         UpdateState.ReadyToInstall -> stringRes(R.string.typebetter__update_ready)
@@ -166,9 +185,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
         // Only an immediate update left running is resumed (Play's rule); a background download keeps going.
         is UpdateState.InProgress -> fun() {
             val running = info
-            if (running?.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS &&
-                running.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
-            ) {
+            if (s.resumable && running?.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
                 startUpdate(AppUpdateType.IMMEDIATE)
             } else {
                 check()
@@ -189,7 +206,12 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
         onClick = action,
         trailing = {
             when (s) {
-                UpdateState.Checking, is UpdateState.InProgress ->
+                is UpdateState.InProgress -> if (s.resumable) {
+                    FilledTonalButton(onClick = { action?.invoke() }) { Text(stringRes(R.string.typebetter__update_resume)) }
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                }
+                UpdateState.Checking ->
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 is UpdateState.Available, is UpdateState.AvailableInStore, UpdateState.PlayCannotUpdateHere ->
                     FilledTonalButton(onClick = { action?.invoke() }) { Text(stringRes(R.string.typebetter__update_button)) }
@@ -202,6 +224,8 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
         },
     )
 }
+
+private const val CHECK_TIMEOUT_MS = 20_000L
 
 /** The install statuses the listener turns into a state of their own (so a pending check may be dropped). */
 private val LIVE_STATUSES = setOf(

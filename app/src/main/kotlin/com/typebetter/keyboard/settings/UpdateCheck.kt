@@ -31,8 +31,11 @@ internal sealed interface UpdateState {
     /** A newer build is on Play but Play will not install it from inside the app: open the Play Store page. */
     data class AvailableInStore(val availableVersionCode: Long) : UpdateState
 
-    /** An update started earlier is still going (downloading or installing). */
-    data class InProgress(val percent: Int?) : UpdateState
+    /**
+     * An update started earlier is still going. [percent] is set only while downloading; [resumable] marks
+     * an immediate update whose Play screen was closed, which Play only finishes when it is opened again.
+     */
+    data class InProgress(val percent: Int?, val resumable: Boolean = false) : UpdateState
 
     /** A background download finished: one tap restarts the app on the new build. */
     data object ReadyToInstall : UpdateState
@@ -72,7 +75,11 @@ internal fun updateStateFor(answer: PlayUpdateAnswer): UpdateState = when {
         answer.installStatus == InstallStatus.PENDING ||
         answer.installStatus == InstallStatus.DOWNLOADING ||
         answer.installStatus == InstallStatus.INSTALLING ->
-        UpdateState.InProgress(downloadPercent(answer.bytesDownloaded, answer.totalBytesToDownload))
+        UpdateState.InProgress(
+            percent = progressPercent(answer.installStatus, answer.bytesDownloaded, answer.totalBytesToDownload),
+            resumable = answer.updateAvailability == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS &&
+                answer.immediateAllowed,
+        )
     answer.updateAvailability == UpdateAvailability.UPDATE_AVAILABLE -> when {
         answer.immediateAllowed -> UpdateState.Available(answer.availableVersionCode, AppUpdateType.IMMEDIATE)
         answer.flexibleAllowed -> UpdateState.Available(answer.availableVersionCode, AppUpdateType.FLEXIBLE)
@@ -82,6 +89,10 @@ internal fun updateStateFor(answer: PlayUpdateAnswer): UpdateState = when {
     // UNKNOWN: Play did not say. Treated as a failed check so a tap asks again.
     else -> UpdateState.Failed
 }
+
+/** The download percentage while downloading; null when installing or waiting (the row then says "Updating…"). */
+internal fun progressPercent(installStatus: Int, downloaded: Long, total: Long): Int? =
+    if (installStatus == InstallStatus.DOWNLOADING) downloadPercent(downloaded, total) else null
 
 /** 0–100, or null while Play has not said how big the download is. */
 internal fun downloadPercent(downloaded: Long, total: Long): Int? =

@@ -54,8 +54,13 @@ class UpdateCheckTest {
     @Test
     fun `an update already running shows its progress`() {
         assertEquals(
-            UpdateState.InProgress(null),
+            UpdateState.InProgress(null, resumable = true),
             updateStateFor(answer(UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS, immediate = true)),
+        )
+        assertEquals(
+            UpdateState.InProgress(null, resumable = false),
+            updateStateFor(answer(UpdateAvailability.UPDATE_AVAILABLE, InstallStatus.INSTALLING, downloaded = 100, total = 100)),
+            "installing says Updating, not Downloading 100%",
         )
         assertEquals(
             UpdateState.InProgress(25),

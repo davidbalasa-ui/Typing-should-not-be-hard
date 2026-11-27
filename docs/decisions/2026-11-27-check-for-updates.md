@@ -14,8 +14,11 @@ Date: 2026-11-27. David asked for a way to see and get a new build from inside T
   is left half done. When Play only allows a **flexible** (background) update, the row shows the download
   percentage and then a Restart button (`completeUpdate`). When Play allows neither, Update opens
   TypeBetter's Play Store page.
-- An update left running (Play's screen closed mid-install) shows as "Updating…"; coming back to the
-  screen checks again, and a tap resumes it, as Play's guide requires.
+- An immediate update left running (the app closed mid-install) is reopened by itself when the screen
+  opens or comes back, as Play's guide requires. After Play's own screen reports back it is not reopened
+  again (so Back never loops); the row then shows a Resume button. A check that gets no answer from Play
+  within 20 seconds shows as failed, with a tap to try again. While installing, the row says "Updating…"
+  rather than "Downloading 100%".
 - A copy not installed by the Play Store (a GitHub APK, a debug build) says so, with nothing to tap,
   since Play cannot update it. A Play-installed copy that Play still refuses ("not owned" or "API not
   available": another Google account signed in to Play, or an old Play Store) gets an Update button that
