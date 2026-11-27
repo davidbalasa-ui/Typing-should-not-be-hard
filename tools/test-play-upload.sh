@@ -131,7 +131,8 @@ echo "OK: draft refusal at the track step: saved as a draft"
 echo review > "$T/mode"; rm -f "$T/log.jsonl"
 up || { echo "FAIL: 'cannot be sent for review' exited non-zero"; cat "$T/out"; exit 1; }
 check 'map(select(.step=="commit")) | length==2 and (.[1].path|endswith("changesNotSentForReview=true"))' "commit not retried with changesNotSentForReview"
-echo "OK: 'cannot be sent for review automatically': committed with changesNotSentForReview"
+grep -q "Send changes for review" "$T/out" || { echo "FAIL: a release held for review gave no warning"; cat "$T/out"; exit 1; }
+echo "OK: 'cannot be sent for review automatically': committed with changesNotSentForReview, and says to send it"
 
 echo duplicate > "$T/mode"; rm -f "$T/log.jsonl"
 up || { echo "FAIL: re-run of an uploaded version code exited non-zero"; cat "$T/out"; exit 1; }
