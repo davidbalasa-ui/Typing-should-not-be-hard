@@ -38,9 +38,11 @@ import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import org.florisboard.lib.compose.stringRes
@@ -58,14 +60,17 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
     var state by remember { mutableStateOf<UpdateState>(UpdateState.Checking) }
     // Play's AppUpdateInfo is what starts an update; one is used once, then asked for again.
     var info by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    // Only the newest check may answer: an older one finishing late must not overwrite what is true now.
+    var checkJob by remember { mutableStateOf<Job?>(null) }
 
     fun check() {
+        checkJob?.cancel()
         state = UpdateState.Checking
         if (!installedByPlay(installerOf(context))) {
             state = UpdateState.NotFromPlay
             return
         }
-        scope.launch {
+        checkJob = scope.launch {
             state = try {
                 val answer = manager.appUpdateInfo.await()
                 info = answer
@@ -97,6 +102,8 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
     // Progress of a background (flexible) download, and the "downloaded" moment it ends with.
     DisposableEffect(manager) {
         val listener = InstallStateUpdatedListener { install ->
+            // Play's live progress is newer than any check still waiting for an answer.
+            if (install.installStatus() in LIVE_STATUSES) checkJob?.cancel()
             when (install.installStatus()) {
                 InstallStatus.DOWNLOADED -> state = UpdateState.ReadyToInstall
                 InstallStatus.PENDING, InstallStatus.DOWNLOADING, InstallStatus.INSTALLING -> state =
@@ -146,18 +153,32 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             ?: stringRes(R.string.typebetter__update_in_progress)
         UpdateState.ReadyToInstall -> stringRes(R.string.typebetter__update_ready)
         UpdateState.NotFromPlay -> stringRes(R.string.typebetter__update_not_from_play, "current" to current)
+        UpdateState.PlayCannotUpdateHere -> stringRes(R.string.typebetter__update_store_only, "current" to current)
         UpdateState.Failed -> stringRes(R.string.typebetter__update_failed, "current" to current)
     }
     val action: (() -> Unit)? = when (s) {
-        UpdateState.Checking -> null
-        UpdateState.UpToDate, UpdateState.Failed, UpdateState.NotFromPlay -> fun() { check() }
+        // Nothing to do for a copy Play did not install: the row only explains.
+        UpdateState.Checking, UpdateState.NotFromPlay -> null
+        UpdateState.UpToDate, UpdateState.Failed -> fun() { check() }
         is UpdateState.Available -> fun() { startUpdate(s.type) }
-        is UpdateState.AvailableInStore -> fun() { if (!openPlayStorePage(context)) state = UpdateState.Failed }
-        // An immediate update left running is resumed; a background download just keeps going.
+        is UpdateState.AvailableInStore, UpdateState.PlayCannotUpdateHere ->
+            fun() { if (!openPlayStorePage(context)) state = UpdateState.Failed }
+        // Only an immediate update left running is resumed (Play's rule); a background download keeps going.
         is UpdateState.InProgress -> fun() {
-            if (info?.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) == true) startUpdate(AppUpdateType.IMMEDIATE) else check()
+            val running = info
+            if (running?.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS &&
+                running.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+            ) {
+                startUpdate(AppUpdateType.IMMEDIATE)
+            } else {
+                check()
+            }
         }
-        UpdateState.ReadyToInstall -> fun() { manager.completeUpdate() }
+        UpdateState.ReadyToInstall -> fun() {
+            manager.completeUpdate().addOnFailureListener { e ->
+                state = updateStateForError((e as? InstallException)?.errorCode)
+            }
+        }
     }
 
     TbRow(
@@ -170,16 +191,22 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             when (s) {
                 UpdateState.Checking, is UpdateState.InProgress ->
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                is UpdateState.Available, is UpdateState.AvailableInStore ->
+                is UpdateState.Available, is UpdateState.AvailableInStore, UpdateState.PlayCannotUpdateHere ->
                     FilledTonalButton(onClick = { action?.invoke() }) { Text(stringRes(R.string.typebetter__update_button)) }
                 UpdateState.ReadyToInstall ->
                     FilledTonalButton(onClick = { action?.invoke() }) { Text(stringRes(R.string.typebetter__update_restart)) }
-                UpdateState.UpToDate, UpdateState.Failed, UpdateState.NotFromPlay ->
+                UpdateState.UpToDate, UpdateState.Failed ->
                     Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                UpdateState.NotFromPlay -> Unit
             }
         },
     )
 }
+
+/** The install statuses the listener turns into a state of their own (so a pending check may be dropped). */
+private val LIVE_STATUSES = setOf(
+    InstallStatus.DOWNLOADED, InstallStatus.PENDING, InstallStatus.DOWNLOADING, InstallStatus.INSTALLING, InstallStatus.FAILED,
+)
 
 private fun AppUpdateInfo.toPlayAnswer() = PlayUpdateAnswer(
     updateAvailability = updateAvailability(),

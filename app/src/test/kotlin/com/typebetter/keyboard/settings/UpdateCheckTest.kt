@@ -85,9 +85,9 @@ class UpdateCheckTest {
     }
 
     @Test
-    fun `a copy Play does not own says so instead of retrying forever`() {
-        assertEquals(UpdateState.NotFromPlay, updateStateForError(InstallErrorCode.ERROR_APP_NOT_OWNED))
-        assertEquals(UpdateState.NotFromPlay, updateStateForError(InstallErrorCode.ERROR_API_NOT_AVAILABLE))
+    fun `a copy Play will not update in the app points to the Play Store instead of retrying forever`() {
+        assertEquals(UpdateState.PlayCannotUpdateHere, updateStateForError(InstallErrorCode.ERROR_APP_NOT_OWNED))
+        assertEquals(UpdateState.PlayCannotUpdateHere, updateStateForError(InstallErrorCode.ERROR_API_NOT_AVAILABLE))
         assertEquals(UpdateState.Failed, updateStateForError(InstallErrorCode.ERROR_INTERNAL_ERROR))
         assertEquals(UpdateState.Failed, updateStateForError(null))
     }

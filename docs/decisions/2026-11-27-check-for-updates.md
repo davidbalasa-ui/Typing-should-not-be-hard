@@ -16,8 +16,12 @@ Date: 2026-11-27. David asked for a way to see and get a new build from inside T
   TypeBetter's Play Store page.
 - An update left running (Play's screen closed mid-install) shows as "Updating…"; coming back to the
   screen checks again, and a tap resumes it, as Play's guide requires.
-- A copy not installed by the Play Store (a GitHub APK, a debug build) says so instead of failing, since
-  Play cannot update it; Play's "not owned" and "API not available" errors mean the same.
+- A copy not installed by the Play Store (a GitHub APK, a debug build) says so, with nothing to tap,
+  since Play cannot update it. A Play-installed copy that Play still refuses ("not owned" or "API not
+  available": another Google account signed in to Play, or an old Play Store) gets an Update button that
+  opens the Play Store page instead.
+- Only the newest check may set the row (older ones are cancelled), so a late answer never overwrites
+  live download progress. A failed Restart (`completeUpdate`) shows as a failed check.
 - When Play says there is nothing newer, the row says a new build can take up to an hour to show up:
   Play serves the update list from a cache, which is the usual reason a just-uploaded build is missing.
 - Pure state logic in `UpdateCheck.kt` with unit tests (`UpdateCheckTest`); the row only calls Play.

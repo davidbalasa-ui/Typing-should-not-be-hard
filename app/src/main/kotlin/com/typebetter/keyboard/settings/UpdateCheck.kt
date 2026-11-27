@@ -40,6 +40,12 @@ internal sealed interface UpdateState {
     /** This copy did not come from Google Play (a GitHub APK or a debug build), so Play cannot update it. */
     data object NotFromPlay : UpdateState
 
+    /**
+     * Installed by the Play Store, but Play will not update it in the app (another Google account is signed
+     * in to Play, or the Play Store app is too old): the Play Store page is the way to update.
+     */
+    data object PlayCannotUpdateHere : UpdateState
+
     /** Play could not be reached or refused; tapping tries again. */
     data object Failed : UpdateState
 }
@@ -82,12 +88,12 @@ internal fun downloadPercent(downloaded: Long, total: Long): Int? =
     if (total <= 0) null else ((downloaded.coerceIn(0, total) * 100) / total).toInt()
 
 /**
- * The state for an error from Play. "Not owned" and "API not available" mean this copy was not installed
- * by Play for this account (a GitHub APK, a debug build, or another Google account on the Play Store),
- * which retrying cannot fix.
+ * The state for an error from Play, asked only after the Play Store is known to have installed this copy.
+ * "Not owned" and "API not available" then mean another Google account is signed in to Play or the Play
+ * Store is too old, which retrying cannot fix; the Play Store page still can.
  */
 internal fun updateStateForError(errorCode: Int?): UpdateState = when (errorCode) {
-    InstallErrorCode.ERROR_APP_NOT_OWNED, InstallErrorCode.ERROR_API_NOT_AVAILABLE -> UpdateState.NotFromPlay
+    InstallErrorCode.ERROR_APP_NOT_OWNED, InstallErrorCode.ERROR_API_NOT_AVAILABLE -> UpdateState.PlayCannotUpdateHere
     else -> UpdateState.Failed
 }
 

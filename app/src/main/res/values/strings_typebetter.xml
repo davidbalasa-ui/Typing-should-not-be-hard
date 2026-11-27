@@ -264,7 +264,8 @@
     <string name="typebetter__update_in_progress">Updating…</string>
     <string name="typebetter__update_in_progress_percent">Downloading the update… {percent}%</string>
     <string name="typebetter__update_ready">Downloaded. Tap Restart to switch to the new build.</string>
-    <string name="typebetter__update_not_from_play">You have {current}. This copy was not installed from Google Play, so it cannot update here. Tap to check again.</string>
+    <string name="typebetter__update_not_from_play">You have {current}. This copy was not installed from Google Play, so it updates from wherever it came from.</string>
+    <string name="typebetter__update_store_only">You have {current}. Google Play will not update it from inside the app (another Google account may be signed in to the Play Store). Tap Update to open the Play Store.</string>
     <string name="typebetter__update_failed">You have {current}. Could not reach Google Play. Tap to try again.</string>
     <string name="typebetter__update_button">Update</string>
     <string name="typebetter__update_restart">Restart</string>
