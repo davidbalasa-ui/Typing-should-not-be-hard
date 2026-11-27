@@ -108,7 +108,7 @@ export PLAY_SERVICE_ACCOUNT_JSON
 PLAY_SERVICE_ACCOUNT_JSON=$(jq -n --rawfile k "$T/sa.pem" '{type:"service_account", client_email:"ci@p.iam.gserviceaccount.com", private_key:$k}')
 up() { bash "$repo/tools/play-upload.sh" "$T/app.aab" com.poeticsquirrel.typebetter internal "Build 31" 142031 > "$T/out" 2>&1; }
 check() { local a=(); [ "$1" = --arg ] && { a=(--arg "$2" "$3"); shift 3; }
-  jq -se "${a[@]}" "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
+  jq -se ${a[@]+"${a[@]}"} "$1" "$T/log.jsonl" > /dev/null || { echo "FAIL: $2"; cat "$T/out"; cat "$T/log.jsonl"; exit 1; }; }
 
 rm -f "$T/log.jsonl"; up || { echo "FAIL: normal upload exited non-zero"; cat "$T/out"; exit 1; }
 check '.[0].type=="application/x-www-form-urlencoded" and .[0].claims.aud==env.PLAY_TOKEN_URL and .[0].sig_ok and .[0].claims.scope=="https://www.googleapis.com/auth/androidpublisher" and .[0].claims.iss=="ci@p.iam.gserviceaccount.com" and (.[0].claims.exp-.[0].claims.iat)==3600 and .[0].grant=="urn:ietf:params:oauth:grant-type:jwt-bearer"' "JWT is not a valid signed service-account assertion"
@@ -148,7 +148,7 @@ echo normal > "$T/mode"; rm -f "$T/log.jsonl"
 wif() {
   env -u PLAY_SERVICE_ACCOUNT_JSON ACTIONS_ID_TOKEN_REQUEST_URL="http://127.0.0.1:$port/oidc?x=1" \
     ACTIONS_ID_TOKEN_REQUEST_TOKEN=req-1 PLAY_STS_URL="http://127.0.0.1:$port/sts" \
-    PLAY_IAMCREDENTIALS_BASE="http://127.0.0.1:$port" PLAY_GCP_PROJECT_NUMBER="${1:-123456789012}" \
+    PLAY_IAMCREDENTIALS_BASE="http://127.0.0.1:$port" PLAY_GCP_PROJECT_NUMBER="${1:-123456789012}" PLAY_WIF_POOL="${3:-}" PLAY_WIF_PROVIDER="${4:-}" \
     PLAY_SERVICE_ACCOUNT="${2:-typebetter-upload@p.iam.gserviceaccount.com}" \
     bash "$repo/tools/play-wif-token.sh" > "$T/tok" 2> "$T/out"
 }
@@ -174,4 +174,13 @@ grep -q "Workload Identity User" "$T/out" || { echo "FAIL: impersonation refusal
 echo normal > "$T/mode"
 if wif my-project-id; then echo "FAIL: a project id was accepted as the number"; exit 1; fi
 grep -q "project NUMBER" "$T/out" || { echo "FAIL: bad project number gave no plain message"; cat "$T/out"; exit 1; }
-echo "OK: keyless refusals (identity, service account, project number) fail with plain messages"
+rm -f "$T/log.jsonl"
+wif " 123456789012
+" " typebetter-upload@p.iam.gserviceaccount.com " gh-pool gh-prov || { echo "FAIL: pasted spaces or custom pool ids broke the keyless token"; cat "$T/out"; exit 1; }
+check '.[0].audience=="https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/gh-pool/providers/gh-prov"' "custom pool/provider ids or trimmed number not used"
+check 'map(select(.step=="impersonate"))[0].path=="/v1/projects/-/serviceAccounts/typebetter-upload@p.iam.gserviceaccount.com:generateAccessToken"' "service account email not trimmed"
+if env -u PLAY_SERVICE_ACCOUNT_JSON ACTIONS_ID_TOKEN_REQUEST_URL="http://127.0.0.1:1/oidc?x=1" ACTIONS_ID_TOKEN_REQUEST_TOKEN=r \
+    PLAY_GCP_PROJECT_NUMBER=1 PLAY_SERVICE_ACCOUNT=a@p.iam.gserviceaccount.com bash "$repo/tools/play-wif-token.sh" > /dev/null 2> "$T/out"; then
+  echo "FAIL: unreachable GitHub token endpoint was accepted"; exit 1; fi
+grep -q "::error::GitHub did not hand out an identity token" "$T/out" || { echo "FAIL: unreachable GitHub token endpoint gave no plain message"; cat "$T/out"; exit 1; }
+echo "OK: keyless refusals (identity, service account, project number, no GitHub token) fail with plain messages; pasted spaces and custom pool ids work"

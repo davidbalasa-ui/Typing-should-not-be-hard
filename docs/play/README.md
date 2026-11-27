@@ -56,7 +56,8 @@ service account keys on new Cloud projects, so the build signs in with its own G
 ("Workload Identity Federation"), which Google accepts only from this repository's `main` builds.
 
 1. Open **https://console.cloud.google.com**, pick or create a project, search for
-   **Google Play Android Developer API** and tap **Enable**. Note the project **number** (digits, on
+   **Google Play Android Developer API** and tap **Enable**. Do the same for **IAM Service Account
+   Credentials API** and **Security Token Service API**. Note the project **number** (digits, on
    the Dashboard's project info card).
 2. **IAM & Admin → Service accounts → Create service account**, name it `typebetter-upload`, tap
    **Done** (no roles). Copy its email (ends in `iam.gserviceaccount.com`).
@@ -64,7 +65,10 @@ service account keys on new Cloud projects, so the build signs in with its own G
    **OpenID Connect (OIDC)**, id `github`, issuer `https://token.actions.githubusercontent.com`,
    audiences left on **Default audience**. Attribute mapping: `google.subject` = `assertion.sub` and
    `attribute.repository` = `assertion.repository`. Attribute condition:
-   `assertion.repository=="davidbalasa-ui/Typing-should-not-be-hard"`. Save.
+   `assertion.repository=="davidbalasa-ui/Typing-should-not-be-hard" && assertion.ref=="refs/heads/main"`
+   (so only `main` builds are accepted, never a work branch). Save. If the pool or provider must be
+   named something other than `github`, add repository variables `PLAY_WIF_POOL` / `PLAY_WIF_PROVIDER`
+   with those ids in step 6.
 4. Open the `typebetter-upload` service account → **Principals with access → Grant access**. Principal:
    `principalSet://iam.googleapis.com/projects/<project number>/locations/global/workloadIdentityPools/github/attribute.repository/davidbalasa-ui/Typing-should-not-be-hard`,
    role **Workload Identity User**. Save.

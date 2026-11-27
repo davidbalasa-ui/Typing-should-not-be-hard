@@ -12,10 +12,12 @@ keyless route.
   `typebetter-upload` service account for one hour with only the `androidpublisher` scope. The token
   goes to `tools/play-upload.sh` as `PLAY_ACCESS_TOKEN`; the upload steps are unchanged.
 - Two repository **variables** (not secrets): `PLAY_GCP_PROJECT_NUMBER`, `PLAY_SERVICE_ACCOUNT`.
-  The pool and provider ids default to `github`.
-- Google only accepts the identity from this repository (provider condition on
-  `assertion.repository`, and the Workload Identity User grant is on that repository's principal set).
-  Only main builds run the job, as before.
+  The pool and provider ids default to `github` (optional variables `PLAY_WIF_POOL`, `PLAY_WIF_PROVIDER`).
+  Only one of the two required variables set fails the job with the missing name, never a silent green.
+- Google only accepts the identity from this repository's `main` branch (provider condition on
+  `assertion.repository` and `assertion.ref`; the Workload Identity User grant is on the repository's
+  principal set). Without the ref check, a work branch could edit the workflow and upload an unreviewed
+  bundle. Needs the IAM Service Account Credentials and Security Token Service APIs enabled.
 - Plain curl + jq, no third-party action, matching the existing upload script (no outside code ever
   holds a Play credential). Every token is masked in the log; Google's error text is shown with a
   plain line naming the console setting to check.

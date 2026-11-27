@@ -12,14 +12,18 @@
 # the pool "github" / provider "github" (which only accepts this repository), then use that to borrow
 # the service account for one hour with only the androidpublisher scope.
 #
+# PLAY_WIF_POOL / PLAY_WIF_PROVIDER name the pool and provider when they are not called "github".
 # PLAY_STS_URL and PLAY_IAMCREDENTIALS_BASE exist only so tools/test-play-upload.sh can run this against
 # a local mock; the workflow never sets them. Nothing printed to the log holds a token.
 set -euo pipefail
 
+# Values pasted on a phone often carry a stray space or newline.
+PLAY_GCP_PROJECT_NUMBER=${PLAY_GCP_PROJECT_NUMBER:-}; PLAY_GCP_PROJECT_NUMBER=${PLAY_GCP_PROJECT_NUMBER//[[:space:]]/}
+PLAY_SERVICE_ACCOUNT=${PLAY_SERVICE_ACCOUNT:-}; PLAY_SERVICE_ACCOUNT=${PLAY_SERVICE_ACCOUNT//[[:space:]]/}
 : "${PLAY_GCP_PROJECT_NUMBER:?PLAY_GCP_PROJECT_NUMBER is not set}"
 : "${PLAY_SERVICE_ACCOUNT:?PLAY_SERVICE_ACCOUNT is not set}"
-pool=${PLAY_WIF_POOL:-github}
-provider_id=${PLAY_WIF_PROVIDER:-github}
+pool=${PLAY_WIF_POOL:-}; pool=${pool//[[:space:]]/}; pool=${pool:-github}
+provider_id=${PLAY_WIF_PROVIDER:-}; provider_id=${provider_id//[[:space:]]/}; provider_id=${provider_id:-github}
 sts=${PLAY_STS_URL:-https://sts.googleapis.com/v1/token}
 iamc=${PLAY_IAMCREDENTIALS_BASE:-https://iamcredentials.googleapis.com}
 
@@ -39,10 +43,15 @@ provider="projects/$PLAY_GCP_PROJECT_NUMBER/locations/global/workloadIdentityPoo
 audience="https://iam.googleapis.com/$provider"
 
 # Google's error text never holds a token, so it is safe to show.
-why() { jq -r '[.error, .error_description, .error.message?] | map(select(type=="string")) | join(": ")' 2>/dev/null || true; }
+why() {
+  local w
+  w=$(jq -r '[.error, .error_description, .error.message?] | map(select(type=="string")) | join(": ")' 2>/dev/null || true)
+  printf '%s' "${w:-no answer from Google}"
+}
 
-gh_jwt=$(curl -sS --max-time 60 --retry 3 -G "$ACTIONS_ID_TOKEN_REQUEST_URL" \
-  --data-urlencode "audience=$audience" -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.value // empty')
+resp=$(curl -sS --max-time 60 --retry 3 -G "$ACTIONS_ID_TOKEN_REQUEST_URL" \
+  --data-urlencode "audience=$audience" -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN") || resp='{}'
+gh_jwt=$(printf '%s' "$resp" | jq -r '.value // empty' 2>/dev/null || true)
 [ -n "$gh_jwt" ] || { echo "::error::GitHub did not hand out an identity token for this run." >&2; exit 1; }
 echo "::add-mask::$gh_jwt" >&2
 
@@ -55,7 +64,7 @@ resp=$(jq -n --arg aud "//iam.googleapis.com/$provider" --arg t "$gh_jwt" '{
   subjectToken: $t}' | curl -sS --max-time 60 --retry 3 "$sts" -H 'Content-Type: application/json' --data-binary @-) || resp='{}'
 federated=$(printf '%s' "$resp" | jq -r '.access_token // empty' 2>/dev/null || true)
 if [ -z "$federated" ]; then
-  echo "::error::Google did not accept this run's GitHub identity ($(printf '%s' "$resp" | why)). Check that the Cloud project number is right, the pool and provider are both called 'github', and the provider's condition names davidbalasa-ui/Typing-should-not-be-hard." >&2
+  echo "::error::Google did not accept this run's GitHub identity ($(printf '%s' "$resp" | why)). Check that the Cloud project number is right, the pool is '$pool' and the provider '$provider_id' (repository variables PLAY_WIF_POOL / PLAY_WIF_PROVIDER if they are named otherwise), the provider's condition allows davidbalasa-ui/Typing-should-not-be-hard on refs/heads/main, and the Security Token Service API is enabled." >&2
   exit 1
 fi
 echo "::add-mask::$federated" >&2
@@ -66,7 +75,7 @@ resp=$(curl -sS --max-time 60 --retry 3 \
   -d '{"scope":["https://www.googleapis.com/auth/androidpublisher"],"lifetime":"3600s"}') || resp='{}'
 access=$(printf '%s' "$resp" | jq -r '.accessToken // empty' 2>/dev/null || true)
 if [ -z "$access" ]; then
-  echo "::error::Google would not let this repository act as $PLAY_SERVICE_ACCOUNT ($(printf '%s' "$resp" | why)). On that service account, the principal set for repository davidbalasa-ui/Typing-should-not-be-hard needs the role Workload Identity User. A new grant can take a few minutes to work." >&2
+  echo "::error::Google would not let this repository act as $PLAY_SERVICE_ACCOUNT ($(printf '%s' "$resp" | why)). On that service account, the principal set for repository davidbalasa-ui/Typing-should-not-be-hard needs the role Workload Identity User, and the IAM Service Account Credentials API must be enabled on the project. A new grant can take a few minutes to work." >&2
   exit 1
 fi
 echo "::add-mask::$access" >&2

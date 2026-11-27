@@ -358,6 +358,8 @@ jobs:
         env:
           PLAY_GCP_PROJECT_NUMBER: ${{ vars.PLAY_GCP_PROJECT_NUMBER }}
           PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          PLAY_WIF_POOL: ${{ vars.PLAY_WIF_POOL }}
+          PLAY_WIF_PROVIDER: ${{ vars.PLAY_WIF_PROVIDER }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           RUN: ${{ github.run_number }}
         run: |
@@ -369,6 +371,11 @@ jobs:
             PLAY_ACCESS_TOKEN=$(tools/play-wif-token.sh)
             export PLAY_ACCESS_TOKEN
             unset PLAY_SERVICE_ACCOUNT_JSON
+          elif [ -n "$PLAY_GCP_PROJECT_NUMBER$PLAY_SERVICE_ACCOUNT" ]; then
+            # Half set up: say which one is missing instead of a green job that uploads nothing.
+            [ -n "$PLAY_GCP_PROJECT_NUMBER" ] || echo "::error::Repository variable PLAY_GCP_PROJECT_NUMBER is missing (PLAY_SERVICE_ACCOUNT is set). Check its exact name under Settings > Secrets and variables > Actions > Variables."
+            [ -n "$PLAY_SERVICE_ACCOUNT" ] || echo "::error::Repository variable PLAY_SERVICE_ACCOUNT is missing (PLAY_GCP_PROJECT_NUMBER is set). Check its exact name under Settings > Secrets and variables > Actions > Variables."
+            exit 1
           elif [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
             echo "Google Play sign-in is not set up (repository variables PLAY_GCP_PROJECT_NUMBER and PLAY_SERVICE_ACCOUNT), so nothing goes to Google Play. TypeBetter.aab is on the GitHub release for a manual upload (docs/play/README.md)."
             exit 0
