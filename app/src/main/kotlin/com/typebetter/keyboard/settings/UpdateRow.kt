@@ -70,7 +70,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
 
     // [resume]: an immediate update left running is reopened straight away (Play's rule), once per showing
     // of the row ([autoResumed]), so closing Play's screen never traps David in a loop.
-    fun check(resume: Boolean = false) {
+    fun check(resume: Boolean = false, tapped: Boolean = false) {
         checkJob?.cancel()
         state = UpdateState.Checking
         if (!installedByPlay(installerOf(context))) {
@@ -86,7 +86,7 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
                     UpdateState.Failed
                 } else {
                     val next = updateStateFor(answer.toPlayAnswer())
-                    if (resume && !autoResumed && next is UpdateState.InProgress && next.resumable) {
+                    if (resume && (tapped || !autoResumed) && next is UpdateState.InProgress && next.resumable) {
                         autoResumed = true
                         resumePending = true
                     }
@@ -193,7 +193,8 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
             if (s.resumable && running?.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
                 startUpdate(AppUpdateType.IMMEDIATE)
             } else {
-                check()
+                // Play's answer was used up by an earlier start: ask again and reopen in one tap.
+                check(resume = s.resumable, tapped = true)
             }
         }
         UpdateState.ReadyToInstall -> fun() {
