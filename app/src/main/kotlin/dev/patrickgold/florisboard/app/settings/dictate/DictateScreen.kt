@@ -131,6 +131,7 @@ fun DictateScreen() = FlorisScreen {
                 // Straight into the On-device editor; a model picked there becomes the dictation engine,
                 // just as one picked in the list above does.
                 ProviderSetupHandoff.openEditorFor = ProviderRegistry.LOCAL.id
+                ProviderSetupHandoff.returnWhenClosed = true
                 navController.navigate(Routes.Settings.DictateProviders)
             },
         )

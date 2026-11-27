@@ -152,6 +152,9 @@ object ProviderSetupHandoff {
     /** Provider id whose editor to open, [ADD_CUSTOM] for a fresh endpoint, or null for nothing. */
     var openEditorFor: String? = null
 
+    /** With [openEditorFor]: go back to where the user came from once that editor closes. */
+    var returnWhenClosed: Boolean = false
+
     /** Sentinel for [openEditorFor]: mint a new custom endpoint instead of editing an existing provider. */
     const val ADD_CUSTOM = "+add-custom"
 }
@@ -193,12 +196,17 @@ fun DictateProvidersScreen() = FlorisScreen {
         // server while being asked how the app should transcribe means to use it, so saving it makes it
         // active instead of leaving them to go and select it by hand.
         var activateOnSave by remember { mutableStateOf(false) }
-        // Set when the wizard sent the user here to pick an on-device model from the full list, which is
-        // the only situation where choosing one also switches the engine (issue #343). During setup that
-        // is the whole question being asked. Later it would move a working configuration underneath
-        // someone who only came to download a second model — quietly, on a screen they may not look at
-        // again.
+        // Set when the user was sent here to pick an on-device model from the full list: by the setup
+        // wizard (issue #343), or by "All voice models" under the Voice model list in Dictation settings
+        // (TypeBetter, 2026-11-27), where a model picked in the list above it also becomes the engine at
+        // once. Only then does choosing one also switch the engine; during setup that is the whole
+        // question, and from that link it is what the list next to it does. Opening the editor from this
+        // screen's own rows never does: it would move a working configuration underneath someone who only
+        // came to download a second model.
         var localFromSetup by remember { mutableStateOf(false) }
+        // Set when the editor was opened from elsewhere with [ProviderSetupHandoff.returnWhenClosed]:
+        // closing it goes straight back there instead of leaving the user on this screen.
+        var returnAfterEditor by remember { mutableStateOf(false) }
 
         fun writeKeyring(updated: ProviderAccounts) {
             scope.launch { prefs.dictate.providerAccounts.set(updated) }
@@ -218,7 +226,15 @@ fun DictateProvidersScreen() = FlorisScreen {
                     localFromSetup = target == ProviderRegistry.LOCAL.id
                 }
             }
+            returnAfterEditor = ProviderSetupHandoff.openEditorFor != null && ProviderSetupHandoff.returnWhenClosed
             ProviderSetupHandoff.openEditorFor = null
+            ProviderSetupHandoff.returnWhenClosed = false
+        }
+        LaunchedEffect(editingId, returnAfterEditor) {
+            if (editingId == null && returnAfterEditor) {
+                returnAfterEditor = false
+                navController.popBackStack()
+            }
         }
 
         // All custom endpoints stored in the keyring (built-ins are taken from the registry).
