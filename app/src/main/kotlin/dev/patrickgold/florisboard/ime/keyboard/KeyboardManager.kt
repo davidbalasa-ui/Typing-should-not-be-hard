@@ -832,6 +832,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // A tap on the strip replaces whatever the previous correction left behind, so there is nothing
         // left to take back. [commitAutoCorrection] re-arms it immediately afterwards for its own case.
         pendingAutoCorrection = null
+        pendingGlideWord = null
+        undoCursorAtKeep = null
         lastWordCorrection = null
         scope.launch {
             candidate.sourceProvider?.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
@@ -1225,7 +1227,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         pendingGlideWord = null
         if (cursorMovedSinceKeep()) return false
         if (editorInstance.activeContent.selection.isSelectionMode) return false
-        if (editorInstance.textBeforeCursorFromEditor(word.length) != word) return false
+        // The word and the character in front of it: a write that skipped onInputKeyUp (a paste from the
+        // clipboard panel) may end in the same letters inside a longer word, and half a word is never deleted.
+        val before = editorInstance.textBeforeCursorFromEditor(word.length + 1) ?: return false
+        if (!before.endsWith(word)) return false
+        if (before.length > word.length && before.first().isLetterOrDigit()) return false
         editorInstance.replaceTextBeforeCursor(word.length, "")
         TouchTrace.reset()
         lastTypedWord = null

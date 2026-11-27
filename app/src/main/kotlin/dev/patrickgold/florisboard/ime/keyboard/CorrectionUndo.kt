@@ -58,7 +58,8 @@ object CorrectionUndo {
     }
 
     /** The endings a glide may add by mistake and a backspace may take off again (`needed` → `need`). */
-    private val GLIDE_ENDINGS = setOf("ed", "d", "s", "es", "ing")
+    // No bare `-d`: it would turn `card` into `car`, `seed` into `see`, `wind` into `win`.
+    private val GLIDE_ENDINGS = setOf("ed", "s", "es", "ing")
 
     /** Below this length the shorter word is too likely a different word (`your` → `you`, `then` → `the`). */
     const val GLIDE_MIN_TARGET = 3
@@ -72,7 +73,7 @@ object CorrectionUndo {
      * a doubled letter. The decoder usually still lists the shorter word among its other choices, and
      * when it does, that is what the user most likely meant, so the first backspace takes the added end
      * off in one go. Only a word the decoder itself offered is used, never a guessed stem, only when the
-     * committed word is that word plus a word ending ([isGlideEnding]: `-ed`, `-d`, `-s`, `-es`, `-ing`, or
+     * committed word is that word plus a word ending ([isGlideEnding]: `-ed`, `-s`, `-es`, `-ing`, or
      * a doubled last letter plus `-ed`), and only for words of at least [GLIDE_MIN_TARGET] letters — so
      * `your` with `you` offered still deletes a letter. The longest such word wins.
      */

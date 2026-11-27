@@ -96,5 +96,9 @@ class CorrectionUndoTest {
         assertNull(CorrectionUndo.glideUndoTarget("your", listOf("you")))
         assertNull(CorrectionUndo.glideUndoTarget("then", listOf("the")))
         assertNull(CorrectionUndo.glideUndoTarget("and", listOf("an")))
+        // A bare d makes a different word, not a form of the same one.
+        assertNull(CorrectionUndo.glideUndoTarget("card", listOf("car")))
+        assertNull(CorrectionUndo.glideUndoTarget("seed", listOf("see")))
+        assertNull(CorrectionUndo.glideUndoTarget("wind", listOf("win")))
     }
 }
