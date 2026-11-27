@@ -58,10 +58,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.os.ConfigurationCompat
+import java.util.Locale
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.provider.DictationReadiness
+import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
 import dev.patrickgold.florisboard.dictate.provider.LocalModelDownloads
 import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 import dev.patrickgold.florisboard.dictate.provider.LocalModelSpec
@@ -119,6 +122,10 @@ fun DictationSetupPanel(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val accent by prefs.theme.accentColor.collectPrefAsState()
 
+    val activeLanguage by prefs.dictate.activeInputLanguage.collectPrefAsState()
+    val shown = remember(activeLanguage) {
+        DictationReadiness.choicesFor(DictationReadiness.pickerLanguage(activeLanguage, deviceLanguage(context)))
+    }
     val downloads by LocalModelDownloads.state.collectAsState()
     val installedTick by LocalModelDownloads.installedTick.collectAsState()
     val installed = remember(installedTick) {
@@ -210,7 +217,7 @@ fun DictationSetupPanel(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    DictationReadiness.choices.forEach { choice ->
+                    shown.forEach { choice ->
                         val id = choice.spec.id
                         val state = downloads[id]
                         val status = when {
@@ -300,12 +307,14 @@ private fun ModelCard(
 ) {
     val shape = RoundedCornerShape(14.dp)
     val track = content.copy(alpha = 0.16f)
-    val name = choice.spec.displayName.removePrefix("Whisper ").ifBlank { choice.spec.displayName }
+    val name = choice.shortName
     val blurb = stringRes(
         when (choice.spec.id) {
+            LocalModelCatalog.PARAKEET_TDT_110M_EN.id -> R.string.typebetter__setup_blurb_parakeet
             "whisper-tiny" -> R.string.dictate__setup_blurb_tiny
             "whisper-small" -> R.string.dictate__setup_blurb_small
-            else -> R.string.dictate__setup_blurb_base
+            // Next to Parakeet, Base is the one for other languages rather than the balance.
+            else -> if (choice.recommended) R.string.dictate__setup_blurb_base else R.string.typebetter__setup_blurb_any_language
         },
     )
     val speedLabel = stringRes(R.string.dictate__setup_speed)
@@ -319,7 +328,9 @@ private fun ModelCard(
         CardStatus.Failed -> stringRes(R.string.dictate__setup_action_retry)
         is CardStatus.Downloading -> stringRes(R.string.dictate__setup_action_cancel)
     }
-    val recommendedLabel = stringRes(R.string.dictate__setup_recommended)
+    val recommendedLabel = stringRes(
+        if (choice.englishOnly) R.string.typebetter__voice_best_english else R.string.dictate__setup_recommended,
+    )
     val levelA11y = stringRes(R.string.dictate__setup_level_a11y)
     val a11y = buildList {
         add(choice.spec.displayName)
@@ -448,6 +459,14 @@ private fun FractionBar(fraction: Float, fill: Color, track: Color, minFraction:
         }
     }
 }
+
+/**
+ * The phone's own language code (`en`, `de`, ...): what the voice model pickers plan for while dictation
+ * is set to detect the language (see [DictationReadiness.pickerLanguage]).
+ */
+internal fun deviceLanguage(context: Context): String =
+    ConfigurationCompat.getLocales(context.resources.configuration)[0]?.language
+        ?: Locale.getDefault().language
 
 /**
  * Points the on-device engine at [spec] and makes it the active transcription provider, the setup

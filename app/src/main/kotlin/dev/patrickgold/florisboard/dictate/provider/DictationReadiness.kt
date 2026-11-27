@@ -19,10 +19,10 @@ import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 
 /**
- * Whether dictation can work right now, and the three Whisper models offered when it cannot (TypeBetter).
+ * Whether dictation can work right now, and the voice models offered when it cannot (TypeBetter).
  *
  * A fresh install transcribes on the device, so until a voice model is downloaded the mic is drawn greyed
- * out, and tapping it opens a picker of Tiny, Base and Small instead of starting a recording that could
+ * out, and tapping it opens a picker of voice models (see [choicesFor]) instead of starting a recording that could
  * only fail. Picking one downloads it and makes it the active engine, so dictation then works offline with
  * nothing else to set up. Someone with a cloud API key in place is never sent through this.
  *
@@ -69,7 +69,7 @@ object DictationReadiness {
     fun isFreshInstall(isImeSetUp: Boolean, accounts: ProviderAccounts): Boolean =
         !isImeSetUp && accounts.accounts.values.none { it.hasKey }
 
-    // --- The picker's three choices ------------------------------------------------------------------
+    // --- The picker's choices ------------------------------------------------------------------------
 
     /** Steps on the speed and accuracy bars. */
     const val SCALE = 5
@@ -77,25 +77,79 @@ object DictationReadiness {
     /**
      * One row of the picker. [speed] and [accuracy] are on a 1..[SCALE] scale and are relative to each
      * other, not absolute claims: Whisper's published figures put Tiny at roughly twice Base's speed and
-     * Small at well under half of it, with the error rate falling in the same order.
+     * Small at well under half of it, with the error rate falling in the same order. [shortName] is what a
+     * narrow card has room for; [englishOnly] marks a model that hears nothing else.
      */
     data class Choice(
         val spec: LocalModelSpec,
         val speed: Int,
         val accuracy: Int,
         val recommended: Boolean,
+        val shortName: String,
+        val englishOnly: Boolean = false,
     ) {
         val megabytes: Int get() = megabytesOf(spec.totalBytes)
     }
 
-    /** Tiny, Base and Small, smallest first, Base recommended. Multilingual models, so any language works. */
-    val choices: List<Choice> = listOf(
-        Choice(LocalModelCatalog.WHISPER_TINY, speed = 5, accuracy = 2, recommended = false),
-        Choice(LocalModelCatalog.WHISPER_BASE, speed = 4, accuracy = 3, recommended = true),
-        Choice(LocalModelCatalog.WHISPER_SMALL, speed = 2, accuracy = 5, recommended = false),
+    private val TINY = Choice(LocalModelCatalog.WHISPER_TINY, speed = 5, accuracy = 2, recommended = false, shortName = "Tiny")
+    private val BASE = Choice(LocalModelCatalog.WHISPER_BASE, speed = 4, accuracy = 3, recommended = true, shortName = "Base")
+    private val SMALL = Choice(LocalModelCatalog.WHISPER_SMALL, speed = 2, accuracy = 5, recommended = false, shortName = "Small")
+
+    /**
+     * Parakeet TDT 110M, the pick for English (David, 2026-11-27): 7.5 % mean WER on the Open ASR
+     * leaderboard sets against roughly 10-13 % for multilingual Whisper Base, at Tiny-like speed (a
+     * non-autoregressive transducer), and it writes its own punctuation and capitals. As accurate as
+     * Small on English for about a third of the download, so it takes the top of both bars.
+     */
+    private val PARAKEET_EN = Choice(
+        LocalModelCatalog.PARAKEET_TDT_110M_EN, speed = 5, accuracy = 5, recommended = true,
+        shortName = "Parakeet", englishOnly = true,
     )
 
-    val recommended: Choice get() = choices.single { it.recommended }
+    /** Every model either list can show: what downloads and installs are tracked against. */
+    val choices: List<Choice> = listOf(PARAKEET_EN, TINY, BASE, SMALL)
+
+    /**
+     * The list for someone dictating in [language] (a code such as `en`, `en-US`; blank or `detect`
+     * should already have been resolved with [pickerLanguage]).
+     *
+     * English: Parakeet first and recommended, then Whisper Base and Small for anyone who also dictates
+     * other languages. Tiny is left out there because Parakeet beats it on speed and accuracy alike; it
+     * is still in the full on-device list, and [visibleChoices] keeps it here while it is installed.
+     * Everyone else: Whisper Tiny, Base and Small, smallest first, Base recommended, since those hear any
+     * language.
+     */
+    fun choicesFor(language: String): List<Choice> =
+        if (baseLanguage(language) == "en") {
+            listOf(PARAKEET_EN, BASE.copy(recommended = false), SMALL)
+        } else {
+            listOf(TINY, BASE, SMALL)
+        }
+
+    /**
+     * [choicesFor] plus any other picker model already on the phone, so a model someone downloaded never
+     * vanishes from the list they chose it in.
+     */
+    fun visibleChoices(language: String, installedIds: Set<String>): List<Choice> {
+        val base = choicesFor(language)
+        val extra = choices.filter { it.spec.id in installedIds && base.none { b -> b.spec.id == it.spec.id } }
+            .map { it.copy(recommended = false) }
+        return base + extra
+    }
+
+    fun recommendedFor(language: String): Choice = choicesFor(language).single { it.recommended }
+
+    /**
+     * The language the picker plans for: the active dictation language, or the phone's own language when
+     * dictation is set to detect it (the default) or nothing is set.
+     */
+    fun pickerLanguage(activeInputLanguage: String, deviceLanguage: String): String {
+        val active = activeInputLanguage.trim()
+        return if (active.isEmpty() || active.equals("detect", ignoreCase = true)) deviceLanguage else active
+    }
+
+    private fun baseLanguage(language: String): String =
+        language.trim().lowercase().substringBefore('-').substringBefore('_')
 
     /** How full the size bar is for [choice]: its download against the biggest one offered. */
     fun sizeFraction(choice: Choice): Float =

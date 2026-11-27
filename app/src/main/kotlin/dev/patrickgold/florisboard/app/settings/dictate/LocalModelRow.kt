@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
@@ -31,9 +33,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
 import dev.patrickgold.florisboard.dictate.provider.LocalModelDownloads
 import dev.patrickgold.florisboard.dictate.provider.LocalModelEntry
 import dev.patrickgold.florisboard.dictate.provider.LocalModelSpec
@@ -135,6 +139,19 @@ internal fun ModelRow(
             )
             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                 Text(text = spec.displayName, style = MaterialTheme.typography.titleSmall)
+                // The one to pick for English (David, 2026-11-27), said where the choice is made.
+                if (spec.id == LocalModelCatalog.PARAKEET_TDT_110M_EN.id) {
+                    Text(
+                        text = stringRes(R.string.typebetter__voice_best_english),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .padding(vertical = 2.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
                 // What the model is stays on the line; only the second half changes with its state. It
                 // used to be replaced by the state, so an installed model stopped saying what it covers
                 // — exactly when several are installed and one has to be chosen between them. The size
