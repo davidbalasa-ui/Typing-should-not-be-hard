@@ -306,6 +306,8 @@ dependencies {
     implementation(projects.lib.dictateCore)
     implementation(projects.lib.compose)
 
+    // "Check for updates" on the home screen: Google Play In-App Updates (docs/decisions/2026-11-27-check-for-updates.md).
+    implementation(libs.play.app.update)
     // Wearable Data Layer: settings sync + tethered transcription with the Wear OS app (#106).
     implementation(libs.play.services.wearable)
     implementation(libs.kotlinx.coroutines.play.services)
