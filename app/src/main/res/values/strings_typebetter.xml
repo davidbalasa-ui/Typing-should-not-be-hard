@@ -309,6 +309,8 @@
     <string name="typebetter__voice_best_english">Best for English</string>
     <string name="typebetter__voice_recommended">Recommended</string>
     <string name="typebetter__local_advanced">Advanced</string>
+    <string name="typebetter__local_advanced_open">Expanded</string>
+    <string name="typebetter__local_advanced_closed">Collapsed</string>
     <string name="typebetter__voice_english_only">English only</string>
     <string name="typebetter__voice_any_language">Any language</string>
     <string name="typebetter__voice_more_section">More dictation settings</string>

@@ -123,13 +123,17 @@ fun DictationSetupPanel(modifier: Modifier = Modifier) {
     val accent by prefs.theme.accentColor.collectPrefAsState()
 
     val activeLanguage by prefs.dictate.activeInputLanguage.collectPrefAsState()
-    val shown = remember(activeLanguage) {
-        DictationReadiness.choicesFor(DictationReadiness.pickerLanguage(activeLanguage, deviceLanguage(context)))
-    }
     val downloads by LocalModelDownloads.state.collectAsState()
     val installedTick by LocalModelDownloads.installedTick.collectAsState()
     val installed = remember(installedTick) {
         DictationReadiness.choices.filter { LocalModelManager.isInstalled(context, it.spec.id) }.map { it.spec.id }.toSet()
+    }
+    // The same list as the Dictation settings picker, installed models included, so the two agree.
+    val shown = remember(activeLanguage, installed) {
+        DictationReadiness.visibleChoices(
+            DictationReadiness.pickerLanguage(activeLanguage, deviceLanguage(context)),
+            installed,
+        )
     }
     val needsSetup = rememberDictationNeedsSetup()
     /** The choice the phone had no room for, with the free megabytes measured at the tap. */

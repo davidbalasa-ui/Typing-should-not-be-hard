@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -161,11 +163,17 @@ fun LocalModelSection(
         // The two options are for people who know they want them (David, 2026-11-27: the checkbox and
         // slider above the list read as the point of the dialog). Folded under "Advanced", below the list.
         var advancedOpen by remember { mutableStateOf(false) }
+        // Outside the folded block, so a change saved just before folding it is not cancelled with it.
+        val scope = rememberCoroutineScope()
+        val advancedState = stringRes(
+            if (advancedOpen) R.string.typebetter__local_advanced_open else R.string.typebetter__local_advanced_closed,
+        )
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(role = Role.Button) { advancedOpen = !advancedOpen }
+                .semantics { stateDescription = advancedState }
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -183,7 +191,6 @@ fun LocalModelSection(
             Column {
                 // Long-press "send with local model" shortcut (issue #228): a short explainer + checkbox. When on, holding the send button while recording transcribes with the
                 // selected on-device model instead of the cloud provider (plain recording only).
-                val scope = rememberCoroutineScope()
                 // Local state (persisted immediately) — avoids importing the jetpref collectAsState, which would
                 // clash by name with the runtime collectAsState already used for the download flows above.
                 var longPressLocal by remember { mutableStateOf(prefs.dictate.longPressSendLocalModel.get()) }
