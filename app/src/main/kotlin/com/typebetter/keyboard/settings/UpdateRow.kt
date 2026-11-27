@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -65,9 +64,12 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
     var checkJob by remember { mutableStateOf<Job?>(null) }
     // Set by a check that found an immediate update to reopen; the effect below reopens it.
     var resumePending by remember { mutableStateOf(false) }
+    // Reopened by itself at most once while the row is shown; after that only the Resume button does it,
+    // so Back on Play's screen always gets David out.
+    var autoResumed by remember { mutableStateOf(false) }
 
-    // [resume]: an immediate update left running is reopened straight away (Play's rule). Not after Play's
-    // own screen reports back, so closing that screen never traps David in a loop.
+    // [resume]: an immediate update left running is reopened straight away (Play's rule), once per showing
+    // of the row ([autoResumed]), so closing Play's screen never traps David in a loop.
     fun check(resume: Boolean = false) {
         checkJob?.cancel()
         state = UpdateState.Checking
@@ -84,7 +86,10 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
                     UpdateState.Failed
                 } else {
                     val next = updateStateFor(answer.toPlayAnswer())
-                    if (resume && next is UpdateState.InProgress && next.resumable) resumePending = true
+                    if (resume && !autoResumed && next is UpdateState.InProgress && next.resumable) {
+                        autoResumed = true
+                        resumePending = true
+                    }
                     next
                 }
             } catch (e: CancellationException) {
@@ -140,11 +145,11 @@ internal fun CheckForUpdatesRow(modifier: Modifier = Modifier) {
     // Store page (an immediate update left running must be resumed, Play's own rule).
     LaunchedEffect(Unit) { check(resume = true) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentState by rememberUpdatedState(state)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME &&
-                (currentState is UpdateState.InProgress || currentState is UpdateState.AvailableInStore)
+                // `state` is snapshot state, so this reads the newest value, not the last composed one.
+                (state is UpdateState.InProgress || state is UpdateState.AvailableInStore)
             ) {
                 check(resume = true)
             }

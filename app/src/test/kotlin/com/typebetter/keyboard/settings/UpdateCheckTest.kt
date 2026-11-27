@@ -63,6 +63,11 @@ class UpdateCheckTest {
             "installing says Updating, not Downloading 100%",
         )
         assertEquals(
+            UpdateState.InProgress(null, resumable = false),
+            updateStateFor(answer(UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS, flexible = true)),
+            "only an update Play lets reopen full screen is resumable",
+        )
+        assertEquals(
             UpdateState.InProgress(25),
             updateStateFor(answer(UpdateAvailability.UPDATE_AVAILABLE, InstallStatus.DOWNLOADING, downloaded = 25, total = 100)),
         )
