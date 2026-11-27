@@ -885,7 +885,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
-    fun commitGesture(word: String) {
+    /**
+     * Writes a glided word. [alternatives] are the decoder's other choices, best first: when one of them is
+     * the glided word with its last few letters taken off (`need` behind `needed`), the next backspace
+     * swaps it in instead of deleting one letter ([CorrectionUndo.glideUndoTarget]).
+     */
+    fun commitGesture(word: String, alternatives: List<String> = emptyList()) {
         // Same as above: a glide never passes through onInputKeyUp (issues #283, #295).
         pendingExpansion = null
         pendingAutoCorrection = null
@@ -897,7 +902,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // sees it — swiping a word while searching used to drop it into the app's text field instead of
         // the search box. Route it to the query the same way a typed character goes.
         if (appendToActiveSearch(text)) return
-        editorInstance.commitGesture(text)
+        if (!editorInstance.commitGesture(text)) return
+        if (isVerbatimField() || activeState.keyVariation == KeyVariation.PASSWORD) return
+        val shorter = CorrectionUndo.glideUndoTarget(text, alternatives.map { fixCase(it) })
+        if (shorter != null) {
+            pendingAutoCorrection = AutoCorrection(inserted = text, replaced = shorter, fromGlide = true)
+        }
     }
 
     /**
@@ -1049,7 +1059,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Only ever armed for a *silent* correction. Tapping a suggestion in the strip is a decision the
      * user made and does not want undone by a backspace they meant for the letter before it.
      */
-    private data class AutoCorrection(val inserted: String, val replaced: String)
+    private data class AutoCorrection(val inserted: String, val replaced: String, val fromGlide: Boolean = false)
 
     private var pendingAutoCorrection: AutoCorrection? = null
 
@@ -1130,13 +1140,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private fun boundaryAfter(correction: AutoCorrection): String? {
         val content = editorInstance.activeContent
         if (content.selection.isSelectionMode) return null
-        val before = content.textBeforeSelection
-        val tail = correction.inserted.takeLast(TAIL_MATCH_LENGTH)
-        return when {
-            before.endsWith(tail) -> ""
-            before.length > correction.inserted.length && before.dropLast(1).endsWith(tail) -> before.takeLast(1)
-            else -> null
-        }
+        return CorrectionUndo.boundaryAfter(content.textBeforeSelection, correction.inserted, TAIL_MATCH_LENGTH)
     }
 
     private fun undoAutoCorrection(): Boolean {
@@ -1156,6 +1160,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // otherwise reject it for certain — a word restored from a correction is one cheap edit from a
         // dictionary word by construction, which is exactly what that reasoning treats as a typo.
         val restored = correction.replaced.trim()
+        // A glide shortened to the decoder's other choice (`needed` → `need`) is not a rejected
+        // correction: no rule was applied, and the restored word was never typed, so nothing is learned.
+        // The word now stands as if typed, so the next backspace deletes a letter (not the whole word, which
+        // "Always delete word" does straight after a glide) and the next letter continues it.
+        if (correction.fromGlide) {
+            editorInstance.phantomSpace.setInactive()
+            lastTypedWord = null
+            return true
+        }
         // TypeBetter: offer "+ word" at once, and after the second undo of the same correction
         // "Don't fix", which saves it as Never change.
         // Nothing is recorded in incognito mode or a password field, same as the "+ word" offer.
@@ -2052,9 +2065,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     override fun onInputKeyUp(data: KeyData) = activeState.batchEdit {
-        // Both undos last exactly one keystroke: anything but a plain backspace lets them go, and the
-        // expansion and the correction re-arm themselves further down (issues #283, #295).
-        if (data.code != KeyCode.DELETE) {
+        // Both undos last until the next keystroke that edits: anything but a plain backspace lets them
+        // go, and the expansion and the correction re-arm themselves further down (issues #283, #295).
+        // Shift and the layer keys change no text, so they keep it (CorrectionUndo.keepsUndo).
+        if (data.code != KeyCode.DELETE && !CorrectionUndo.keepsUndo(data.code)) {
             pendingExpansion = null
             pendingAutoCorrection = null
         }
