@@ -753,7 +753,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         com.typebetter.keyboard.VerbatimField.isVerbatim(editorInstance.activeInfo.base.privateImeOptions)
 
     private fun endOfWord(): SuggestionCandidate? {
-        val candidate = nlpManager.getAutoCommitCandidate(editorInstance.activeContent.composingText)
+        val composing = editorInstance.activeContent.composingText
+        val keep = keepAsGlided
+        keepAsGlided = null
+        val candidate = if (keep != null && composing.toString() == keep) {
+            null
+        } else {
+            nlpManager.getAutoCommitCandidate(composing)
+        }
         if (candidate != null) {
             commitAutoCorrection(candidate)
             lastTypedWord = null
@@ -901,16 +908,32 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         lastWordCorrection = null
         // A glide produces a whole word at once, so there are no per-character taps to reason about (#242).
         TouchTrace.reset()
-        val text = fixCase(word)
-        // Cased together with the word, before the commit can move the shift state on.
-        val shorter = CorrectionUndo.glideUndoTarget(text, alternatives.map { fixCase(it) })
+        val glided = fixCase(word)
         // A glide never passes through onInputKeyDown, so the emoji/GIF search interception there never
         // sees it — swiping a word while searching used to drop it into the app's text field instead of
         // the search box. Route it to the query the same way a typed character goes.
-        if (appendToActiveSearch(text)) return
+        if (appendToActiveSearch(glided)) return
+        // TypeBetter: a glided word gets the user's own automatic fix too ("Naya" → "Niah"), exactly as a
+        // typed one does on Space; a glide never passes through the strip that applies it there. Only where
+        // a typed word would get it: not in a correction box or a password field, and not with word
+        // suggestions off (typed words then have no composing word to fix).
+        val personalFix = if (isVerbatimField() || activeState.keyVariation == KeyVariation.PASSWORD ||
+            !nlpManager.wordSuggestionsWanted()
+        ) {
+            null
+        } else {
+            com.typebetter.keyboard.TypeBetterSuggestions
+                .personalFixNow(glided, prefs.suggestion.autoCorrect.get())?.text?.toString()
+        }
+        val text = personalFix ?: glided
+        // Cased together with the word, before the commit can move the shift state on.
+        val shorter = if (personalFix != null) null else CorrectionUndo.glideUndoTarget(text, alternatives.map { fixCase(it) })
         if (!editorInstance.commitGesture(text)) return
         if (isVerbatimField() || activeState.keyVariation == KeyVariation.PASSWORD) return
-        if (shorter != null) {
+        if (personalFix != null) {
+            // Backspace takes it back to what was glided, like any correction (and counts as an undo of it).
+            pendingAutoCorrection = AutoCorrection(inserted = text, replaced = glided, glidedFix = true)
+        } else if (shorter != null) {
             pendingAutoCorrection = AutoCorrection(inserted = text, replaced = shorter, fromGlide = true)
         }
     }
@@ -1066,7 +1089,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Only ever armed for a *silent* correction. Tapping a suggestion in the strip is a decision the
      * user made and does not want undone by a backspace they meant for the letter before it.
      */
-    private data class AutoCorrection(val inserted: String, val replaced: String, val fromGlide: Boolean = false)
+    private data class AutoCorrection(
+        val inserted: String,
+        val replaced: String,
+        val fromGlide: Boolean = false,
+        /** TypeBetter: a My correction made to a glided word, which has no space after it yet. */
+        val glidedFix: Boolean = false,
+    )
+
+    /**
+     * TypeBetter: the glided word whose My correction Backspace just took back. A glided word has no space
+     * after it, so it is still the word being composed, and the Space that follows would correct it again
+     * at once. That one end of word leaves it as it is.
+     */
+    private var keepAsGlided: String? = null
 
     private var pendingAutoCorrection: AutoCorrection? = null
 
@@ -1186,6 +1222,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // otherwise reject it for certain — a word restored from a correction is one cheap edit from a
         // dictionary word by construction, which is exactly what that reasoning treats as a typo.
         val restored = correction.replaced.trim()
+        if (correction.glidedFix) keepAsGlided = restored
         // A glide shortened to the decoder's other choice (`needed` → `need`) is not a rejected
         // correction: no rule was applied, and the restored word was never typed, so nothing is learned.
         // The word now stands as if typed: the next letter continues it, and the next backspace deletes a
