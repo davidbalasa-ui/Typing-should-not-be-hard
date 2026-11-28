@@ -2065,10 +2065,10 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             // the user's own words starts the typo. English only: measured on en.json in
             // `PrefixShadowEvalTest`.
             val shadowLead = corrections.firstOrNull()
+            val ownStartsIt = personal.isNotEmpty() || learned.isNotEmpty()
             val shadow = if (hadCandidatesBefore && topTouchCost == null && personalFixes.isEmpty() &&
                 shadowLead != null && index.lang == ContextualFixes.LANG
             ) {
-                val ownStartsIt = personal.isNotEmpty() || learned.isNotEmpty()
                 val topCompletion = if (ownStartsIt) Int.MAX_VALUE else out.values.maxOfOrNull { c ->
                     if ((c as? WordSuggestionCandidate)?.isLearned == true) Int.MAX_VALUE
                     else index.freq[index.fold(c.text.toString())] ?: Int.MAX_VALUE
@@ -2167,10 +2167,13 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                     ),
                 )
             }
-            // Where the fix sits when the typo starts other words: right behind the typed word when it is
+            // Where the fix sits when the typo starts other words (English, and none of the user's own):
+            // right behind the typed word when it is
             // more common than all of them, otherwise still among the three slots the strip shows, so
             // `continue` is never pushed off it by `continent`, `continental` and `continents`.
-            if (hadCandidatesBefore && lead != null && personalFixes.isEmpty()) {
+            if (hadCandidatesBefore && lead != null && personalFixes.isEmpty() &&
+                index.lang == ContextualFixes.LANG && !ownStartsIt
+            ) {
                 val leadKey = cased(lead).lowercase()
                 val typedKey = word.lowercase()
                 if (shadow.offerFirst) {

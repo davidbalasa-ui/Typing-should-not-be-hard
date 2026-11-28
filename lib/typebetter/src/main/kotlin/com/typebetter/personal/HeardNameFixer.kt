@@ -27,22 +27,29 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
      * capitalised word says that name is meant, so a dictation that heard it as "Nia" or "Nyah" gets it
      * too, not only the one spelling the correction names. Only automatic, single-word corrections.
      */
-    private val names: List<String> = (
-        myWords + rules.fixes
-            .filter { it.mode == FixMode.AUTO && !it.isPhrase && it.meant.trim().firstOrNull()?.isUpperCase() == true }
-            .map { it.meant.trim() }
-        ).distinctBy { keyOf(it) }
+    private val fixNames: List<String> = rules.fixes
+        .filter { it.mode == FixMode.AUTO && !it.isPhrase && it.meant.trim().firstOrNull()?.isUpperCase() == true }
+        .map { it.meant.trim() }
+
+    private val names: List<String> = (myWords + fixNames).distinctBy { keyOf(it) }
 
     private val byKey: Map<String, String> = run {
-        val groups = HashMap<String, MutableSet<String>>()
-        for (word in names) {
-            val w = word.trim()
-            if (!isTarget(w)) continue
-            val key = SoundKey.of(w) ?: continue
-            groups.getOrPut(key) { LinkedHashSet() }.add(w)
+        fun groupsOf(words: List<String>): Map<String, String> {
+            val groups = HashMap<String, MutableSet<String>>()
+            for (word in words) {
+                val w = word.trim()
+                if (!isTarget(w)) continue
+                val key = SoundKey.of(w) ?: continue
+                groups.getOrPut(key) { LinkedHashSet() }.add(w)
+            }
+            // Two names that sound the same: the transcript cannot say which was meant, so neither is used.
+            return groups.filterValues { it.size == 1 }.mapValues { it.value.first() }
         }
-        // Two My words that sound the same: the transcript cannot say which was meant, so neither is used.
-        groups.filterValues { it.size == 1 }.mapValues { it.value.first() }
+        // My words decide first, so a correction's name never makes a My word ambiguous: My word "Nia" and
+        // a correction to "Niah" keep restoring "Nia". A correction's name only fills a sound no My word has.
+        val mine = groupsOf(myWords)
+        val myKeysTaken = myWords.mapNotNull { SoundKey.of(it.trim()) }.toHashSet()
+        mine + groupsOf(fixNames).filterKeys { it !in myKeysTaken }
     }
 
     private val myKeys: Set<String> = names.map { keyOf(it) }.toHashSet()

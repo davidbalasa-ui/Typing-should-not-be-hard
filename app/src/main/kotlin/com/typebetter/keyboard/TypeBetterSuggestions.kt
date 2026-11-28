@@ -86,7 +86,8 @@ object TypeBetterSuggestions {
     fun personalFixNow(typed: String, autoCorrect: Boolean): WordSuggestionCandidate? {
         if (typed.isBlank()) return null
         val meant = try {
-            PersonalWords.typingRules().autoFixFor(typed, autoCorrect)
+            // Rules only: a fix never depends on My words, and building them can read the database.
+            com.typebetter.personal.TypingRules(PersonalWords.rules.value, emptyList()).autoFixFor(typed, autoCorrect)
         } catch (e: Exception) {
             flogError { "TypeBetter: rules failed for a word, keeping it as typed: $e" }
             null

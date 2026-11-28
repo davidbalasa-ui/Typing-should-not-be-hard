@@ -70,4 +70,11 @@ class FixEveryTimeTest {
             HeardNameFixer(emptyList(), offerOnly).apply("I talked to Nia today.", { dictionary[it] }),
         )
     }
+
+    @Test
+    fun `a correction's name never takes a sound from a My word`() {
+        val fixer = HeardNameFixer(listOf("Nia"), naya)
+        // "Nia" is a My word: the correction to Niah does not make it ambiguous, and Nia stays Nia.
+        assertEquals("I talked to Nia today.", fixer.apply("I talked to Nyah today.", { dictionary[it] }))
+    }
 }
