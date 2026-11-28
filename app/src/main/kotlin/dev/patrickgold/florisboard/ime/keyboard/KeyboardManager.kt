@@ -901,16 +901,29 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         lastWordCorrection = null
         // A glide produces a whole word at once, so there are no per-character taps to reason about (#242).
         TouchTrace.reset()
-        val text = fixCase(word)
+        val glided = fixCase(word)
+        // TypeBetter: a glided word gets the user's own automatic fix too ("Naya" → "Niah"), exactly as a
+        // typed one does on Space; a glide never passes through the strip that applies it there. Not in a
+        // correction box or a password field, which keep what was entered.
+        val personalFix = if (isVerbatimField() || activeState.keyVariation == KeyVariation.PASSWORD) {
+            null
+        } else {
+            com.typebetter.keyboard.TypeBetterSuggestions
+                .personalFixNow(glided, prefs.suggestion.autoCorrect.get())?.text?.toString()
+        }
+        val text = personalFix ?: glided
         // Cased together with the word, before the commit can move the shift state on.
-        val shorter = CorrectionUndo.glideUndoTarget(text, alternatives.map { fixCase(it) })
+        val shorter = if (personalFix != null) null else CorrectionUndo.glideUndoTarget(text, alternatives.map { fixCase(it) })
         // A glide never passes through onInputKeyDown, so the emoji/GIF search interception there never
         // sees it — swiping a word while searching used to drop it into the app's text field instead of
         // the search box. Route it to the query the same way a typed character goes.
         if (appendToActiveSearch(text)) return
         if (!editorInstance.commitGesture(text)) return
         if (isVerbatimField() || activeState.keyVariation == KeyVariation.PASSWORD) return
-        if (shorter != null) {
+        if (personalFix != null) {
+            // Backspace takes it back to what was glided, like any correction (and counts as an undo of it).
+            pendingAutoCorrection = AutoCorrection(inserted = text, replaced = glided)
+        } else if (shorter != null) {
             pendingAutoCorrection = AutoCorrection(inserted = text, replaced = shorter, fromGlide = true)
         }
     }

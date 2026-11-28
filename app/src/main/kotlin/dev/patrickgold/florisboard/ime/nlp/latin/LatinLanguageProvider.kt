@@ -78,6 +78,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         private const val CORRECTION_MAX = CorrectionReaders.MAX_CORRECTIONS
         private const val CORRECTION_RESERVE = 3
 
+        /** TypeBetter: the last of the three slots the strip shows; a fix shadowed by completions goes no lower. */
+        private const val VISIBLE_FIX_SLOT = 2
+
         // A prefix with more dictionary words than this is left to the plain completion walk (issue #381):
         // with over a thousand matches in ~64,000 words, the walk meets its eight within the first few
         // hundred, which is cheaper than collecting and sorting the matches.
@@ -2052,6 +2055,37 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             )
             // What may be swapped in *silently* (the strip always shows everything either way).
             val topTouchCost = touchCorrections?.topCost
+            // The user's own words one edit away; they outrank every dictionary fix below.
+            val personalFixes = personalCorrectionsFor(word, subtype, index)
+            // A typo that starts rarer words (TypeBetter): `contine` is `continue` with the u left out, and
+            // also the start of `continent`. Space ends a word; nobody presses it half way through
+            // `continent`, so when the fix is more common than everything the typo starts it goes ahead of
+            // those words, and with one letter missing and a clear lead Space takes it. Not when the taps
+            // already decided ([AutoCommitGate]), not past a fix of the user's own, and never when one of
+            // the user's own words starts the typo. English only: measured on en.json in
+            // `PrefixShadowEvalTest`.
+            val shadowLead = corrections.firstOrNull()
+            val shadow = if (hadCandidatesBefore && topTouchCost == null && personalFixes.isEmpty() &&
+                shadowLead != null && index.lang == ContextualFixes.LANG
+            ) {
+                val ownStartsIt = personal.isNotEmpty() || learned.isNotEmpty()
+                val topCompletion = if (ownStartsIt) Int.MAX_VALUE else out.values.maxOfOrNull { c ->
+                    if ((c as? WordSuggestionCandidate)?.isLearned == true) Int.MAX_VALUE
+                    else index.freq[index.fold(c.text.toString())] ?: Int.MAX_VALUE
+                } ?: 0
+                val lead = index.fold(shadowLead)
+                val verdict = PrefixShadowGate.judge(
+                    typed = index.fold(word),
+                    fix = lead,
+                    fixFreq = index.freq[lead] ?: 0,
+                    topCompletionFreq = topCompletion,
+                    strength = prefs.correction.autoCorrectStrength.get(),
+                )
+                // A capitalised word after another word is most likely a name: offered, never swapped.
+                if (wantCapitalized && prevWord != null) verdict.copy(autoCommit = false) else verdict
+            } else {
+                PrefixShadowGate.NONE
+            }
             // A restoration above (umlaut, spelling, apostrophe) that already claimed the slot keeps it:
             // [NlpManager.getAutoCommitCandidate] takes the first eligible candidate, so a second one is
             // never committed — it is only drawn bold, which is a lie about what Space is going to take.
@@ -2066,8 +2100,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                     AutoCommitGate.allows(topTouchCost, word.length, prefs.correction.autoCorrectStrength.get())
                 // A dropped or doubled letter: the beam cannot see it and the taps say nothing either way,
                 // so keep the conservative classic rule.
-                touchCorrections != null -> !hadCandidatesBefore
-                else -> !hadCandidatesBefore && !distance1Empty
+                touchCorrections != null -> !hadCandidatesBefore || shadow.autoCommit
+                else -> (!hadCandidatesBefore || shadow.autoCommit) && !distance1Empty
             }
             // Over the tap budget (two slips, `wotj`), but the previous word says which word was meant
             // (`words wotj` → `with`). Measured on English only, in `ContextSlipEvalTest`. The evidence is
@@ -2092,7 +2126,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             // half-typed (no dictionary word extends it). Otherwise a word like "Dads", which is left alone
             // precisely because it looks deliberate, never appears in the strip at all, so there is nothing
             // to long-press to teach it (issue #241).
-            if (corrections.isNotEmpty() && (allowAutoCommit || contextBacked || !hadCandidatesBefore)) {
+            if (corrections.isNotEmpty() && (allowAutoCommit || contextBacked || !hadCandidatesBefore || shadow.offerFirst)) {
                 out.putIfAbsent(
                     word.lowercase(),
                     WordSuggestionCandidate(
@@ -2103,7 +2137,6 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             // The user's own words go first among the corrections. They are not in the dictionary index,
             // so they carry no frequency of their own — they are ranked at the same band they occupy as
             // completions, which is what puts them ahead of a rare dictionary word one edit away.
-            val personalFixes = personalCorrectionsFor(word, subtype, index)
             personalFixes.forEachIndexed { i, correction ->
                 val text = cased(correction)
                 out.putIfAbsent(
@@ -2133,6 +2166,22 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                         sourceProvider = this,
                     ),
                 )
+            }
+            // Where the fix sits when the typo starts other words: right behind the typed word when it is
+            // more common than all of them, otherwise still among the three slots the strip shows, so
+            // `continue` is never pushed off it by `continent`, `continental` and `continents`.
+            if (hadCandidatesBefore && lead != null && personalFixes.isEmpty()) {
+                val leadKey = cased(lead).lowercase()
+                val typedKey = word.lowercase()
+                if (shadow.offerFirst) {
+                    out.remove(leadKey)?.let { leadCandidate ->
+                        // The typed word stays tappable, left-most (issue #150).
+                        out.remove(typedKey)?.let { insertAt(out, 0, typedKey, it) }
+                        insertAt(out, if (out.keys.firstOrNull() == typedKey) 1 else 0, leadKey, leadCandidate)
+                    }
+                } else if (out.keys.indexOf(leadKey) > VISIBLE_FIX_SLOT) {
+                    out.remove(leadKey)?.let { insertAt(out, VISIBLE_FIX_SLOT, leadKey, it) }
+                }
             }
 
             // Sound-alike spellings (TypeBetter): the consonants right and the vowels wrong, `siezers` for

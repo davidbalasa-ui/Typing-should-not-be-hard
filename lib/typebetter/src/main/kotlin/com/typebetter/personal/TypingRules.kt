@@ -119,6 +119,19 @@ class TypingRules(
     }
 
     /**
+     * The word Space should write for [typed] on the user's own authority alone, or null: the meant word
+     * of an automatic My fix, in the typed case, unless Never change blocks it or [autoCorrect] is off.
+     *
+     * The same decision [apply] makes, asked without the keyboard's suggestions. For the moments those
+     * are not there: Space pressed before the strip caught up with the last letter, and a glided word,
+     * which never goes through the strip at all. A fix needs no dictionary, so it is never late.
+     */
+    fun autoFixFor(typed: String, autoCorrect: Boolean = true): String? =
+        apply(typed, emptyList<String>(), { it }, { false }, autoCorrect)
+            .firstOrNull { it.origin == Origin.FIX && it.autoCommit }
+            ?.text
+
+    /**
      * True when [word] is the part before an apostrophe or hyphen of a My word ("Ba" of "Ba'al"), and not a
      * My word itself. The keyboard ends a word at those characters, so such a part must not be corrected
      * or offered as a new word.

@@ -22,9 +22,20 @@ package com.typebetter.personal
  */
 class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = PersonalRules()) {
 
+    /**
+     * My words, and the names My corrections turn something into ("Naya" → "Niah"): a correction to a
+     * capitalised word says that name is meant, so a dictation that heard it as "Nia" or "Nyah" gets it
+     * too, not only the one spelling the correction names. Only automatic, single-word corrections.
+     */
+    private val names: List<String> = (
+        myWords + rules.fixes
+            .filter { it.mode == FixMode.AUTO && !it.isPhrase && it.meant.trim().firstOrNull()?.isUpperCase() == true }
+            .map { it.meant.trim() }
+        ).distinctBy { keyOf(it) }
+
     private val byKey: Map<String, String> = run {
         val groups = HashMap<String, MutableSet<String>>()
-        for (word in myWords) {
+        for (word in names) {
             val w = word.trim()
             if (!isTarget(w)) continue
             val key = SoundKey.of(w) ?: continue
@@ -34,7 +45,7 @@ class HeardNameFixer(myWords: List<String>, private val rules: PersonalRules = P
         groups.filterValues { it.size == 1 }.mapValues { it.value.first() }
     }
 
-    private val myKeys: Set<String> = myWords.map { keyOf(it) }.toHashSet()
+    private val myKeys: Set<String> = names.map { keyOf(it) }.toHashSet()
 
     val isEmpty: Boolean get() = byKey.isEmpty()
 

@@ -516,9 +516,18 @@ class NlpManager(context: Context) {
     fun getAutoCommitCandidate(composingWord: CharSequence): SuggestionCandidate? {
         // TypeBetter: a box where a correction is being entered keeps the word as typed.
         if (com.typebetter.keyboard.VerbatimField.isVerbatim(editorInstance.activeInfo.base.privateImeOptions)) return null
+        val typed = composingWord.toString()
         val forWord = suggestionsWord
-        if (forWord != null && forWord != composingWord.toString()) return null
-        return activeCandidates.firstOrNull { it.isEligibleForAutoCommit }
+        if (forWord == null || forWord == typed) {
+            activeCandidates.firstOrNull { it.isEligibleForAutoCommit }?.let { return it }
+            // The strip for this very word decided (My fixes included, through TypeBetterSuggestions.shape).
+            if (forWord == typed) return null
+        }
+        // TypeBetter: the strip is not this word's: Space came before its suggestions did (fast typing,
+        // a slow first lookup), or it holds a glide's alternatives. My corrections need no dictionary, so
+        // they are asked directly rather than dropped: "Naya" must become "Niah" every time, not only when
+        // the strip happened to be in time.
+        return com.typebetter.keyboard.TypeBetterSuggestions.personalFixNow(typed, prefs.suggestion.autoCorrect.get())
     }
 
     /** Outcome of [addToUserDictionary], so the caller knows what (if anything) to tell the user. */

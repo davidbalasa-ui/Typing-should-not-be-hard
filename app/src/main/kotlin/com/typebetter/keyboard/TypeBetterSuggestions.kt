@@ -78,6 +78,28 @@ object TypeBetterSuggestions {
         }
     }
 
+    /**
+     * The automatic My fix for [typed] as a candidate Space may commit, or null (see
+     * [com.typebetter.personal.TypingRules.autoFixFor]). Cheap and synchronous: safe on the typing path.
+     * Never throws.
+     */
+    fun personalFixNow(typed: String, autoCorrect: Boolean): WordSuggestionCandidate? {
+        if (typed.isBlank()) return null
+        val meant = try {
+            PersonalWords.typingRules().autoFixFor(typed, autoCorrect)
+        } catch (e: Exception) {
+            flogError { "TypeBetter: rules failed for a word, keeping it as typed: $e" }
+            null
+        } ?: return null
+        return WordSuggestionCandidate(
+            text = meant,
+            confidence = 1.0,
+            isEligibleForAutoCommit = true,
+            isEligibleForUserRemoval = false,
+            sourceProvider = null,
+        )
+    }
+
     /** Word slots the classic strip shows; the offers go at its end so they stay visible there. */
     private const val VISIBLE_SLOTS = 3
 
